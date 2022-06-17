@@ -30,6 +30,9 @@ set(ThirdPartiesSourcesDirectory ${CMAKE_CURRENT_LIST_DIR}/Engine/ThirdParties)
 ## Vulkan
 find_package(Vulkan REQUIRED)
 
+## GLM
+add_subdirectory(${ThirdPartiesSourcesDirectory}/glm)
+
 ## GLFW
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -45,7 +48,7 @@ aux_source_directory(${EngineSourcesDirectory} EngineSources)
 add_library(Engine ${RenderSources} ${RenderIncludes} ${SceneSources} ${SceneIncludes} ${EngineSources} ${EngineIncludes})
 target_include_directories(Engine 
                             PUBLIC ${RenderSourceDirectory}/Public ${SceneSourceDirectory}/Public ${EngineSourcesDirectory})
-target_link_libraries(Engine PUBLIC glfw Vulkan::Vulkan)
+target_link_libraries(Engine PUBLIC glfw glm::glm Vulkan::Vulkan)
 
 
 # Samples
