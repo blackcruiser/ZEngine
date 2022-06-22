@@ -1,24 +1,18 @@
 #pragma once
 
-#include "CoreDefines.h"
-#include "Device.h"
-#include "Window.h"
+#include "Renderer.h"
+#include "Graphic/Device.h"
+#include "Graphic/Window.h"
 
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
-class TEScene;
+
 class TEObject;
 class TEMaterial;
 class TECommandPool;
 class TECommandBuffer;
 
-class TERendererInterface
-{
-public:
-	virtual void RenderFrame(TEPtr<TEScene> scene) = 0;
-
-};
 
 class TEForwardRenderer : public TERendererInterface
 {
