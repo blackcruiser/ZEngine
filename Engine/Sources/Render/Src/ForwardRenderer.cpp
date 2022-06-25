@@ -1,7 +1,8 @@
 #include "ForwardRenderer.h"
 #include "Scene/Scene.h"
-#include "Scene/Object.h"
-#include "Scene/Material.h"
+#include "Scene/SceneObject.h"
+#include "Scene/MeshComponent.h"
+#include "Scene/MaterialComponent.h"
 #include "Graphic/Surface.h"
 #include "Graphic/CommandPool.h"
 #include "Graphic/CommandBuffer.h"
@@ -11,6 +12,7 @@
 #include <fstream>
 #include <array>
 #include <cstddef>
+#include <functional>
 
 
 static std::vector<char> readFile(const std::string &filename)
@@ -87,7 +89,7 @@ TEForwardRenderer::~TEForwardRenderer()
     _device->DestroySwapchain(_vkSwapchain);
 }
 
-VkPipeline TEForwardRenderer::CreatePipeline(TEPtr<TEMaterial> material)
+VkPipeline TEForwardRenderer::CreatePipeline(TEPtr<TEMaterialComponent> material)
 {
     auto vertShaderCode = readFile("Build/Shaders/VertexShader.spv");
     auto fragShaderCode = readFile("Build/Shaders/FragmentShader.spv");
@@ -137,16 +139,16 @@ void TEForwardRenderer::CreateSwapchain(VkRenderPass renderPass)
 
 void TEForwardRenderer::GatherObjects(TEPtr<TEScene> scene)
 {
-    const TEPtrArr<TEObject> &objects = scene->GetObjects();
+    const TEPtrArr<TESceneObject> &objects = scene->GetObjects();
 
     _objectsToRender.clear(); 
     for (auto &object : objects)
     {
-        TEPtr<TEMaterial> material = object->_material;
+        TEPtr<TEMaterialComponent> material = object->GetComponent<TEMaterialComponent>();
         std::uintptr_t address = reinterpret_cast<std::uintptr_t>(material.get());
         if (_objectsToRender.find(address) == _objectsToRender.end())
-            _objectsToRender.emplace(address, TEPtrArr<TEObject>());
-        TEPtrArr<TEObject> &objectArr = _objectsToRender.at(address);
+            _objectsToRender.emplace(address, TEPtrArr<TESceneObject>());
+        TEPtrArr<TESceneObject> &objectArr = _objectsToRender.at(address);
         objectArr.push_back(object);
     }
 }
@@ -211,15 +213,15 @@ void TEForwardRenderer::RenderFrame(TEPtr<TEScene> scene)
         if (objectArr.empty())
             continue;
 
-        TEPtr<TEMaterial> material = objectArr[0]->_material;
+        TEPtr<TEMaterialComponent> materialComponent = objectArr[0]->GetComponent<TEMaterialComponent>();
 
         VkPipeline vkPipeline;
-        VkResult Result = VK_SUCCESS;
 
-        std::uintptr_t address = reinterpret_cast<std::uintptr_t>(material.get());
+        std::hash<TEMaterialComponent *> hashCreater;
+        size_t address = hashCreater(materialComponent.get());
         if (_pipelines.find(address) == _pipelines.end())
         {
-            vkPipeline = CreatePipeline(material);
+            vkPipeline = CreatePipeline(materialComponent);
             _pipelines.insert(std::make_pair(address, vkPipeline));
         }
         else
@@ -230,7 +232,9 @@ void TEForwardRenderer::RenderFrame(TEPtr<TEScene> scene)
         size_t totalBufferSize = 0;
         for (auto &object : objectArr)
         {
-            totalBufferSize = object->vertices.size() * sizeof(glm::vec3);
+            TEPtr<TEMeshComponent> meshComponent = objectArr[0]->GetComponent<TEMeshComponent>();
+            const std::vector<glm::vec3> &vertices = meshComponent->GetVertices();
+            totalBufferSize = vertices.size() * sizeof(glm::vec3);
         }
 
         if (_stagingBuffer != VK_NULL_HANDLE && totalBufferSize > _stagingBufferSize)
@@ -262,21 +266,19 @@ void TEForwardRenderer::RenderFrame(TEPtr<TEScene> scene)
             _vertexBufferMemory = _device->AllocateAndBindBufferMemory(_vertexBuffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         }
 
-        void *data = nullptr;
-        Result = vkMapMemory(_device->GetRawDevice(), _stagingBufferMemory, 0, totalBufferSize, 0, &data);
-        if (Result != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to map memory!");
-        }
+        void *data;
+        vkMapMemory(_device->GetRawDevice(), _stagingBufferMemory, 0, totalBufferSize, 0, &data);
 
         uint8_t *dataPtr = reinterpret_cast<uint8_t *>(data);
         uint32_t vertexCounts = 0;
         for (auto &object : objectArr)
         {
-            size_t bufferSize = object->vertices.size() * sizeof(glm::vec3);
-            memcpy(dataPtr, object->vertices.data(), bufferSize);
+            TEPtr<TEMeshComponent> meshComponent = object->GetComponent<TEMeshComponent>();
+            const std::vector<glm::vec3> &vertices = meshComponent->GetVertices();
+            size_t bufferSize = vertices.size() * sizeof(glm::vec3);
+            memcpy(dataPtr, vertices.data(), bufferSize);
             dataPtr = dataPtr + bufferSize;
-            vertexCounts += object->vertices.size();
+            vertexCounts += vertices.size();
         }
 
         vkUnmapMemory(_device->GetRawDevice(), _stagingBufferMemory);
