@@ -53,6 +53,9 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(${ThirdPartiesSourcesDirectory}/glfw)
 
+## Tinyobjloader
+add_subdirectory(${ThirdPartiesSourcesDirectory}/tinyobjloader)
+
 
 # Engine
 # should not use file(GLOB ...)
@@ -63,7 +66,7 @@ add_library(Engine ${GraphicSources} ${GraphicIncludes} ${InputSources} ${InputI
 target_include_directories(Engine 
                             PUBLIC ${EngineSourcesDirectory}
                             PRIVATE ${GraphicSourceDirectory} ${InputSourceDirectory} ${RenderSourceDirectory} ${SceneSourceDirectory})
-target_link_libraries(Engine PUBLIC glfw glm::glm Vulkan::Vulkan)
+target_link_libraries(Engine PUBLIC glfw glm::glm Vulkan::Vulkan tinyobjloader)
 
 
 # Samples
