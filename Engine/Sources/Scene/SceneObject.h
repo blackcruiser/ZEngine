@@ -7,15 +7,18 @@
 
 #include <memory>
 
-class TESceneObject : public std::enable_shared_from_this<TESceneObject>
+
+namespace TE {
+
+class SceneObject : public std::enable_shared_from_this<SceneObject>
 {
 public:
-    TESceneObject();
-    ~TESceneObject();
+    SceneObject();
+    ~SceneObject();
 
     template <typename T>
-    requires std::is_convertible<T, TESceneComponent>::value
-    void AddComponent(TEPtr<T> component)
+    requires std::is_convertible<T, SceneComponent>::value
+        void AddComponent(TPtr<T> component)
     {
         _componentArr.push_back(component);
 
@@ -23,12 +26,12 @@ public:
     }
 
     template <typename T>
-    requires std::is_convertible<T, TESceneComponent>::value
-    TEPtr<T> GetComponent()
+    requires std::is_convertible<T, SceneComponent>::value
+        TPtr<T> GetComponent()
     {
-        for (const TEPtr<TESceneComponent>& component : _componentArr)
+        for (const TPtr<SceneComponent>& component : _componentArr)
         {
-            TEPtr<T> result = std::dynamic_pointer_cast<T>(component);
+            TPtr<T> result = std::dynamic_pointer_cast<T>(component);
             if (result != nullptr)
                 return result;
         }
@@ -37,14 +40,14 @@ public:
     }
 
     template <typename T>
-    requires std::is_convertible<T, TESceneComponent>::value
-    TEPtrArr<T> GetComponents()
+    requires std::is_convertible<T, SceneComponent>::value
+        TPtrArr<T> GetComponents()
     {
-        TEPtrArr<T> components;
+        TPtrArr<T> components;
 
-        for (const TEPtr<TESceneComponent> &component : _componentArr)
+        for (const TPtr<SceneComponent>& component : _componentArr)
         {
-            TEPtr<T> result =  std::dynamic_pointer_cast<T>(component);
+            TPtr<T> result = std::dynamic_pointer_cast<T>(component);
             if (result != nullptr)
                 components.push_back(result);
         }
@@ -53,5 +56,7 @@ public:
     }
 
 private:
-    TEPtrArr<TESceneComponent> _componentArr;
+    TPtrArr<SceneComponent> _componentArr;
 };
+
+}

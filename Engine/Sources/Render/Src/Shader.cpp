@@ -1,10 +1,15 @@
 #include "Shader.h"
 
-TEShader::TEShader(const std::string &path) : _path(path)
+
+namespace TE {
+
+Shader::Shader(const std::string& path) : _path(path)
 {
 }
 
-const std::string &TEShader::GetPath()
+const std::string& Shader::GetPath()
 {
     return _path;
+}
+
 }

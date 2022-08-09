@@ -1,11 +1,15 @@
 #include "SceneObject.h"
 
-TESceneObject::TESceneObject()
+
+namespace TE {
+
+SceneObject::SceneObject()
 {
 }
 
-TESceneObject::~TESceneObject()
+SceneObject::~SceneObject()
 {
     _componentArr.clear();
 }
 
+}

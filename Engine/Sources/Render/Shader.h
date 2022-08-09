@@ -2,19 +2,24 @@
 
 #include <string>
 
+
+namespace TE {
+
 enum class EShaderType
 {
     Vertex = 0,
     Fragment
 };
 
-class TEShader
+class Shader
 {
 public:
-    TEShader(const std::string &path);
+    Shader(const std::string& path);
 
-    const std::string &GetPath();
+    const std::string& GetPath();
 
 private:
     std::string _path;
 };
+
+}

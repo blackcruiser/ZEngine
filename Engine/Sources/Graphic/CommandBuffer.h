@@ -4,14 +4,17 @@
 
 #include <vulkan/vulkan.hpp>
 
-class TEDevice;
-class TECommandPool;
 
-class TECommandBuffer
+namespace TE {
+
+class Device;
+class CommandPool;
+
+class CommandBuffer
 {
 public:
-    TECommandBuffer(TEPtr<TECommandPool> commandPool);
-    ~TECommandBuffer();
+    CommandBuffer(TPtr<CommandPool> commandPool);
+    ~CommandBuffer();
 
     void Begin();
     void End();
@@ -23,7 +26,9 @@ private:
     void _AllocateAndBindBufferMemory();
 
 private:
-    TEPtr<TECommandPool> _commandPool;
+    TPtr<CommandPool> _commandPool;
 
     VkCommandBuffer _vkCommandBuffer;
 };
+
+}

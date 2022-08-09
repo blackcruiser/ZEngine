@@ -5,8 +5,10 @@
 #include <stdexcept>
 #include <set>
 
-TEGPU::TEGPU(const VkInstance &vkInstance) : _vkInstance(vkInstance),
-                                             _GPU(VK_NULL_HANDLE), _deviceExtensions({VK_KHR_SWAPCHAIN_EXTENSION_NAME})
+namespace TE {
+
+GPU::GPU(const VkInstance& vkInstance) : _vkInstance(vkInstance),
+_GPU(VK_NULL_HANDLE), _deviceExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME })
 {
     std::vector<VkPhysicalDevice> GPUs = GetSupportedGPUs();
 
@@ -17,7 +19,7 @@ TEGPU::TEGPU(const VkInstance &vkInstance) : _vkInstance(vkInstance),
 
         std::set<std::string> requiredExtensions(_deviceExtensions.begin(), _deviceExtensions.end());
 
-        for (const auto &extension : availableExtensions)
+        for (const auto& extension : availableExtensions)
             requiredExtensions.erase(extension.extensionName);
 
         if (requiredExtensions.empty())
@@ -28,21 +30,21 @@ TEGPU::TEGPU(const VkInstance &vkInstance) : _vkInstance(vkInstance),
     }
 }
 
-TEGPU::~TEGPU()
+GPU::~GPU()
 {
 }
 
-VkPhysicalDevice TEGPU::GetRawPhysicalDevice()
+VkPhysicalDevice GPU::GetRawPhysicalDevice()
 {
     return _GPU;
 }
 
-const std::vector<const char *> &TEGPU::GetExtensions()
+const std::vector<const char*>& GPU::GetExtensions()
 {
     return _deviceExtensions;
 }
 
-std::vector<VkExtensionProperties> TEGPU::GetExtensionProperties(VkPhysicalDevice GPU)
+std::vector<VkExtensionProperties> GPU::GetExtensionProperties(VkPhysicalDevice GPU)
 {
     uint32_t extensionCount = 0;
     vkEnumerateDeviceExtensionProperties(GPU, nullptr, &extensionCount, nullptr);
@@ -53,7 +55,7 @@ std::vector<VkExtensionProperties> TEGPU::GetExtensionProperties(VkPhysicalDevic
     return availableExtensions;
 }
 
-std::vector<VkQueueFamilyProperties> TEGPU::GetQueueFamilyProperties()
+std::vector<VkQueueFamilyProperties> GPU::GetQueueFamilyProperties()
 {
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(_GPU, &queueFamilyCount, nullptr);
@@ -64,14 +66,14 @@ std::vector<VkQueueFamilyProperties> TEGPU::GetQueueFamilyProperties()
     return queueFamilieProperties;
 }
 
-bool TEGPU::isSurfaceSupported(uint32_t queueFamilyIndex, TEPtr<TESurface> surface)
+bool GPU::isSurfaceSupported(uint32_t queueFamilyIndex, TPtr<Surface> surface)
 {
     VkBool32 isSupported;
     vkGetPhysicalDeviceSurfaceSupportKHR(_GPU, queueFamilyIndex, surface->GetRawSurface(), &isSupported);
     return isSupported != 0;
 }
 
-uint32_t TEGPU::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t GPU::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(_GPU, &memProperties);
@@ -87,7 +89,7 @@ uint32_t TEGPU::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags proper
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-std::vector<VkPhysicalDevice> TEGPU::GetSupportedGPUs()
+std::vector<VkPhysicalDevice> GPU::GetSupportedGPUs()
 {
     // Physical Device
     uint32_t deviceCount = 0;
@@ -100,4 +102,6 @@ std::vector<VkPhysicalDevice> TEGPU::GetSupportedGPUs()
     vkEnumeratePhysicalDevices(_vkInstance, &deviceCount, devices.data());
 
     return devices;
+}
+
 }
