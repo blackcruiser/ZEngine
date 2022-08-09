@@ -5,14 +5,17 @@
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 
-class TEGPU;
-class TESurface;
 
-class TEDevice
+namespace TE {
+
+class GPU;
+class Surface;
+
+class Device
 {
 public:
-    TEDevice(TEPtr<TEGPU> GPU, TEPtr<TESurface> surface);
-    ~TEDevice();
+    Device(TPtr<GPU> GPU, TPtr<Surface> surface);
+    ~Device();
 
     VkBuffer CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage);
     void DestroyBuffer(VkBuffer buffer);
@@ -26,7 +29,7 @@ public:
     VkFence CreateFence(bool isSignaled);
     void DestroyFence(VkFence fence);
 
-    VkShaderModule CreateShaderModule(const std::vector<char> &code);
+    VkShaderModule CreateShaderModule(const std::vector<char>& code);
     void DestroyShaderModule(VkShaderModule shaderModule);
 
     VkImageView CreateImageView(VkImage image, VkFormat format);
@@ -41,7 +44,7 @@ public:
     VkPipelineLayout CreatePipelineLayout(VkDescriptorSetLayout descriptorSetLayout);
     void DestroyPipelineLayout(VkPipelineLayout pipelineLayout);
 
-    VkPipeline CreateGraphicPipeline(VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule, VkExtent2D extent, const VkVertexInputBindingDescription& bindingDescription,  std::vector<VkVertexInputAttributeDescription> attributeDescriptions, VkPipelineLayout pipelineLayout, VkRenderPass renderPass);
+    VkPipeline CreateGraphicPipeline(VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule, VkExtent2D extent, const VkVertexInputBindingDescription& bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions, VkPipelineLayout pipelineLayout, VkRenderPass renderPass);
     void DestroyPipeline(VkPipeline pipeline);
 
     VkRenderPass CreateRenderPass(VkFormat format);
@@ -53,7 +56,7 @@ public:
     VkDescriptorPool CreateDescriptorPool(VkDescriptorType type, uint32_t descriptorCount);
     void DestroyDescriptorPool(VkDescriptorPool descriptorPool);
 
-    VkDescriptorSet AllocateDescriptorSet(VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSetLayout *pSetLayouts);
+    VkDescriptorSet AllocateDescriptorSet(VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSetLayout* pSetLayouts);
 
     void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkDescriptorType descriptorType, VkBuffer buffer, VkDeviceSize size);
 
@@ -72,6 +75,8 @@ private:
     VkQueue _vkGraphicQueue, _vkPresentQueue;
     uint32_t _graphicQueueFamilyIndex, _presentQueueFamilyIndex;
 
-    TEPtr<TEGPU> _GPU;
-    TEPtr<TESurface> _surface;
+    TPtr<GPU> _GPU;
+    TPtr<Surface> _surface;
 };
+
+}

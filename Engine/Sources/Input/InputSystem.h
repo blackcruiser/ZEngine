@@ -7,17 +7,20 @@
 
 #include <functional>
 
+
+namespace TE {
+
 typedef std::function<void(const glm::vec2&)> MouseAction;
 typedef std::function<void(int key, int action)> KeyboardAction;
 
-class TEInputSystem
+class InputSystem
 {
 public:
-    static TEInputSystem &GetInstance();
+    static InputSystem& GetInstance();
 
 private:
-    TEInputSystem();
-    ~TEInputSystem();
+    InputSystem();
+    ~InputSystem();
 
 public:
     size_t RegisterMouseAction(MouseAction action);
@@ -26,10 +29,12 @@ public:
     size_t RegisterKeyboardAction(KeyboardAction action);
     void UnregisterKeyboardAction(size_t key);
 
-    static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos);
+    static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
     static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 private:
     std::vector<MouseAction> _mouseActions;
     std::vector<KeyboardAction> _keyboardActions;
 };
+
+}

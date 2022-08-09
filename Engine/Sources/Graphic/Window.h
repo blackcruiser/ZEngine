@@ -7,24 +7,29 @@
 
 #include <string>
 
-class TEInputSystem;
 
-class TEWindow
+namespace TE {
+
+class InputSystem;
+
+class Window
 {
 public:
-    TEWindow(const std::string &appName, int width, int height);
-    ~TEWindow();
+    Window(const std::string& appName, int width, int height);
+    ~Window();
 
     glm::ivec2 GetFramebufferSize();
 
-    void RegisterInput(const TEInputSystem &inputSystem);
-    void UnregisterInput(const TEInputSystem &inputSystem);
+    void RegisterInput(const InputSystem& inputSystem);
+    void UnregisterInput(const InputSystem& inputSystem);
 
     bool ShouldClose();
 
-    GLFWwindow *GetRawWindow();
+    GLFWwindow* GetRawWindow();
 
 private:
-    GLFWwindow *_glfwWindow;
+    GLFWwindow* _glfwWindow;
     int _width, _height;
 };
+
+}

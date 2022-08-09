@@ -3,9 +3,14 @@
 #include "CoreDefines.h"
 #include "SceneComponent.h"
 
-class TEScriptComponent : public TESceneComponent
+
+namespace TE {
+
+class ScriptComponent : public SceneComponent
 {
 public:
-    TEScriptComponent();
-    ~TEScriptComponent();
+    ScriptComponent();
+    ~ScriptComponent();
 };
+
+}

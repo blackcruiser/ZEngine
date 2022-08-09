@@ -2,22 +2,27 @@
 
 #include "CoreDefines.h"
 
-class TESceneObject;
-class TECameraComponent;
 
-class TEScene
+namespace TE {
+
+class SceneObject;
+class CameraComponent;
+
+class Scene
 {
 public:
-    TEScene();
+    Scene();
 
-    void AddObject(TEPtr<TESceneObject> object);
-    void RemoveObject(TEPtr<TESceneObject> object);
-    const TEPtrArr<TESceneObject> &GetObjects();
+    void AddObject(TPtr<SceneObject> object);
+    void RemoveObject(TPtr<SceneObject> object);
+    const TPtrArr<SceneObject>& GetObjects();
 
-    void SetCamera(TEPtr<TECameraComponent> cameraComponent);
-    TEPtr<TECameraComponent> GetCamera();
+    void SetCamera(TPtr<CameraComponent> cameraComponent);
+    TPtr<CameraComponent> GetCamera();
 
 private:
-    TEPtrArr<TESceneObject> _objects;
-    TEPtr<TECameraComponent> _cameraComponent;
+    TPtrArr<SceneObject> _objects;
+    TPtr<CameraComponent> _cameraComponent;
 };
+
+}

@@ -2,14 +2,17 @@
 
 #include <vulkan/vulkan.h>
 
-class TEGPU;
-class TEWindow;
 
-class TESurface
+namespace TE {
+
+class GPU;
+class Window;
+
+class Surface
 {
 public:
-    TESurface(VkInstance vkInstance, TEPtr<TEGPU> GPU, TEPtr<TEWindow> window);
-    ~TESurface();
+    Surface(VkInstance vkInstance, TPtr<GPU> GPU, TPtr<Window> window);
+    ~Surface();
 
     VkSurfaceKHR GetRawSurface();
     VkSurfaceFormatKHR GetSurfaceFormat();
@@ -32,6 +35,8 @@ private:
     VkPresentModeKHR _presentMode;
     VkExtent2D _vkExtent;
 
-    TEPtr<TEGPU> _GPU;
-    TEPtr<TEWindow> _window;
+    TPtr<GPU> _GPU;
+    TPtr<Window> _window;
 };
+
+}

@@ -5,39 +5,42 @@
 
 #include <stdexcept>
 
-TEScene::TEScene()
+
+namespace TE {
+
+Scene::Scene()
 {
 }
 
-void TEScene::AddObject(TEPtr<TESceneObject> object)
+void Scene::AddObject(TPtr<SceneObject> object)
 {
-    TEPtrArr<TEScriptComponent> scriptComponents = object->GetComponents<TEScriptComponent>();
-    for (const TEPtr<TEScriptComponent> &scriptComponent : scriptComponents)
+    TPtrArr<ScriptComponent> scriptComponents = object->GetComponents<ScriptComponent>();
+    for (const TPtr<ScriptComponent>& scriptComponent : scriptComponents)
         scriptComponent->OnAttached();
 
     _objects.push_back(object);
 }
 
-void TEScene::RemoveObject(TEPtr<TESceneObject> object)
+void Scene::RemoveObject(TPtr<SceneObject> object)
 {
     _objects.erase(std::remove(_objects.begin(), _objects.end(), object));
 
-    TEPtrArr<TEScriptComponent> scriptComponents = object->GetComponents<TEScriptComponent>();
-    for (const TEPtr<TEScriptComponent> &scriptComponent : scriptComponents)
+    TPtrArr<ScriptComponent> scriptComponents = object->GetComponents<ScriptComponent>();
+    for (const TPtr<ScriptComponent>& scriptComponent : scriptComponents)
         scriptComponent->OnDetached();
 }
 
-const TEPtrArr<TESceneObject> &TEScene::GetObjects()
+const TPtrArr<SceneObject>& Scene::GetObjects()
 {
     return _objects;
 }
 
-void TEScene::SetCamera(TEPtr<TECameraComponent> cameraComponent)
+void Scene::SetCamera(TPtr<CameraComponent> cameraComponent)
 {
     if (cameraComponent == nullptr)
         throw std::runtime_error("cameraComponent is null or object is null");
 
-    TEWeakPtr<TESceneObject> object = cameraComponent->GetObject();
+    TWeakPtr<SceneObject> object = cameraComponent->GetObject();
     if (_cameraComponent != nullptr)
         RemoveObject(object.lock());
     AddObject(object.lock());
@@ -45,7 +48,9 @@ void TEScene::SetCamera(TEPtr<TECameraComponent> cameraComponent)
     _cameraComponent = cameraComponent;
 }
 
-TEPtr<TECameraComponent> TEScene::GetCamera()
+TPtr<CameraComponent> Scene::GetCamera()
 {
     return _cameraComponent;
+}
+
 }
