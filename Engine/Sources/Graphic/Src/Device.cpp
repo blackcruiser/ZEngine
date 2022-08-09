@@ -9,8 +9,10 @@
 #include <array>
 #include <glm/glm.hpp>
 
-TEDevice::TEDevice(TEPtr<TEGPU> GPU, TEPtr<TESurface> surface) : _GPU(GPU), _surface(surface),
-                                                                 _vkDevice(VK_NULL_HANDLE), _vkGraphicQueue(VK_NULL_HANDLE), _vkPresentQueue(VK_NULL_HANDLE), _graphicQueueFamilyIndex(std::numeric_limits<uint32_t>::max()), _presentQueueFamilyIndex(std::numeric_limits<uint32_t>::max())
+namespace TE {
+
+Device::Device(TPtr<GPU> GPU, TPtr<Surface> surface) : _GPU(GPU), _surface(surface),
+_vkDevice(VK_NULL_HANDLE), _vkGraphicQueue(VK_NULL_HANDLE), _vkPresentQueue(VK_NULL_HANDLE), _graphicQueueFamilyIndex(std::numeric_limits<uint32_t>::max()), _presentQueueFamilyIndex(std::numeric_limits<uint32_t>::max())
 {
     // Queue
     std::vector<VkQueueFamilyProperties> queueFamilyProperties = _GPU->GetQueueFamilyProperties();
@@ -29,7 +31,7 @@ TEDevice::TEDevice(TEPtr<TEGPU> GPU, TEPtr<TESurface> surface) : _GPU(GPU), _sur
     }
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = {_graphicQueueFamilyIndex, _presentQueueFamilyIndex};
+    std::set<uint32_t> uniqueQueueFamilies = { _graphicQueueFamilyIndex, _presentQueueFamilyIndex };
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -42,7 +44,7 @@ TEDevice::TEDevice(TEPtr<TEGPU> GPU, TEPtr<TESurface> surface) : _GPU(GPU), _sur
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    const std::vector<const char *> deviceExtensions = _GPU->GetExtensions();
+    const std::vector<const char*> deviceExtensions = _GPU->GetExtensions();
     VkPhysicalDeviceFeatures deviceFeatures{};
 
     VkDeviceCreateInfo vkDeviceCreateInfo{};
@@ -63,13 +65,13 @@ TEDevice::TEDevice(TEPtr<TEGPU> GPU, TEPtr<TESurface> surface) : _GPU(GPU), _sur
     vkGetDeviceQueue(_vkDevice, _presentQueueFamilyIndex, 0, &_vkPresentQueue);
 }
 
-TEDevice::~TEDevice()
+Device::~Device()
 {
     if (_vkDevice != VK_NULL_HANDLE)
         vkDestroyDevice(_vkDevice, nullptr);
 }
 
-VkBuffer TEDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage)
+VkBuffer Device::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage)
 {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -86,12 +88,12 @@ VkBuffer TEDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage)
     return buffer;
 }
 
-void TEDevice::DestroyBuffer(VkBuffer buffer)
+void Device::DestroyBuffer(VkBuffer buffer)
 {
     vkDestroyBuffer(_vkDevice, buffer, nullptr);
 }
 
-VkDeviceMemory TEDevice::AllocateAndBindBufferMemory(VkBuffer buffer, VkMemoryPropertyFlags properties)
+VkDeviceMemory Device::AllocateAndBindBufferMemory(VkBuffer buffer, VkMemoryPropertyFlags properties)
 {
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(_vkDevice, buffer, &memRequirements);
@@ -115,12 +117,12 @@ VkDeviceMemory TEDevice::AllocateAndBindBufferMemory(VkBuffer buffer, VkMemoryPr
     return vkDeviceMemory;
 }
 
-void TEDevice::FreeMemmory(VkDeviceMemory deviceMemory)
+void Device::FreeMemmory(VkDeviceMemory deviceMemory)
 {
     vkFreeMemory(_vkDevice, deviceMemory, nullptr);
 }
 
-VkSemaphore TEDevice::CreateGraphicSemaphore()
+VkSemaphore Device::CreateGraphicSemaphore()
 {
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -135,12 +137,12 @@ VkSemaphore TEDevice::CreateGraphicSemaphore()
     return semaphore;
 }
 
-void TEDevice::DestroyGraphicSemaphore(VkSemaphore semaphore)
+void Device::DestroyGraphicSemaphore(VkSemaphore semaphore)
 {
     vkDestroySemaphore(_vkDevice, semaphore, nullptr);
 }
 
-VkFence TEDevice::CreateFence(bool isSignaled)
+VkFence Device::CreateFence(bool isSignaled)
 {
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -155,17 +157,17 @@ VkFence TEDevice::CreateFence(bool isSignaled)
     return fence;
 }
 
-void TEDevice::DestroyFence(VkFence fence)
+void Device::DestroyFence(VkFence fence)
 {
     vkDestroyFence(_vkDevice, fence, nullptr);
 }
 
-VkShaderModule TEDevice::CreateShaderModule(const std::vector<char> &code)
+VkShaderModule Device::CreateShaderModule(const std::vector<char>& code)
 {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(_vkDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
@@ -176,12 +178,12 @@ VkShaderModule TEDevice::CreateShaderModule(const std::vector<char> &code)
     return shaderModule;
 }
 
-void TEDevice::DestroyShaderModule(VkShaderModule shaderModule)
+void Device::DestroyShaderModule(VkShaderModule shaderModule)
 {
     vkDestroyShaderModule(_vkDevice, shaderModule, nullptr);
 }
 
-VkImageView TEDevice::CreateImageView(VkImage image, VkFormat format)
+VkImageView Device::CreateImageView(VkImage image, VkFormat format)
 {
     VkImageViewCreateInfo imageViewCreateInfo{};
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -207,12 +209,12 @@ VkImageView TEDevice::CreateImageView(VkImage image, VkFormat format)
     return imageView;
 }
 
-void TEDevice::DestroyImageView(VkImageView imageView)
+void Device::DestroyImageView(VkImageView imageView)
 {
     vkDestroyImageView(_vkDevice, imageView, nullptr);
 }
 
-VkFramebuffer TEDevice::CreateFramebuffer(VkRenderPass renderPass, const std::vector<VkImageView> imageViewArr, uint32_t width, uint32_t height)
+VkFramebuffer Device::CreateFramebuffer(VkRenderPass renderPass, const std::vector<VkImageView> imageViewArr, uint32_t width, uint32_t height)
 {
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -231,12 +233,12 @@ VkFramebuffer TEDevice::CreateFramebuffer(VkRenderPass renderPass, const std::ve
     return framebuffer;
 }
 
-void TEDevice::DestroyFramebuffer(VkFramebuffer framebuffer)
+void Device::DestroyFramebuffer(VkFramebuffer framebuffer)
 {
     vkDestroyFramebuffer(_vkDevice, framebuffer, nullptr);
 }
 
-VkSwapchainKHR TEDevice::CreateSwapchain(uint32_t imageCount, VkFormat imageFormat, VkColorSpaceKHR colorSpace, VkExtent2D extent, VkSurfaceTransformFlagBitsKHR preTransform, VkPresentModeKHR presentMode)
+VkSwapchainKHR Device::CreateSwapchain(uint32_t imageCount, VkFormat imageFormat, VkColorSpaceKHR colorSpace, VkExtent2D extent, VkSurfaceTransformFlagBitsKHR preTransform, VkPresentModeKHR presentMode)
 {
     VkSwapchainCreateInfoKHR vkSwapchainCreateInfo{};
     vkSwapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -250,7 +252,7 @@ VkSwapchainKHR TEDevice::CreateSwapchain(uint32_t imageCount, VkFormat imageForm
 
     if (_graphicQueueFamilyIndex != _presentQueueFamilyIndex)
     {
-        uint32_t queueFamilyIndexs[] = {_graphicQueueFamilyIndex, _presentQueueFamilyIndex};
+        uint32_t queueFamilyIndexs[] = { _graphicQueueFamilyIndex, _presentQueueFamilyIndex };
         vkSwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         vkSwapchainCreateInfo.queueFamilyIndexCount = 2;
         vkSwapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndexs;
@@ -276,12 +278,12 @@ VkSwapchainKHR TEDevice::CreateSwapchain(uint32_t imageCount, VkFormat imageForm
     return swapchain;
 }
 
-void TEDevice::DestroySwapchain(VkSwapchainKHR swapchain)
+void Device::DestroySwapchain(VkSwapchainKHR swapchain)
 {
     vkDestroySwapchainKHR(_vkDevice, swapchain, nullptr);
 }
 
-VkPipelineLayout TEDevice::CreatePipelineLayout(VkDescriptorSetLayout descriptorSetLayout)
+VkPipelineLayout Device::CreatePipelineLayout(VkDescriptorSetLayout descriptorSetLayout)
 {
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -298,12 +300,12 @@ VkPipelineLayout TEDevice::CreatePipelineLayout(VkDescriptorSetLayout descriptor
     return pipelineLayout;
 }
 
-void TEDevice::DestroyPipelineLayout(VkPipelineLayout pipelineLayout)
+void Device::DestroyPipelineLayout(VkPipelineLayout pipelineLayout)
 {
     vkDestroyPipelineLayout(_vkDevice, pipelineLayout, nullptr);
 }
 
-VkPipeline TEDevice::CreateGraphicPipeline(VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule, VkExtent2D extent, const VkVertexInputBindingDescription& bindingDescription,  std::vector<VkVertexInputAttributeDescription> attributeDescriptions, VkPipelineLayout pipelineLayout, VkRenderPass renderPass)
+VkPipeline Device::CreateGraphicPipeline(VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule, VkExtent2D extent, const VkVertexInputBindingDescription& bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions, VkPipelineLayout pipelineLayout, VkRenderPass renderPass)
 {
     VkPipelineShaderStageCreateInfo vkVertexShaderStageCreateInfo{};
     vkVertexShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -317,7 +319,7 @@ VkPipeline TEDevice::CreateGraphicPipeline(VkShaderModule vertexShaderModule, Vk
     vkFragmentShaderStageCreateInfo.pName = "main";
     vkFragmentShaderStageCreateInfo.module = fragmentShaderModule;
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vkVertexShaderStageCreateInfo, vkFragmentShaderStageCreateInfo};
+    VkPipelineShaderStageCreateInfo shaderStages[] = { vkVertexShaderStageCreateInfo, vkFragmentShaderStageCreateInfo };
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -340,7 +342,7 @@ VkPipeline TEDevice::CreateGraphicPipeline(VkShaderModule vertexShaderModule, Vk
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
-    scissor.offset = {0, 0};
+    scissor.offset = { 0, 0 };
     scissor.extent = extent;
 
     VkPipelineViewportStateCreateInfo viewportState{};
@@ -427,12 +429,12 @@ VkPipeline TEDevice::CreateGraphicPipeline(VkShaderModule vertexShaderModule, Vk
     return vkPipeline;
 }
 
-void TEDevice::DestroyPipeline(VkPipeline pipeline)
+void Device::DestroyPipeline(VkPipeline pipeline)
 {
     vkDestroyPipeline(_vkDevice, pipeline, nullptr);
 }
 
-VkRenderPass TEDevice::CreateRenderPass(VkFormat format)
+VkRenderPass Device::CreateRenderPass(VkFormat format)
 {
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = format;
@@ -479,12 +481,12 @@ VkRenderPass TEDevice::CreateRenderPass(VkFormat format)
     return renderPass;
 }
 
-void TEDevice::DestroyRenderPass(VkRenderPass renderPass)
+void Device::DestroyRenderPass(VkRenderPass renderPass)
 {
     vkDestroyRenderPass(_vkDevice, renderPass, nullptr);
 }
 
-VkDescriptorSetLayout TEDevice::CreateDescriptorSetLayout(VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags stageFlags)
+VkDescriptorSetLayout Device::CreateDescriptorSetLayout(VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags stageFlags)
 {
     VkDescriptorSetLayoutBinding layoutBinding{};
     layoutBinding.binding = 0;
@@ -506,12 +508,12 @@ VkDescriptorSetLayout TEDevice::CreateDescriptorSetLayout(VkDescriptorType type,
     return descriptorSetLayout;
 }
 
-void TEDevice::DestroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
+void Device::DestroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
 {
     vkDestroyDescriptorSetLayout(_vkDevice, descriptorSetLayout, nullptr);
 }
 
-VkDescriptorPool TEDevice::CreateDescriptorPool(VkDescriptorType type, uint32_t descriptorCount)
+VkDescriptorPool Device::CreateDescriptorPool(VkDescriptorType type, uint32_t descriptorCount)
 {
     VkDescriptorPoolSize poolSize{};
     poolSize.type = type;
@@ -532,12 +534,12 @@ VkDescriptorPool TEDevice::CreateDescriptorPool(VkDescriptorType type, uint32_t 
     return descriptorPool;
 }
 
-void TEDevice::DestroyDescriptorPool(VkDescriptorPool descriptorPool)
+void Device::DestroyDescriptorPool(VkDescriptorPool descriptorPool)
 {
     vkDestroyDescriptorPool(_vkDevice, descriptorPool, nullptr);
 }
 
-VkDescriptorSet TEDevice::AllocateDescriptorSet(VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSetLayout *pSetLayouts)
+VkDescriptorSet Device::AllocateDescriptorSet(VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSetLayout* pSetLayouts)
 {
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -553,7 +555,7 @@ VkDescriptorSet TEDevice::AllocateDescriptorSet(VkDescriptorPool descriptorPool,
     return descriptorSet;
 }
 
-void TEDevice::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkDescriptorType descriptorType, VkBuffer buffer, VkDeviceSize size)
+void Device::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkDescriptorType descriptorType, VkBuffer buffer, VkDeviceSize size)
 {
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = buffer;
@@ -574,32 +576,34 @@ void TEDevice::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkDescriptorTy
     vkUpdateDescriptorSets(_vkDevice, 1, &descriptorWrite, 0, nullptr);
 }
 
-void TEDevice::WaitIdle()
+void Device::WaitIdle()
 {
     vkDeviceWaitIdle(_vkDevice);
 }
 
-VkDevice TEDevice::GetRawDevice()
+VkDevice Device::GetRawDevice()
 {
     return _vkDevice;
 }
 
-VkQueue TEDevice::GetGraphicQueue()
+VkQueue Device::GetGraphicQueue()
 {
     return _vkGraphicQueue;
 }
 
-VkQueue TEDevice::GetPresentQueue()
+VkQueue Device::GetPresentQueue()
 {
     return _vkPresentQueue;
 }
 
-uint32_t TEDevice::GetGraphicQueueFamilyIndex()
+uint32_t Device::GetGraphicQueueFamilyIndex()
 {
     return _graphicQueueFamilyIndex;
 }
 
-uint32_t TEDevice::GetPresentQueueFamilyIndex()
+uint32_t Device::GetPresentQueueFamilyIndex()
 {
     return _presentQueueFamilyIndex;
+}
+
 }

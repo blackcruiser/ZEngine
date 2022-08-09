@@ -1,9 +1,14 @@
 #include "ScriptComponent.h"
 
-TEScriptComponent::TEScriptComponent() : TESceneComponent(EComponentType::Script)
+
+namespace TE {
+
+ScriptComponent::ScriptComponent() : SceneComponent(EComponentType::Script)
 {
 }
 
-TEScriptComponent::~TEScriptComponent()
+ScriptComponent::~ScriptComponent()
 {
+}
+
 }

@@ -8,53 +8,57 @@
 #include <vulkan/vulkan.h>
 
 
-class TESceneObject;
-class TEMaterialComponent;
-class TECommandPool;
-class TECommandBuffer;
+namespace TE {
+
+class SceneObject;
+class MaterialComponent;
+class CommandPool;
+class CommandBuffer;
 
 
-class TEForwardRenderer : public TERendererInterface
+class ForwardRenderer : public RendererInterface
 {
 public:
-	TEForwardRenderer(TEPtr<TEDevice> device, TEPtr<TESurface> surface);
-	virtual ~TEForwardRenderer();
+    ForwardRenderer(TPtr<Device> device, TPtr<Surface> surface);
+    virtual ~ForwardRenderer();
 
-	VkPipeline CreatePipeline(TEPtr<TEMaterialComponent> material);
-	void CreateSwapchain(VkRenderPass renderPass);
+    VkPipeline CreatePipeline(TPtr<MaterialComponent> material);
+    void CreateSwapchain(VkRenderPass renderPass);
 
-	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
-	void GatherObjects(TEPtr<TEScene> scene);
-	virtual void RenderFrame(TEPtr<TEScene> scene) override;
+    void GatherObjects(TPtr<Scene> scene);
+    virtual void RenderFrame(TPtr<Scene> scene) override;
 
 private:
-	std::map<std::uintptr_t, TEPtrArr<TESceneObject>> _objectsToRender;
+    std::map<std::uintptr_t, TPtrArr<SceneObject>> _objectsToRender;
 
-	TEPtr<TEDevice> _device;
-	TEPtr<TESurface> _surface;
+    TPtr<Device> _device;
+    TPtr<Surface> _surface;
 
-	VkSwapchainKHR _vkSwapchain;
-	std::vector<VkFramebuffer> _vkFramebuffers;
-	std::vector<VkImage> _vkImages;
-	std::vector<VkImageView> _vkImageViews;
-	std::vector<VkShaderModule> _vkShaderModules;
+    VkSwapchainKHR _vkSwapchain;
+    std::vector<VkFramebuffer> _vkFramebuffers;
+    std::vector<VkImage> _vkImages;
+    std::vector<VkImageView> _vkImageViews;
+    std::vector<VkShaderModule> _vkShaderModules;
 
-	VkRenderPass _vkRenderPass;
-	VkPipelineLayout _vkPipelineLayout;
-	std::map<size_t, VkPipeline> _pipelines;
+    VkRenderPass _vkRenderPass;
+    VkPipelineLayout _vkPipelineLayout;
+    std::map<size_t, VkPipeline> _pipelines;
 
-	VkBuffer _stagingBuffer, _vertexBuffer, _indexBuffer, _uniformBuffer;
-	VkDeviceMemory _stagingBufferMemory, _vertexBufferMemory, _indexBufferMemory, _uniformBufferMemory;
-	size_t _stagingBufferSize, _vertexBufferSize, _indexesBufferSize;
+    VkBuffer _stagingBuffer, _vertexBuffer, _indexBuffer, _uniformBuffer;
+    VkDeviceMemory _stagingBufferMemory, _vertexBufferMemory, _indexBufferMemory, _uniformBufferMemory;
+    size_t _stagingBufferSize, _vertexBufferSize, _indexesBufferSize;
 
-	VkSemaphore _imageAvailableSemaphore, _renderFinishedSemaphore;
-	VkFence _inFlightFence;
+    VkSemaphore _imageAvailableSemaphore, _renderFinishedSemaphore;
+    VkFence _inFlightFence;
 
-	VkDescriptorPool _descriptorPool;
-	VkDescriptorSetLayout _descriptorLayout;
-	VkDescriptorSet _descriptorSet;
+    VkDescriptorPool _descriptorPool;
+    VkDescriptorSetLayout _descriptorLayout;
+    VkDescriptorSet _descriptorSet;
 
-	TEPtr<TECommandPool> _commandPool;
-	TECommandBuffer *_commandBuffer;
+    TPtr<CommandPool> _commandPool;
+    CommandBuffer* _commandBuffer;
 };
+
+}

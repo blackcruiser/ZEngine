@@ -5,7 +5,10 @@
 
 #include <stdexcept>
 
-TEWindow::TEWindow(const std::string& appName, int width, int height) : _glfwWindow(nullptr), _width(width), _height(height)
+
+namespace TE {
+
+Window::Window(const std::string& appName, int width, int height) : _glfwWindow(nullptr), _width(width), _height(height)
 {
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
@@ -18,12 +21,12 @@ TEWindow::TEWindow(const std::string& appName, int width, int height) : _glfwWin
     }
 }
 
-TEWindow::~TEWindow()
+Window::~Window()
 {
     glfwDestroyWindow(_glfwWindow);
 }
 
-glm::ivec2 TEWindow::GetFramebufferSize()
+glm::ivec2 Window::GetFramebufferSize()
 {
     glm::ivec2 size;
     glfwGetFramebufferSize(_glfwWindow, &size.x, &size.y);
@@ -31,24 +34,26 @@ glm::ivec2 TEWindow::GetFramebufferSize()
     return size;
 }
 
-void TEWindow::RegisterInput(const TEInputSystem& inputSystem)
+void Window::RegisterInput(const InputSystem& inputSystem)
 {
     glfwSetInputMode(_glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    glfwSetCursorPosCallback(_glfwWindow, TEInputSystem::cursor_position_callback);
-    glfwSetKeyCallback(_glfwWindow, TEInputSystem::key_callback);
+    glfwSetCursorPosCallback(_glfwWindow, InputSystem::cursor_position_callback);
+    glfwSetKeyCallback(_glfwWindow, InputSystem::key_callback);
 }
 
-void TEWindow::UnregisterInput(const TEInputSystem& inputSystem)
+void Window::UnregisterInput(const InputSystem& inputSystem)
 {
 }
 
-bool TEWindow::ShouldClose()
+bool Window::ShouldClose()
 {
     return glfwWindowShouldClose(_glfwWindow);
 }
 
-GLFWwindow* TEWindow::GetRawWindow()
+GLFWwindow* Window::GetRawWindow()
 {
     return _glfwWindow;
+}
+
 }

@@ -6,27 +6,32 @@
 
 #include <set>
 
-class TEDevice;
-class TECommandBuffer;
 
-class TECommandPool
+namespace TE {
+
+class Device;
+class CommandBuffer;
+
+class CommandPool
 {
 public:
-    TECommandPool(TEPtr<TEDevice> device);
-    ~TECommandPool();
+    CommandPool(TPtr<Device> device);
+    ~CommandPool();
 
-    TECommandBuffer *CreateCommandBuffer(TEPtr<TECommandPool> commandPool);
-    void DestroyCommandBuffer(TECommandBuffer *commandBuffer);
+    CommandBuffer* CreateCommandBuffer(TPtr<CommandPool> commandPool);
+    void DestroyCommandBuffer(CommandBuffer* commandBuffer);
 
     VkCommandPool GetRawCommandPool();
-    TEPtr<TEDevice> GetDevice();
+    TPtr<Device> GetDevice();
 
 private:
     void _CreateRawCommandPool();
 
 private:
-    TEPtr<TEDevice> _device;
+    TPtr<Device> _device;
 
     VkCommandPool _vkCommandPool;
-    std::set<TECommandBuffer *> _commandBuffers;
+    std::set<CommandBuffer*> _commandBuffers;
 };
+
+}
