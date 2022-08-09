@@ -3,12 +3,15 @@
 #include "CoreDefines.h"
 
 
-class TEScene;
+namespace TE {
+
+class Scene;
 
 
-class TERendererInterface
+class RendererInterface
 {
 public:
-	virtual void RenderFrame(TEPtr<TEScene> scene) = 0;
-
+    virtual void RenderFrame(TPtr<Scene> scene) = 0;
 };
+
+} // namespace TE

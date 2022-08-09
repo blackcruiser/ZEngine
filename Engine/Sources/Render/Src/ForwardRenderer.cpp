@@ -23,6 +23,8 @@
 #include <filesystem>
 
 
+namespace TE {
+
 
 static std::vector<char> readFile(const std::string& filename)
 {
@@ -44,13 +46,13 @@ static std::vector<char> readFile(const std::string& filename)
     return buffer;
 }
 
-TEForwardRenderer::TEForwardRenderer(TEPtr<TEDevice> device, TEPtr<TESurface> surface) : _device(device), _surface(surface), _stagingBuffer(VK_NULL_HANDLE), _stagingBufferSize(0), _vertexBuffer(VK_NULL_HANDLE), _vertexBufferSize(0), _indexBuffer(VK_NULL_HANDLE), _indexesBufferSize(0), _uniformBuffer(VK_NULL_HANDLE)
+ForwardRenderer::ForwardRenderer(TPtr<Device> device, TPtr<Surface> surface) : _device(device), _surface(surface), _stagingBuffer(VK_NULL_HANDLE), _stagingBufferSize(0), _vertexBuffer(VK_NULL_HANDLE), _vertexBufferSize(0), _indexBuffer(VK_NULL_HANDLE), _indexesBufferSize(0), _uniformBuffer(VK_NULL_HANDLE)
 {
     VkSurfaceFormatKHR surfaceFormat = _surface->GetSurfaceFormat();
     _vkRenderPass = _device->CreateRenderPass(surfaceFormat.format);
     CreateSwapchain(_vkRenderPass);
 
-    _commandPool = std::make_shared<TECommandPool>(_device);
+    _commandPool = std::make_shared<CommandPool>(_device);
     _commandBuffer = _commandPool->CreateCommandBuffer(_commandPool);
 
     _imageAvailableSemaphore = _device->CreateGraphicSemaphore();
@@ -69,7 +71,7 @@ TEForwardRenderer::TEForwardRenderer(TEPtr<TEDevice> device, TEPtr<TESurface> su
     _device->UpdateDescriptorSet(_descriptorSet, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, _uniformBuffer, sizeof(glm::mat4x4));
 }
 
-TEForwardRenderer::~TEForwardRenderer()
+ForwardRenderer::~ForwardRenderer()
 {
     _device->FreeMemmory(_uniformBufferMemory);
     _device->DestroyBuffer(_uniformBuffer);
@@ -117,14 +119,14 @@ TEForwardRenderer::~TEForwardRenderer()
     _device->DestroySwapchain(_vkSwapchain);
 }
 
-VkPipeline TEForwardRenderer::CreatePipeline(TEPtr<TEMaterialComponent> materialComponent)
+VkPipeline ForwardRenderer::CreatePipeline(TPtr<MaterialComponent> materialComponent)
 {
-    auto loadAndCreateShaderModule = [&](TEPtr<TEMaterialComponent> materialComponent, EMaterialShaderType shaderType) -> VkShaderModule {
-        std::optional<std::reference_wrapper<TEMaterialShaderInfo>> shaderInfoWrapper = materialComponent->GetShaderInfo(shaderType);
+    auto loadAndCreateShaderModule = [&](TPtr<MaterialComponent> materialComponent, EMaterialShaderType shaderType) -> VkShaderModule {
+        std::optional<std::reference_wrapper<MaterialShaderInfo>> shaderInfoWrapper = materialComponent->GetShaderInfo(shaderType);
         if (shaderInfoWrapper.has_value() == false)
             return VK_NULL_HANDLE;
 
-        TEMaterialShaderInfo& shaderInfo = shaderInfoWrapper.value();
+        MaterialShaderInfo& shaderInfo = shaderInfoWrapper.value();
         if (shaderInfo.bytecodePath.empty())
         {
             STARTUPINFO si;
@@ -197,7 +199,7 @@ VkPipeline TEForwardRenderer::CreatePipeline(TEPtr<TEMaterialComponent> material
     return vkPipeline;
 }
 
-void TEForwardRenderer::CreateSwapchain(VkRenderPass renderPass)
+void ForwardRenderer::CreateSwapchain(VkRenderPass renderPass)
 {
     VkSurfaceFormatKHR vkSurfaceFormat = _surface->GetSurfaceFormat();
     VkPresentModeKHR vkPresentMode = _surface->GetPresentMode();
@@ -228,26 +230,26 @@ void TEForwardRenderer::CreateSwapchain(VkRenderPass renderPass)
     }
 }
 
-void TEForwardRenderer::GatherObjects(TEPtr<TEScene> scene)
+void ForwardRenderer::GatherObjects(TPtr<Scene> scene)
 {
-    const TEPtrArr<TESceneObject>& objects = scene->GetObjects();
-    std::hash<TEMaterialComponent*> hashCreator;
+    const TPtrArr<SceneObject>& objects = scene->GetObjects();
+    std::hash<MaterialComponent*> hashCreator;
 
     _objectsToRender.clear();
     for (auto& object : objects)
     {
-        TEPtr<TEMaterialComponent> material = object->GetComponent<TEMaterialComponent>();
+        TPtr<MaterialComponent> material = object->GetComponent<MaterialComponent>();
         size_t address = hashCreator(material.get());
         if (_objectsToRender.find(address) == _objectsToRender.end())
-            _objectsToRender.emplace(address, TEPtrArr<TESceneObject>());
-        TEPtrArr<TESceneObject>& objectArr = _objectsToRender.at(address);
+            _objectsToRender.emplace(address, TPtrArr<SceneObject>());
+        TPtrArr<SceneObject>& objectArr = _objectsToRender.at(address);
         objectArr.push_back(object);
     }
 }
 
-void TEForwardRenderer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+void ForwardRenderer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
-    TECommandBuffer* commandBuffer = _commandPool->CreateCommandBuffer(_commandPool);
+    CommandBuffer* commandBuffer = _commandPool->CreateCommandBuffer(_commandPool);
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
 
     commandBuffer->Begin();
@@ -269,7 +271,7 @@ void TEForwardRenderer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDev
     _commandPool->DestroyCommandBuffer(commandBuffer);
 }
 
-void TEForwardRenderer::RenderFrame(TEPtr<TEScene> scene)
+void ForwardRenderer::RenderFrame(TPtr<Scene> scene)
 {
     GatherObjects(scene);
 
@@ -299,7 +301,7 @@ void TEForwardRenderer::RenderFrame(TEPtr<TEScene> scene)
 
     vkCmdBeginRenderPass(vkCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    TEPtr<TECameraComponent> cameraComponent = scene->GetCamera();
+    TPtr<CameraComponent> cameraComponent = scene->GetCamera();
     glm::mat4x4 VP = cameraComponent->GetProjectMatrix() * cameraComponent->GetViewMatrix();
 
     for (auto& pair : _objectsToRender)
@@ -308,13 +310,13 @@ void TEForwardRenderer::RenderFrame(TEPtr<TEScene> scene)
         if (objectArr.empty())
             continue;
 
-        TEPtr<TEMaterialComponent> materialComponent = objectArr[0]->GetComponent<TEMaterialComponent>();
+        TPtr<MaterialComponent> materialComponent = objectArr[0]->GetComponent<MaterialComponent>();
         if (materialComponent == nullptr)
             continue;
 
         VkPipeline vkPipeline;
 
-        std::hash<TEMaterialComponent*> hashCreator;
+        std::hash<MaterialComponent*> hashCreator;
         size_t address = hashCreator(materialComponent.get());
         if (_pipelines.find(address) == _pipelines.end())
         {
@@ -330,7 +332,7 @@ void TEForwardRenderer::RenderFrame(TEPtr<TEScene> scene)
 
         for (auto& object : objectArr)
         {
-            TEPtr<TEMeshComponent> meshComponent = object->GetComponent<TEMeshComponent>();
+            TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
 
             if (meshComponent == nullptr)
                 continue;
@@ -338,7 +340,7 @@ void TEForwardRenderer::RenderFrame(TEPtr<TEScene> scene)
             const std::vector<Vertex>& vertices = meshComponent->GetVertices();
             const std::vector<uint32_t>& indexes = meshComponent->GetIndexes();
 
-            TEPtr<TETransformComponent> transformComponent = object->GetComponent<TETransformComponent>();
+            TPtr<TransformComponent> transformComponent = object->GetComponent<TransformComponent>();
             glm::mat4x4 MVP = VP * transformComponent->GetTransform();
 
             size_t curVertexBufferSize = vertices.size() * sizeof(Vertex);
@@ -453,4 +455,6 @@ void TEForwardRenderer::RenderFrame(TEPtr<TEScene> scene)
     presentInfo.pResults = nullptr; // Optional
 
     vkQueuePresentKHR(_device->GetPresentQueue(), &presentInfo);
+}
+
 }

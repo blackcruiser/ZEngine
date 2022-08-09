@@ -2,13 +2,15 @@
 #include "CommandPool.h"
 #include "Device.h"
 
-TECommandBuffer::TECommandBuffer(TEPtr<TECommandPool> commandPool) : _commandPool(commandPool)
+namespace TE {
+
+CommandBuffer::CommandBuffer(TPtr<CommandPool> commandPool) : _commandPool(commandPool)
 {
 
     _CreateRawBuffer();
 }
 
-TECommandBuffer::~TECommandBuffer()
+CommandBuffer::~CommandBuffer()
 {
     VkDevice vkDevice = _commandPool->GetDevice()->GetRawDevice();
     VkCommandPool vkCommandPool = _commandPool->GetRawCommandPool();
@@ -16,7 +18,7 @@ TECommandBuffer::~TECommandBuffer()
     vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &_vkCommandBuffer);
 }
 
-void TECommandBuffer::Begin()
+void CommandBuffer::Begin()
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -25,17 +27,17 @@ void TECommandBuffer::Begin()
     vkBeginCommandBuffer(_vkCommandBuffer, &beginInfo);
 }
 
-void TECommandBuffer::End()
+void CommandBuffer::End()
 {
     vkEndCommandBuffer(_vkCommandBuffer);
 }
 
-VkCommandBuffer TECommandBuffer::GetRawCommandBuffer()
+VkCommandBuffer CommandBuffer::GetRawCommandBuffer()
 {
     return _vkCommandBuffer;
 }
 
-void TECommandBuffer::_CreateRawBuffer()
+void CommandBuffer::_CreateRawBuffer()
 {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -49,4 +51,6 @@ void TECommandBuffer::_CreateRawBuffer()
     {
         throw std::runtime_error("failed to allocate command buffers!");
     }
+}
+
 }

@@ -1,24 +1,29 @@
 #include "SceneComponent.h"
 
-TESceneComponent::TESceneComponent(const EComponentType type) : _type(type)
+
+namespace TE {
+
+SceneComponent::SceneComponent(const EComponentType type) : _type(type)
 {
 }
 
-TESceneComponent::~TESceneComponent()
+SceneComponent::~SceneComponent()
 {
 }
 
-const EComponentType TESceneComponent::GetType() const
+const EComponentType SceneComponent::GetType() const
 {
     return _type;
 }
 
-void TESceneComponent::SetObject(TEPtr<TESceneObject> object)
+void SceneComponent::SetObject(TPtr<SceneObject> object)
 {
     _sceneObject = object;
 }
 
-TEPtr<TESceneObject> TESceneComponent::GetObject()
+TPtr<SceneObject> SceneComponent::GetObject()
 {
     return _sceneObject.lock();
+}
+
 }
