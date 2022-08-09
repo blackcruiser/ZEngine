@@ -2,12 +2,14 @@
 #include "CommandBuffer.h"
 #include "Device.h"
 
-TECommandPool::TECommandPool(TEPtr<TEDevice> device) : _device(device)
+namespace TE {
+
+CommandPool::CommandPool(TPtr<Device> device) : _device(device)
 {
     _CreateRawCommandPool();
 }
 
-TECommandPool::~TECommandPool()
+CommandPool::~CommandPool()
 {
 
 
@@ -15,33 +17,33 @@ TECommandPool::~TECommandPool()
     vkDestroyCommandPool(vkDevice, _vkCommandPool, nullptr);
 }
 
-TECommandBuffer *TECommandPool::CreateCommandBuffer(TEPtr<TECommandPool> commandPool)
+CommandBuffer* CommandPool::CreateCommandBuffer(TPtr<CommandPool> commandPool)
 {
-    TECommandBuffer *commandBuffer = new TECommandBuffer(commandPool);
+    CommandBuffer* commandBuffer = new CommandBuffer(commandPool);
 
     _commandBuffers.insert(commandBuffer);
 
     return commandBuffer;
 }
 
-void TECommandPool::DestroyCommandBuffer(TECommandBuffer *commandBuffer)
+void CommandPool::DestroyCommandBuffer(CommandBuffer* commandBuffer)
 {
     _commandBuffers.erase(commandBuffer);
     delete commandBuffer;
 }
 
 
-VkCommandPool TECommandPool::GetRawCommandPool()
+VkCommandPool CommandPool::GetRawCommandPool()
 {
     return _vkCommandPool;
 }
 
-TEPtr<TEDevice> TECommandPool::GetDevice()
+TPtr<Device> CommandPool::GetDevice()
 {
     return _device;
 }
 
-void TECommandPool::_CreateRawCommandPool()
+void CommandPool::_CreateRawCommandPool()
 {
     VkDevice vkDevice = _device->GetRawDevice();
     uint32_t graphicQueueFamilyIndex = _device->GetGraphicQueueFamilyIndex();
@@ -55,4 +57,6 @@ void TECommandPool::_CreateRawCommandPool()
     {
         throw std::runtime_error("failed to create command pool!");
     }
+}
+
 }

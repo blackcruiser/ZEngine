@@ -10,6 +10,7 @@
 #include <format>
 #include <iostream>
 
+
 CameraControlComponent::CameraControlComponent() : cachedMousePosition(glm::zero<glm::vec2>())
 {
 }
@@ -21,22 +22,22 @@ CameraControlComponent::~CameraControlComponent()
 
 void CameraControlComponent::OnAttached()
 {
-    MouseAction mouseAction = std::bind(&CameraControlComponent::OnMouseInput, this, std::placeholders::_1);
-    _mouseActionKey = TEInputSystem::GetInstance().RegisterMouseAction(mouseAction);
+    TE::MouseAction mouseAction = std::bind(&CameraControlComponent::OnMouseInput, this, std::placeholders::_1);
+    _mouseActionKey = TE::InputSystem::GetInstance().RegisterMouseAction(mouseAction);
 
-    KeyboardAction keyboardAction = std::bind(&CameraControlComponent::OnKeyboardInput, this, std::placeholders::_1, std::placeholders::_2);
-    _keyboardActionKey = TEInputSystem::GetInstance().RegisterKeyboardAction(keyboardAction);
+    TE::KeyboardAction keyboardAction = std::bind(&CameraControlComponent::OnKeyboardInput, this, std::placeholders::_1, std::placeholders::_2);
+    _keyboardActionKey = TE::InputSystem::GetInstance().RegisterKeyboardAction(keyboardAction);
 }
 
 void CameraControlComponent::OnDetached()
 {
-    TEInputSystem::GetInstance().UnregisterMouseAction(_mouseActionKey);
-    TEInputSystem::GetInstance().UnregisterKeyboardAction(_keyboardActionKey);
+    TE::InputSystem::GetInstance().UnregisterMouseAction(_mouseActionKey);
+    TE::InputSystem::GetInstance().UnregisterKeyboardAction(_keyboardActionKey);
 }
 
 void CameraControlComponent::OnMouseInput(const glm::vec2& position)
 {
-    TEPtr<TETransformComponent> transformComponent = GetObject()->GetComponent<TETransformComponent>();
+    TE::TPtr<TE::TransformComponent> transformComponent = GetObject()->GetComponent<TE::TransformComponent>();
     if (transformComponent == nullptr)
         return;
 
@@ -58,13 +59,13 @@ void CameraControlComponent::OnMouseInput(const glm::vec2& position)
 
 void CameraControlComponent::OnKeyboardInput(int key, int action)
 {
-    TEPtr<TETransformComponent> transformComponent = GetObject()->GetComponent<TETransformComponent>();
+    TE::TPtr<TE::TransformComponent> transformComponent = GetObject()->GetComponent<TE::TransformComponent>();
     if (transformComponent == nullptr)
         return;
 
     if (action == GLFW_PRESS || action == GLFW_REPEAT)
         cachedPressedKey.insert(key);
-    else if(action == GLFW_RELEASE)
+    else if (action == GLFW_RELEASE)
         cachedPressedKey.erase(key);
 
     glm::vec3 translation{ 0 };

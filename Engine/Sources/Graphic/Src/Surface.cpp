@@ -7,7 +7,9 @@
 #include <stdexcept>
 #include <algorithm>
 
-TESurface::TESurface(VkInstance vkInstance, TEPtr<TEGPU> GPU, TEPtr<TEWindow> window) : _vkInstance(vkInstance), _GPU(GPU), _window(window)
+namespace TE {
+
+Surface::Surface(VkInstance vkInstance, TPtr<GPU> GPU, TPtr<Window> window) : _vkInstance(vkInstance), _GPU(GPU), _window(window)
 {
     if (glfwCreateWindowSurface(_vkInstance, _window->GetRawWindow(), nullptr, &_vkSurface) != VK_SUCCESS)
     {
@@ -19,32 +21,32 @@ TESurface::TESurface(VkInstance vkInstance, TEPtr<TEGPU> GPU, TEPtr<TEWindow> wi
     _CalculateExtent();
 }
 
-TESurface::~TESurface()
+Surface::~Surface()
 {
     vkDestroySurfaceKHR(_vkInstance, _vkSurface, nullptr);
 }
 
-VkSurfaceKHR TESurface::GetRawSurface()
+VkSurfaceKHR Surface::GetRawSurface()
 {
     return _vkSurface;
 }
 
-VkSurfaceFormatKHR TESurface::GetSurfaceFormat()
+VkSurfaceFormatKHR Surface::GetSurfaceFormat()
 {
     return _vkSurfaceFormat;
 }
 
-VkPresentModeKHR TESurface::GetPresentMode()
+VkPresentModeKHR Surface::GetPresentMode()
 {
     return _presentMode;
 }
 
-VkExtent2D TESurface::GetExtent()
+VkExtent2D Surface::GetExtent()
 {
     return _vkExtent;
 }
 
-std::vector<VkSurfaceFormatKHR> TESurface::GetSupportedSurfaceFormats()
+std::vector<VkSurfaceFormatKHR> Surface::GetSupportedSurfaceFormats()
 {
     VkPhysicalDevice physicalDevice = _GPU->GetRawPhysicalDevice();
 
@@ -61,7 +63,7 @@ std::vector<VkSurfaceFormatKHR> TESurface::GetSupportedSurfaceFormats()
     return surfaceFormats;
 }
 
-std::vector<VkPresentModeKHR> TESurface::GetSupportedPresentModes()
+std::vector<VkPresentModeKHR> Surface::GetSupportedPresentModes()
 {
     VkPhysicalDevice physicalDevice = _GPU->GetRawPhysicalDevice();
 
@@ -78,7 +80,7 @@ std::vector<VkPresentModeKHR> TESurface::GetSupportedPresentModes()
     return presentModes;
 }
 
-VkSurfaceCapabilitiesKHR TESurface::GetCpabilities()
+VkSurfaceCapabilitiesKHR Surface::GetCpabilities()
 {
     VkPhysicalDevice physicalDevice = _GPU->GetRawPhysicalDevice();
     VkSurfaceCapabilitiesKHR capabilities{};
@@ -87,13 +89,13 @@ VkSurfaceCapabilitiesKHR TESurface::GetCpabilities()
     return capabilities;
 }
 
-void TESurface::_SelectSurfaceFormat()
+void Surface::_SelectSurfaceFormat()
 {
     std::vector<VkSurfaceFormatKHR> surfaceFormats = GetSupportedSurfaceFormats();
 
     for (size_t i = 0; i < surfaceFormats.size(); i++)
     {
-        const VkSurfaceFormatKHR &currentSurfaceFormat = surfaceFormats[i];
+        const VkSurfaceFormatKHR& currentSurfaceFormat = surfaceFormats[i];
 
         if (currentSurfaceFormat.colorSpace == VkColorSpaceKHR::VK_COLOR_SPACE_SRGB_NONLINEAR_KHR && currentSurfaceFormat.format == VkFormat::VK_FORMAT_B8G8R8A8_SRGB)
         {
@@ -103,12 +105,12 @@ void TESurface::_SelectSurfaceFormat()
     }
 }
 
-void TESurface::_SelectPresentMode()
+void Surface::_SelectPresentMode()
 {
     std::vector<VkPresentModeKHR> supportedPresentModes = GetSupportedPresentModes();
 
-    VkPresentModeKHR presentMode{VkPresentModeKHR::VK_PRESENT_MODE_IMMEDIATE_KHR};
-    for (const VkPresentModeKHR &presentMode : supportedPresentModes)
+    VkPresentModeKHR presentMode{ VkPresentModeKHR::VK_PRESENT_MODE_IMMEDIATE_KHR };
+    for (const VkPresentModeKHR& presentMode : supportedPresentModes)
     {
         if (presentMode == VkPresentModeKHR::VK_PRESENT_MODE_MAILBOX_KHR)
             break;
@@ -116,7 +118,7 @@ void TESurface::_SelectPresentMode()
     _presentMode = presentMode;
 }
 
-void TESurface::_CalculateExtent()
+void Surface::_CalculateExtent()
 {
     VkSurfaceCapabilitiesKHR capabilities = GetCpabilities();
 
@@ -133,4 +135,6 @@ void TESurface::_CalculateExtent()
         _vkExtent.width = std::clamp(static_cast<uint32_t>(size.x), capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
         _vkExtent.height = std::clamp(static_cast<uint32_t>(size.y), capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
     }
+}
+
 }

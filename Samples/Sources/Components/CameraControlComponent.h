@@ -1,11 +1,12 @@
-#include "Scene\ScriptComponent.h"
-#include "Input\InputSystem.h"
+#include "Scene/ScriptComponent.h"
+#include "Input/InputSystem.h"
 
 #include <glm/glm.hpp>
 
 #include <set>
 
-class CameraControlComponent : public TEScriptComponent
+
+class CameraControlComponent : public TE::ScriptComponent
 {
 public:
     CameraControlComponent();

@@ -1,31 +1,34 @@
 #include "MeshComponent.h"
 
 
+namespace TE {
 
-TEMeshComponent::TEMeshComponent(): TESceneComponent(EComponentType::Mesh)
+MeshComponent::MeshComponent() : SceneComponent(EComponentType::Mesh)
 {
 }
 
-TEMeshComponent::~TEMeshComponent()
+MeshComponent::~MeshComponent()
 {
 }
 
-void TEMeshComponent::SetVertices(const std::vector<Vertex> &vertices)
+void MeshComponent::SetVertices(const std::vector<Vertex>& vertices)
 {
     _vertices = vertices;
 }
 
-const std::vector<Vertex> &TEMeshComponent::GetVertices()
+const std::vector<Vertex>& MeshComponent::GetVertices()
 {
     return _vertices;
 }
 
-void TEMeshComponent::SetIndexes(const std::vector<uint32_t> &indexes)
+void MeshComponent::SetIndexes(const std::vector<uint32_t>& indexes)
 {
     _indexes = indexes;
 }
 
-const std::vector<uint32_t> &TEMeshComponent::GetIndexes()
+const std::vector<uint32_t>& MeshComponent::GetIndexes()
 {
     return _indexes;
+}
+
 }

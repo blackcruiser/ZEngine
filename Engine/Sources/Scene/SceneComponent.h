@@ -2,6 +2,9 @@
 
 #include "CoreDefines.h"
 
+
+namespace TE {
+
 enum class EComponentType : int
 {
     Invalid = 0,
@@ -12,25 +15,27 @@ enum class EComponentType : int
     Script,
 };
 
-class TESceneObject;
+class SceneObject;
 
-class TESceneComponent
+class SceneComponent
 {
 public:
-    TESceneComponent(const EComponentType type);
-    ~TESceneComponent();
+    SceneComponent(const EComponentType type);
+    ~SceneComponent();
 
     const EComponentType GetType() const;
 
-    void SetObject(TEPtr<TESceneObject> object);
-    TEPtr<TESceneObject> GetObject();
+    void SetObject(TPtr<SceneObject> object);
+    TPtr<SceneObject> GetObject();
 
     // liftCycle
-    virtual void OnAttached(){};
-    virtual void Update(float deltaTime){};
-    virtual void OnDetached(){};
+    virtual void OnAttached() {};
+    virtual void Update(float deltaTime) {};
+    virtual void OnDetached() {};
 
 private:
     EComponentType _type;
-    TEWeakPtr<TESceneObject> _sceneObject;
+    TWeakPtr<SceneObject> _sceneObject;
 };
+
+}

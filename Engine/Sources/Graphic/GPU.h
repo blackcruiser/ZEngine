@@ -4,21 +4,24 @@
 
 #include <vulkan/vulkan.h>
 
-class TESurface;
-class TEDevice;
 
-class TEGPU
+namespace TE {
+
+class Surface;
+class Device;
+
+class GPU
 {
 public:
-    TEGPU(const VkInstance &vkInstance);
-     ~TEGPU();
+    GPU(const VkInstance& vkInstance);
+    ~GPU();
 
     VkPhysicalDevice GetRawPhysicalDevice();
-    const std::vector<const char *> &GetExtensions();
+    const std::vector<const char*>& GetExtensions();
 
     std::vector<VkExtensionProperties> GetExtensionProperties(VkPhysicalDevice GPU);
     std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties();
-    bool isSurfaceSupported(uint32_t queueFamilyIndex, TEPtr<TESurface> surface);
+    bool isSurfaceSupported(uint32_t queueFamilyIndex, TPtr<Surface> surface);
 
     uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
@@ -29,5 +32,7 @@ private:
     VkInstance _vkInstance;
     VkPhysicalDevice _GPU;
 
-    const std::vector<const char *> _deviceExtensions;
+    const std::vector<const char*> _deviceExtensions;
 };
+
+}

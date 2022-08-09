@@ -11,45 +11,48 @@
 #include <stdexcept>
 #include <set>
 
+
+namespace TE {
+
 const std::string AppName("ToyEngine");
 const int kWidth = 800;
 const int kHeight = 800;
 
-TEApplication::TEApplication() : _device(nullptr), _window(nullptr), _renderer(nullptr)
+Application::Application() : _device(nullptr), _window(nullptr), _renderer(nullptr)
 {
 
     _InitGlfw();
     _CreateVulkanInstance();
 
-    _window = std::make_shared<TEWindow>(AppName, kWidth, kHeight);
-    _window->RegisterInput(TEInputSystem::GetInstance());
+    _window = std::make_shared<Window>(AppName, kWidth, kHeight);
+    _window->RegisterInput(InputSystem::GetInstance());
 
-    _GPU = std::make_shared<TEGPU>(_vkInstance);
-    _surface = std::make_shared<TESurface>(_vkInstance, _GPU, _window);
-    _device = std::make_shared<TEDevice>(_GPU, _surface);
-    _renderer = std::make_shared<TEForwardRenderer>(_device, _surface);
+    _GPU = std::make_shared<GPU>(_vkInstance);
+    _surface = std::make_shared<Surface>(_vkInstance, _GPU, _window);
+    _device = std::make_shared<Device>(_GPU, _surface);
+    _renderer = std::make_shared<ForwardRenderer>(_device, _surface);
 }
 
-TEApplication::~TEApplication()
+Application::~Application()
 {
     _renderer.reset();
     _device.reset();
     _surface.reset();
     _GPU.reset();
 
-    _window->UnregisterInput(TEInputSystem::GetInstance());
+    _window->UnregisterInput(InputSystem::GetInstance());
     _window.reset();
 
     _CleanupVulkan();
     _CleanupGlfw();
 }
 
-void TEApplication::_InitGlfw()
+void Application::_InitGlfw()
 {
     glfwInit();
 }
 
-void TEApplication::_CreateVulkanInstance()
+void Application::_CreateVulkanInstance()
 {
     // Instance
     VkApplicationInfo vkAppInfo{};
@@ -61,10 +64,10 @@ void TEApplication::_CreateVulkanInstance()
     vkAppInfo.apiVersion = VK_API_VERSION_1_0;
 
     uint32_t glfwExtensionCount = 0;
-    const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-    const std::vector<const char *> validationLayers = {
+    const std::vector<const char*> validationLayers = {
 #ifdef TOYENGINE_DEBUG
         "VK_LAYER_KHRONOS_validation"
 #endif
@@ -85,7 +88,7 @@ void TEApplication::_CreateVulkanInstance()
     }
 }
 
-void TEApplication::Run(TEPtr<TEScene> scene)
+void Application::Run(TPtr<Scene> scene)
 {
     while (!_window->ShouldClose())
     {
@@ -97,14 +100,16 @@ void TEApplication::Run(TEPtr<TEScene> scene)
     _device->WaitIdle();
 }
 
-void TEApplication::_CleanupVulkan()
+void Application::_CleanupVulkan()
 {
 
     if (_vkInstance != VK_NULL_HANDLE)
         vkDestroyInstance(_vkInstance, nullptr);
 }
 
-void TEApplication::_CleanupGlfw()
+void Application::_CleanupGlfw()
 {
     glfwTerminate();
+}
+
 }

@@ -5,17 +5,22 @@
 
 #include <glm/glm.hpp>
 
-class TECameraComponent : public TESceneComponent
+
+namespace TE {
+
+class CameraComponent : public SceneComponent
 {
 public:
-    TECameraComponent();
-    ~TECameraComponent();
+    CameraComponent();
+    ~CameraComponent();
 
     glm::mat4x4 GetViewMatrix();
 
-    void SetProjectMatrix(const glm::mat4x4 &matrix);
+    void SetProjectMatrix(const glm::mat4x4& matrix);
     const glm::mat4x4& GetProjectMatrix();
 
 private:
     glm::mat4x4 _projectMatrix;
 };
+
+}

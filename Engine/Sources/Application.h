@@ -6,21 +6,24 @@
 
 #include <memory>
 
-class TEGPU;
-class TEDevice;
-class TEWindow;
-class TESurface;
-class TERendererInterface;
 
-class TEScene;
+namespace TE {
 
-class TEApplication
+class GPU;
+class Device;
+class Window;
+class Surface;
+class RendererInterface;
+
+class Scene;
+
+class Application
 {
 public:
-    TEApplication();
-    ~TEApplication();
+    Application();
+    ~Application();
 
-    void Run(TEPtr<TEScene> scene);
+    void Run(TPtr<Scene> scene);
 
 private:
     void _InitGlfw();
@@ -30,11 +33,13 @@ private:
     void _CleanupVulkan();
 
 private:
-    TEPtr<TEGPU> _GPU;
-    TEPtr<TEDevice> _device;
-    TEPtr<TEWindow> _window;
-    TEPtr<TESurface> _surface;
-    TEPtr<TERendererInterface> _renderer;
+    TPtr<GPU> _GPU;
+    TPtr<Device> _device;
+    TPtr<Window> _window;
+    TPtr<Surface> _surface;
+    TPtr<RendererInterface> _renderer;
 
     VkInstance _vkInstance;
 };
+
+}
