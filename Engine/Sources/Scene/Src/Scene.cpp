@@ -53,4 +53,16 @@ TPtr<CameraComponent> Scene::GetCamera()
     return _cameraComponent;
 }
 
+void Scene::Load()
+{
+    for (TPtr<SceneObject>& object : _objects)
+    {
+        TPtrArr<SceneComponent> components = object->GetComponents<SceneComponent>();
+        for (TPtr<SceneComponent>& component : components)
+        {
+            component->Load();
+        }
+    }
+}
+
 }

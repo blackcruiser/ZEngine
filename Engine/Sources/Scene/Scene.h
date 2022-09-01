@@ -20,6 +20,8 @@ public:
     void SetCamera(TPtr<CameraComponent> cameraComponent);
     TPtr<CameraComponent> GetCamera();
 
+    void Load();
+
 private:
     TPtrArr<SceneObject> _objects;
     TPtr<CameraComponent> _cameraComponent;

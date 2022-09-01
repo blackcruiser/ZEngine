@@ -3,13 +3,27 @@
 
 namespace TE {
 
-Shader::Shader(const std::string& path) : _path(path)
+Shader::Shader()
 {
 }
 
-const std::string& Shader::GetPath()
+Shader::Shader(const std::filesystem::path& path) : _sourcePath(path)
 {
-    return _path;
+}
+
+const std::filesystem::path& Shader::GetSourcePath()
+{
+    return _sourcePath;
+}
+
+void Shader::SetBytecodePath(const std::filesystem::path& path)
+{
+    _bytecodePath = path;
+}
+
+const std::filesystem::path& Shader::GetBytecodePath()
+{
+    return _bytecodePath;
 }
 
 }

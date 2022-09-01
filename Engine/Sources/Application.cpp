@@ -90,6 +90,8 @@ void Application::_CreateVulkanInstance()
 
 void Application::Run(TPtr<Scene> scene)
 {
+    scene->Load();
+
     while (!_window->ShouldClose())
     {
         glfwPollEvents();

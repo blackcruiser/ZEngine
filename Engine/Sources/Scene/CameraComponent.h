@@ -12,7 +12,7 @@ class CameraComponent : public SceneComponent
 {
 public:
     CameraComponent();
-    ~CameraComponent();
+    virtual ~CameraComponent();
 
     glm::mat4x4 GetViewMatrix();
 
