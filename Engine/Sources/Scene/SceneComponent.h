@@ -29,6 +29,8 @@ public:
     TPtr<SceneObject> GetObject();
 
     // liftCycle
+    virtual void Load() {};
+    
     virtual void OnAttached() {};
     virtual void Update(float deltaTime) {};
     virtual void OnDetached() {};

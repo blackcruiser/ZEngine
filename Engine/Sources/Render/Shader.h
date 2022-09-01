@@ -1,11 +1,12 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 
 
 namespace TE {
 
-enum class EShaderType
+enum class EShaderStage : int
 {
     Vertex = 0,
     Fragment
@@ -14,12 +15,16 @@ enum class EShaderType
 class Shader
 {
 public:
-    Shader(const std::string& path);
+    Shader();
+    Shader(const std::filesystem::path& path);
 
-    const std::string& GetPath();
+    const std::filesystem::path& GetSourcePath();
+
+    void SetBytecodePath(const std::filesystem::path& path);
+    const std::filesystem::path& GetBytecodePath();
 
 private:
-    std::string _path;
+    std::filesystem::path _sourcePath, _bytecodePath;
 };
 
 }
