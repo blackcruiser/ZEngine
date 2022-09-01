@@ -10,7 +10,7 @@ class ScriptComponent : public SceneComponent
 {
 public:
     ScriptComponent();
-    ~ScriptComponent();
+    virtual ~ScriptComponent();
 };
 
 }

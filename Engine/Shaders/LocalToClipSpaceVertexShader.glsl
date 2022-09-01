@@ -2,16 +2,19 @@
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
-layout(location = 2) in vec3 tecCoord;
-
-layout(location = 0) out vec3 fragColor;
+layout(location = 2) in vec2 texCoord;
 
 layout(set = 0, binding = 0) uniform UniformBuffer
 { 
     mat4 mvp;
 } ub;
 
-void main() {
+layout(location = 0) out vec3 outNormal;
+layout(location = 1) out vec2 outTexcoord;
+
+void main()
+{
     gl_Position = ub.mvp * vec4(position, 1.0) ;
-    fragColor = vec3(1.0, 0.0, 1.0);
+    outNormal = normal;
+    outTexcoord = texCoord;
 }

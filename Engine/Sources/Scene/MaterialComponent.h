@@ -1,41 +1,47 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "Render/Shader.h"
+#include "Render/Texture.h"
 #include "SceneComponent.h"
 
-#include <string>
-#include <optional>
 #include <filesystem>
-
+#include <string>
+#include <unordered_map>
 
 namespace TE {
 
-enum class EMaterialShaderType : int
+class RSMaterial;
+
+struct TextureBindingInfo
 {
-    Vertex,
-    Fragment,
+    uint32_t bindingPoint;
+    TPtr<Texture> texture;
 };
-
-
-struct MaterialShaderInfo
-{
-    std::filesystem::path filePath;
-    std::filesystem::path bytecodePath;
-};
-
 
 class MaterialComponent : public SceneComponent
 {
 public:
     MaterialComponent();
-    ~MaterialComponent();
+    virtual ~MaterialComponent();
 
-    void SetShader(const EMaterialShaderType& type, const std::string& shaderPath);
-    std::optional<std::reference_wrapper<MaterialShaderInfo>> GetShaderInfo(const EMaterialShaderType& type);
+    virtual void Load() override;
+
+    void SetShader(const EShaderStage& stage, const std::filesystem::path& shaderPath);
+    TPtr<Shader> GetShader(const EShaderStage& stage);
+    const TPtrUnorderedMap<EShaderStage, Shader>& GetShaderMap();
+
+    void SetTexture(const EShaderStage& stage, uint32_t bindingPoint, TPtr<Texture> texture);
+    TPtr<Texture> GetTexture(const EShaderStage& stage);
+    const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& GetTextureMap();
 
 private:
     // EBlendType _blendType;
-    std::map<EMaterialShaderType, MaterialShaderInfo> _shaderMap;
+    TPtrUnorderedMap<EShaderStage, Shader> _shaderMap;
+    std::unordered_map<EShaderStage, std::list<TextureBindingInfo>> _textureMap;
+
+public:
+    TPtr<RSMaterial> rsMaterial;
 };
 
-}
+} // namespace TE
