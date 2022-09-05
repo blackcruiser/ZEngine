@@ -1,15 +1,15 @@
 #include "Application.h"
-#include "Render/ForwardRenderer.h"
-#include "Graphic/GPU.h"
-#include "Graphic/Window.h"
-#include "Graphic/Device.h"
+#include "Graphic/VulkanDevice.h"
+#include "Graphic/VulkanGPU.h"
 #include "Graphic/Surface.h"
+#include "Graphic/Window.h"
 #include "Input/InputSystem.h"
+#include "Render/ForwardRenderer.h"
 #include "Scene/Scene.h"
 
-#include <string>
-#include <stdexcept>
 #include <set>
+#include <stdexcept>
+#include <string>
 
 
 namespace TE {
@@ -27,9 +27,9 @@ Application::Application() : _device(nullptr), _window(nullptr), _renderer(nullp
     _window = std::make_shared<Window>(AppName, kWidth, kHeight);
     _window->RegisterInput(InputSystem::GetInstance());
 
-    _GPU = std::make_shared<GPU>(_vkInstance);
+    _GPU = std::make_shared<VulkanGPU>(_vkInstance);
     _surface = std::make_shared<Surface>(_vkInstance, _GPU, _window);
-    _device = std::make_shared<Device>(_GPU, _surface);
+    _device = std::make_shared<VulkanDevice>(_GPU, _surface);
     _renderer = std::make_shared<ForwardRenderer>(_device, _surface);
 }
 
@@ -92,6 +92,8 @@ void Application::Run(TPtr<Scene> scene)
 {
     scene->Load();
 
+    _renderer->Init(scene);
+
     while (!_window->ShouldClose())
     {
         glfwPollEvents();
@@ -100,6 +102,8 @@ void Application::Run(TPtr<Scene> scene)
     }
 
     _device->WaitIdle();
+
+    scene->Unload();
 }
 
 void Application::_CleanupVulkan()
@@ -114,4 +118,4 @@ void Application::_CleanupGlfw()
     glfwTerminate();
 }
 
-}
+} // namespace TE

@@ -37,6 +37,13 @@ file(GLOB SceneIncludes "${SceneSourceDirectory}/*.h")
 aux_source_directory(${SceneSourceDirectory}/Src SceneSources)
 source_group(TREE ${EngineSourcesDirectory} FILES ${SceneSources} ${SceneIncludes})
 
+## Resource Module
+set(ResourceSourceDirectory ${EngineSourcesDirectory}/Resource)
+# should not use file(GLOB ...)
+file(GLOB ResourceIncludes "${ResourceSourceDirectory}/*.h")
+aux_source_directory(${ResourceSourceDirectory}/Src ResourceSources)
+source_group(TREE ${EngineSourcesDirectory} FILES ${ResourceSources} ${ResourceIncludes})
+
 
 # ThirdParties
 set(ThirdPartiesSourcesDirectory ${CMAKE_CURRENT_LIST_DIR}/Engine/ThirdParties)
@@ -66,10 +73,10 @@ target_include_directories(stb_image INTERFACE ${ThirdPartiesSourcesDirectory}/s
 file(GLOB EngineIncludes "${EngineSourcesDirectory}/*.h")
 aux_source_directory(${EngineSourcesDirectory} EngineSources)
 
-add_library(Engine ${GraphicSources} ${GraphicIncludes} ${InputSources} ${InputIncludes} ${RenderSources} ${RenderIncludes} ${SceneSources} ${SceneIncludes} ${EngineSources} ${EngineIncludes})
+add_library(Engine ${GraphicSources} ${GraphicIncludes} ${InputSources} ${InputIncludes} ${RenderSources} ${RenderIncludes} ${SceneSources} ${SceneIncludes} ${ResourceSources} ${ResourceIncludes} ${EngineSources} ${EngineIncludes})
 target_include_directories(Engine 
                             PUBLIC ${EngineSourcesDirectory}
-                            PRIVATE ${GraphicSourceDirectory} ${InputSourceDirectory} ${RenderSourceDirectory} ${SceneSourceDirectory})
+                            PRIVATE ${GraphicSourceDirectory} ${InputSourceDirectory} ${RenderSourceDirectory} ${SceneSourceDirectory} ${ResourceSourceDirectory})
 target_link_libraries(Engine PUBLIC glfw glm::glm Vulkan::Vulkan tinyobjloader stb_image)
 
 
