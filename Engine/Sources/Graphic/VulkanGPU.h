@@ -8,15 +8,15 @@
 namespace TE {
 
 class Surface;
-class Device;
+class VulkanDevice;
 
-class GPU
+class VulkanGPU
 {
 public:
-    GPU(const VkInstance& vkInstance);
-    ~GPU();
+    VulkanGPU(const VkInstance& vkInstance);
+    ~VulkanGPU();
 
-    VkPhysicalDevice GetRawPhysicalDevice();
+    VkPhysicalDevice GetRawGPU();
     const std::vector<const char*>& GetExtensions();
 
     std::vector<VkExtensionProperties> GetExtensionProperties(VkPhysicalDevice GPU);
@@ -26,7 +26,7 @@ public:
     uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 private:
-    std::vector<VkPhysicalDevice> GetSupportedGPUs();
+    std::vector<VkPhysicalDevice> GetSupportedRawGPUs();
 
 private:
     VkInstance _vkInstance;

@@ -1,16 +1,16 @@
-#include "GPU.h"
+#include "VulkanGPU.h"
 #include "Surface.h"
-#include "device.h"
+#include "VulkanDevice.h"
 
 #include <stdexcept>
 #include <set>
 
 namespace TE {
 
-GPU::GPU(const VkInstance& vkInstance) : _vkInstance(vkInstance),
+VulkanGPU::VulkanGPU(const VkInstance& vkInstance) : _vkInstance(vkInstance),
 _GPU(VK_NULL_HANDLE), _deviceExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME })
 {
-    std::vector<VkPhysicalDevice> GPUs = GetSupportedGPUs();
+    std::vector<VkPhysicalDevice> GPUs = GetSupportedRawGPUs();
 
     _GPU = VK_NULL_HANDLE;
     for (size_t i = 0; i < GPUs.size(); i++)
@@ -30,21 +30,21 @@ _GPU(VK_NULL_HANDLE), _deviceExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME })
     }
 }
 
-GPU::~GPU()
+VulkanGPU::~VulkanGPU()
 {
 }
 
-VkPhysicalDevice GPU::GetRawPhysicalDevice()
+VkPhysicalDevice VulkanGPU::GetRawGPU()
 {
     return _GPU;
 }
 
-const std::vector<const char*>& GPU::GetExtensions()
+const std::vector<const char*>& VulkanGPU::GetExtensions()
 {
     return _deviceExtensions;
 }
 
-std::vector<VkExtensionProperties> GPU::GetExtensionProperties(VkPhysicalDevice GPU)
+std::vector<VkExtensionProperties> VulkanGPU::GetExtensionProperties(VkPhysicalDevice GPU)
 {
     uint32_t extensionCount = 0;
     vkEnumerateDeviceExtensionProperties(GPU, nullptr, &extensionCount, nullptr);
@@ -55,7 +55,7 @@ std::vector<VkExtensionProperties> GPU::GetExtensionProperties(VkPhysicalDevice 
     return availableExtensions;
 }
 
-std::vector<VkQueueFamilyProperties> GPU::GetQueueFamilyProperties()
+std::vector<VkQueueFamilyProperties> VulkanGPU::GetQueueFamilyProperties()
 {
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(_GPU, &queueFamilyCount, nullptr);
@@ -66,14 +66,14 @@ std::vector<VkQueueFamilyProperties> GPU::GetQueueFamilyProperties()
     return queueFamilieProperties;
 }
 
-bool GPU::isSurfaceSupported(uint32_t queueFamilyIndex, TPtr<Surface> surface)
+bool VulkanGPU::isSurfaceSupported(uint32_t queueFamilyIndex, TPtr<Surface> surface)
 {
     VkBool32 isSupported;
     vkGetPhysicalDeviceSurfaceSupportKHR(_GPU, queueFamilyIndex, surface->GetRawSurface(), &isSupported);
     return isSupported != 0;
 }
 
-uint32_t GPU::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t VulkanGPU::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(_GPU, &memProperties);
@@ -89,9 +89,9 @@ uint32_t GPU::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properti
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-std::vector<VkPhysicalDevice> GPU::GetSupportedGPUs()
+std::vector<VkPhysicalDevice> VulkanGPU::GetSupportedRawGPUs()
 {
-    // Physical Device
+    // Physical VulkanDevice
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(_vkInstance, &deviceCount, nullptr);
     if (deviceCount == 0)

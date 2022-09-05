@@ -7,14 +7,14 @@
 
 namespace TE {
 
-class Device;
-class CommandPool;
+class VulkanDevice;
+class VulkanCommandPool;
 
-class CommandBuffer
+class VulkanCommandBuffer
 {
 public:
-    CommandBuffer(TPtr<CommandPool> commandPool);
-    ~CommandBuffer();
+    VulkanCommandBuffer(TPtr<VulkanCommandPool> commandPool);
+    ~VulkanCommandBuffer();
 
     void Begin();
     void End();
@@ -26,7 +26,7 @@ private:
     void _AllocateAndBindBufferMemory();
 
 private:
-    TPtr<CommandPool> _commandPool;
+    TPtr<VulkanCommandPool> _commandPool;
 
     VkCommandBuffer _vkCommandBuffer;
 };

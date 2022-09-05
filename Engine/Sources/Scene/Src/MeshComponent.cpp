@@ -1,9 +1,11 @@
 #include "MeshComponent.h"
+#include "Resource/MaterialResource.h"
+#include "Resource/MeshResource.h"
 
 
 namespace TE {
 
-MeshComponent::MeshComponent() : SceneComponent(EComponentType::Mesh)
+MeshComponent::MeshComponent() : SceneComponent(EComponentType::Mesh), _mesh(nullptr)
 {
 }
 
@@ -11,24 +13,55 @@ MeshComponent::~MeshComponent()
 {
 }
 
-void MeshComponent::SetVertices(const std::vector<Vertex>& vertices)
+void MeshComponent::Load()
 {
-    _vertices = vertices;
+    SceneComponent::Load();
+
+    if (_mesh != nullptr)
+        _mesh->Load();
+
+    for (const TPtr<MaterialResource>& material : _materialArr)
+    {
+        material->Load();
+    }
 }
 
-const std::vector<Vertex>& MeshComponent::GetVertices()
+void MeshComponent::Unload()
 {
-    return _vertices;
+    if (_mesh != nullptr)
+        _mesh->Unload();
+
+    for (const TPtr<MaterialResource>& material : _materialArr)
+    {
+        material->Unload();
+    }
+    SceneComponent::Unload();
 }
 
-void MeshComponent::SetIndexes(const std::vector<uint32_t>& indexes)
+void MeshComponent::SetMesh(TPtr<MeshResource> mesh)
 {
-    _indexes = indexes;
+    _mesh = mesh;
 }
 
-const std::vector<uint32_t>& MeshComponent::GetIndexes()
+TPtr<MeshResource> MeshComponent::GetMesh()
 {
-    return _indexes;
+    return _mesh;
 }
 
+void MeshComponent::SetMaterial(uint32_t slot, TPtr<MaterialResource> material)
+{
+    if (slot >= _materialArr.size())
+        _materialArr.resize(slot + 1);
+
+    _materialArr[slot] = material;
 }
+
+TPtr<MaterialResource> MeshComponent::GetMaterial(uint32_t slot)
+{
+    if (slot < _materialArr.size())
+        return _materialArr[slot];
+    else
+        return nullptr;
+}
+
+} // namespace TE
