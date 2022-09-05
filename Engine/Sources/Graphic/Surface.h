@@ -5,13 +5,13 @@
 
 namespace TE {
 
-class GPU;
+class VulkanGPU;
 class Window;
 
 class Surface
 {
 public:
-    Surface(VkInstance vkInstance, TPtr<GPU> GPU, TPtr<Window> window);
+    Surface(VkInstance vkInstance, TPtr<VulkanGPU> GPU, TPtr<Window> window);
     ~Surface();
 
     VkSurfaceKHR GetRawSurface();
@@ -35,7 +35,7 @@ private:
     VkPresentModeKHR _presentMode;
     VkExtent2D _vkExtent;
 
-    TPtr<GPU> _GPU;
+    TPtr<VulkanGPU> _GPU;
     TPtr<Window> _window;
 };
 
