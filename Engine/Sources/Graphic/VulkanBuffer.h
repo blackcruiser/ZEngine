@@ -15,7 +15,8 @@ public:
     VulkanBuffer(TPtr<VulkanDevice> device, uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
     ~VulkanBuffer();
 
-    void UploadData(TPtr<VulkanCommandPool> commandPool, const void* data, uint32_t size);
+    void CopyFromBuffer(TPtr<VulkanCommandPool> commandPool, TPtr<VulkanBuffer> otherBuffer, VkDeviceSize size);
+    void TransferData(TPtr<VulkanCommandPool> commandPool, const void* data, uint32_t size);
 
     void* MapMemory(VkDeviceSize offset, VkDeviceSize size);
     void UnmapMemory();

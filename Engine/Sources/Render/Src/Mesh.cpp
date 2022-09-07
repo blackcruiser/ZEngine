@@ -31,7 +31,7 @@ void Mesh::CreateVertexBuffer(TPtr<VulkanCommandPool> commandPool)
     _vertexBuffer = std::make_shared<VulkanBuffer>(_device, byteSize,
                                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    _vertexBuffer->UploadData(commandPool, vertices.data(), byteSize);
+    _vertexBuffer->TransferData(commandPool, vertices.data(), byteSize);
 }
 
 TPtr<VulkanBuffer> Mesh::GetVertexBuffer()
@@ -51,7 +51,7 @@ void Mesh::CreateIndexBuffer(TPtr<VulkanCommandPool> commandPool)
     _indexBuffer = std::make_shared<VulkanBuffer>(_device, byteSize,
                                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    _indexBuffer->UploadData(commandPool, indexes.data(), byteSize);
+    _indexBuffer->TransferData(commandPool, indexes.data(), byteSize);
 
     _verticesCount = indexes.size();
 }

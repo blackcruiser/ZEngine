@@ -2,6 +2,7 @@
 #include "Graphic/Surface.h"
 #include "Graphic/VulkanBuffer.h"
 #include "Graphic/VulkanImage.h"
+#include "Graphic/VulkanImageView.h"
 #include "Graphic/VulkanShader.h"
 #include "Graphic/VulkanCommandBuffer.h"
 #include "Graphic/VulkanCommandPool.h"
@@ -9,6 +10,9 @@
 #include "Graphic/VulkanDescriptorSet.h"
 #include "Graphic/VulkanPipelineLayout.h"
 #include "Graphic/VulkanPipeline.h"
+#include "Graphic/VulkanSwapchain.h"
+#include "Graphic/VulkanRenderPass.h"
+#include "Graphic/VulkanFramebuffer.h"
 #include "Material.h"
 #include "Mesh.h"
 #include "Resource/MaterialResource.h"
@@ -22,15 +26,29 @@
 
 namespace TE {
 
-
-ForwardRenderer::ForwardRenderer(TPtr<VulkanDevice> device, TPtr<Surface> surface) : _device(device), _surface(surface)
+ForwardRenderer::ForwardRenderer(TPtr<VulkanDevice> device, TPtr<Surface> surface)
+    : _device(device), _surface(surface)
 {
     VkSurfaceFormatKHR surfaceFormat = _surface->GetSurfaceFormat();
-    _vkRenderPass = _device->CreateRenderPass(surfaceFormat.format);
-    CreateSwapchain(_vkRenderPass);
+    VkSurfaceCapabilitiesKHR vkCapabilities = _surface->GetCpabilities();
+    _renderPass = std::make_shared<VulkanRenderPass>(_device, surfaceFormat.format);
+    _swapchain = std::make_shared<VulkanSwapchain>(_device, _surface, 2);
+
+    TPtrArr<VulkanImage> images = _swapchain->GetImages();
+    TPtrArr<VulkanImageView> imageViews;
+    std::transform(images.begin(), images.end(), std::back_inserter(imageViews), [&](TPtr<VulkanImage> image) {
+        return std::make_shared<VulkanImageView>(_device, image);
+    });
+
+    for (int i = 0; i < 2; i++)
+    {
+        TPtrArr<VulkanImageView> framebufferImageViews{imageViews[i]};
+        _framebuffers.push_back(std::make_shared<VulkanFramebuffer>(_device, _renderPass, framebufferImageViews, _surface->GetExtent()));
+    }
+
 
     _commandPool = std::make_shared<VulkanCommandPool>(_device);
-    _commandBuffer = _commandPool->CreateCommandBuffer(_commandPool);
+    _commandBuffer = std::make_shared<VulkanCommandBuffer>(_commandPool);
 
     _imageAvailableSemaphore = _device->CreateGraphicSemaphore();
     _renderFinishedSemaphore = _device->CreateGraphicSemaphore();
@@ -56,23 +74,6 @@ ForwardRenderer::~ForwardRenderer()
     _device->DestroyGraphicSemaphore(_imageAvailableSemaphore);
     _device->DestroyGraphicSemaphore(_renderFinishedSemaphore);
     _device->DestroyFence(_inFlightFence);
-
-    _device->DestroyRenderPass(_vkRenderPass);
-
-
-    for (auto imageView : _vkImageViews)
-    {
-        _device->DestroyImageView(imageView);
-    }
-
-    for (VkFramebuffer& framebuffer : _vkFramebuffers)
-    {
-        _device->DestroyFramebuffer(framebuffer);
-    }
-
-    _commandPool->DestroyCommandBuffer(_commandBuffer);
-    _commandPool.reset();
-    _device->DestroySwapchain(_vkSwapchain);
 }
 
 void ForwardRenderer::Init(TPtr<Scene> scene)
@@ -102,7 +103,7 @@ void ForwardRenderer::Init(TPtr<Scene> scene)
             material->CreateGraphicTextures(_commandPool);
             material->CreateDescriptorSet(_descriptorPool);
             material->UpdateDescriptorSet();
-            material->CreatePipeline(meshResource->GetMesh(), _surface->GetExtent(), _vkRenderPass);
+            material->CreatePipeline(meshResource->GetMesh(), _renderPass, _surface->GetExtent());
             materialResource->SetMaterial(material);
         }
     }
@@ -114,16 +115,15 @@ void ForwardRenderer::RenderFrame(TPtr<Scene> scene)
     vkWaitForFences(vkDevice, 1, &_inFlightFence, VK_TRUE, UINT64_MAX);
     vkResetFences(vkDevice, 1, &_inFlightFence);
 
-    uint32_t imageIndex;
-    vkAcquireNextImageKHR(vkDevice, _vkSwapchain, UINT64_MAX, _imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    uint32_t imageIndex = _swapchain->AcquireNextImage(_imageAvailableSemaphore);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = _vkRenderPass;
-    renderPassInfo.framebuffer = _vkFramebuffers[imageIndex];
+    renderPassInfo.renderPass = _renderPass->GetRawRenderPass();
+    renderPassInfo.framebuffer = _framebuffers[imageIndex]->GetRawFramebuffer();
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = _surface->GetExtent();
 
@@ -196,7 +196,7 @@ void ForwardRenderer::RenderFrame(TPtr<Scene> scene)
         throw std::runtime_error("failed to submit draw command buffer!");
     }
 
-    VkSwapchainKHR swapchains[] = {_vkSwapchain};
+    VkSwapchainKHR swapchains[] = {_swapchain->GetRawSwapchain()};
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
@@ -207,38 +207,6 @@ void ForwardRenderer::RenderFrame(TPtr<Scene> scene)
     presentInfo.pResults = nullptr; // Optional
 
     vkQueuePresentKHR(_device->GetPresentQueue(), &presentInfo);
-}
-
-void ForwardRenderer::CreateSwapchain(VkRenderPass renderPass)
-{
-    VkSurfaceFormatKHR vkSurfaceFormat = _surface->GetSurfaceFormat();
-    VkPresentModeKHR vkPresentMode = _surface->GetPresentMode();
-    VkSurfaceCapabilitiesKHR vkCapabilities = _surface->GetCpabilities();
-    VkExtent2D extent = _surface->GetExtent();
-
-    _vkSwapchain =
-        _device->CreateSwapchain(vkCapabilities.minImageCount + 1, vkSurfaceFormat.format, vkSurfaceFormat.colorSpace,
-                                 extent, vkCapabilities.currentTransform, vkPresentMode);
-
-    uint32_t imageCount;
-    vkGetSwapchainImagesKHR(_device->GetRawDevice(), _vkSwapchain, &imageCount, nullptr);
-    _vkImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(_device->GetRawDevice(), _vkSwapchain, &imageCount, _vkImages.data());
-
-    // Image View
-    _vkImageViews.resize(imageCount);
-    for (size_t i = 0; i < imageCount; i++)
-    {
-        _vkImageViews[i] = _device->CreateImageView(_vkImages[i], vkSurfaceFormat.format);
-    }
-
-    _vkFramebuffers.resize(imageCount);
-    for (size_t i = 0; i < imageCount; i++)
-    {
-        std::vector<VkImageView> attachments = {_vkImageViews[i]};
-
-        _vkFramebuffers[i] = _device->CreateFramebuffer(renderPass, attachments, extent.width, extent.height);
-    }
 }
 
 }
