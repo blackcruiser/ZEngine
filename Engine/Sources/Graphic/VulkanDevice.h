@@ -23,27 +23,6 @@ public:
     VkFence CreateFence(bool isSignaled);
     void DestroyFence(VkFence fence);
 
-    VkImageView CreateImageView(VkImage image, VkFormat format);
-    void DestroyImageView(VkImageView imageView);
-
-    VkSampler CreateTextureSampler();
-    void DestroyTextureSampler(VkSampler sampler);
-
-    VkFramebuffer CreateFramebuffer(VkRenderPass renderPass, const std::vector<VkImageView> imageViewArr,
-                                    uint32_t width, uint32_t height);
-    void DestroyFramebuffer(VkFramebuffer framebuffer);
-
-    VkSwapchainKHR CreateSwapchain(uint32_t imageCount, VkFormat imageFormat, VkColorSpaceKHR colorSpace,
-                                   VkExtent2D extent, VkSurfaceTransformFlagBitsKHR preTransform,
-                                   VkPresentModeKHR presentMode);
-    void DestroySwapchain(VkSwapchainKHR swapchain);
-
-    VkPipelineLayout CreatePipelineLayout(VkDescriptorSetLayout descriptorSetLayout);
-    void DestroyPipelineLayout(VkPipelineLayout pipelineLayout);
-
-    VkRenderPass CreateRenderPass(VkFormat format);
-    void DestroyRenderPass(VkRenderPass renderPass);
-
     VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings);
     void DestroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
 

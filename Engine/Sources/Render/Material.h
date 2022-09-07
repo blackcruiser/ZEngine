@@ -9,12 +9,15 @@
 namespace TE {
 
 class VulkanImage;
+class VulkanSampler;
+class VulkanImageView;
 class VulkanShader;
 class VulkanBuffer;
 class VulkanDescriptorPool;
 class VulkanDescriptorSet;
 class VulkanPipelineLayout;
 class VulkanGraphicPipeline;
+class VulkanRenderPass;
 class VulkanCommandPool;
 class MaterialResource;
 class Mesh;
@@ -22,7 +25,8 @@ class Mesh;
 struct VulkanImageBindingInfo
 {
     uint32_t bindingPoint;
-    TPtr<VulkanImage> vulkanImage;
+    TPtr<VulkanImageView> vulkanImageView;
+    TPtr<VulkanSampler> vulkanSampler;
 };
 
 class Material
@@ -41,7 +45,7 @@ public:
     void UpdateUniformBuffer(TPtr<VulkanCommandPool> commandPool, const glm::mat4x4& transform);
     TPtr<VulkanBuffer> GetUniformBuffer();
 
-    void CreatePipeline(TPtr<Mesh> mesh, const VkExtent2D& extent, VkRenderPass renderPass);
+    void CreatePipeline(TPtr<Mesh> mesh, TPtr<VulkanRenderPass> renderPass,  const VkExtent2D& extent);
     TPtr<VulkanPipelineLayout> GetPipelineLayout();
     TPtr<VulkanGraphicPipeline> GetPipeline();
 
