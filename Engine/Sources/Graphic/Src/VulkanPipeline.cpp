@@ -2,6 +2,7 @@
 #include "VulkanDevice.h"
 #include "VulkanShader.h"
 #include "VulkanPipelineLayout.h"
+#include "VulkanRenderPass.h"
 
 
 namespace TE {
@@ -10,7 +11,7 @@ VulkanGraphicPipeline::VulkanGraphicPipeline(
     TPtr<VulkanDevice> device, TPtr<VulkanShader> vertexShader, TPtr<VulkanShader> fragmentShader,
     const VkExtent2D& extent, VkVertexInputBindingDescription& bindingDescription,
     std::vector<VkVertexInputAttributeDescription>& attributeDescriptions, TPtr<VulkanPipelineLayout> pipelineLayout,
-    VkRenderPass renderPass)
+    TPtr<VulkanRenderPass> renderPass)
     : _device(device), _vkPipeline(VK_NULL_HANDLE)
 {
     // Pipeline
@@ -123,7 +124,7 @@ VulkanGraphicPipeline::VulkanGraphicPipeline(
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = nullptr; // Optional
     pipelineInfo.layout = pipelineLayout->GetRawPipelineLayout();
-    pipelineInfo.renderPass = renderPass;
+    pipelineInfo.renderPass = renderPass->GetRawRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipelineInfo.basePipelineIndex = -1;              // Optional

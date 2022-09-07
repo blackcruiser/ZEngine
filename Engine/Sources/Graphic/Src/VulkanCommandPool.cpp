@@ -1,49 +1,11 @@
 #include "VulkanCommandPool.h"
-#include "VulkanCommandBuffer.h"
 #include "VulkanDevice.h"
+
 
 namespace TE {
 
-VulkanCommandPool::VulkanCommandPool(TPtr<VulkanDevice> device) : _device(device)
-{
-    _CreateRawCommandPool();
-}
-
-VulkanCommandPool::~VulkanCommandPool()
-{
-
-
-    VkDevice vkDevice = _device->GetRawDevice();
-    vkDestroyCommandPool(vkDevice, _vkCommandPool, nullptr);
-}
-
-VulkanCommandBuffer* VulkanCommandPool::CreateCommandBuffer(TPtr<VulkanCommandPool> commandPool)
-{
-    VulkanCommandBuffer* commandBuffer = new VulkanCommandBuffer(commandPool);
-
-    _commandBuffers.insert(commandBuffer);
-
-    return commandBuffer;
-}
-
-void VulkanCommandPool::DestroyCommandBuffer(VulkanCommandBuffer* commandBuffer)
-{
-    _commandBuffers.erase(commandBuffer);
-    delete commandBuffer;
-}
-
-
-VkCommandPool VulkanCommandPool::GetRawCommandPool()
-{
-    return _vkCommandPool;
-}
-
-TPtr<VulkanDevice> VulkanCommandPool::GetDevice()
-{
-    return _device;
-}
-
-void VulkanCommandPool::_CreateRawCommandPool()
+VulkanCommandPool::VulkanCommandPool(TPtr<VulkanDevice> device)
+    : _device(device), _vkCommandPool(VK_NULL_HANDLE)
 {
     VkDevice vkDevice = _device->GetRawDevice();
     uint32_t graphicQueueFamilyIndex = _device->GetGraphicQueueFamilyIndex();
@@ -59,4 +21,23 @@ void VulkanCommandPool::_CreateRawCommandPool()
     }
 }
 
+VulkanCommandPool::~VulkanCommandPool()
+{
+
+
+    VkDevice vkDevice = _device->GetRawDevice();
+    vkDestroyCommandPool(vkDevice, _vkCommandPool, nullptr);
 }
+
+
+VkCommandPool VulkanCommandPool::GetRawCommandPool()
+{
+    return _vkCommandPool;
+}
+
+TPtr<VulkanDevice> VulkanCommandPool::GetDevice()
+{
+    return _device;
+}
+
+} // namespace TE

@@ -3,6 +3,8 @@
 #include "Graphic/VulkanDescriptorPool.h"
 #include "Graphic/VulkanDescriptorSet.h"
 #include "Graphic/VulkanImage.h"
+#include "Graphic/VulkanImageView.h"
+#include "Graphic/VulkanSampler.h"
 #include "Graphic/VulkanPipelineLayout.h"
 #include "Graphic/VulkanPipeline.h"
 #include "Graphic/VulkanShader.h"
@@ -40,17 +42,20 @@ VkShaderStageFlagBits ConvertShaderStageToVulkanBit(EShaderStage stage)
     }
 }
 
-TPtr<VulkanImage> CreateGraphicImage(TPtr<VulkanDevice> device, TPtr<VulkanCommandPool> commandPool, TPtr<TextureResource> texture)
+TPtr<VulkanImageView> CreateGraphicImage(TPtr<VulkanDevice> device, TPtr<VulkanCommandPool> commandPool, TPtr<TextureResource> texture)
 {
     assert(texture->IsLoaded());
 
+    VkExtent3D extent{texture->GetWidth(), texture->GetHeight(), 1};
     TPtr<VulkanImage> vulkanImage =
-        std::make_shared<VulkanImage>(device, texture->GetWidth(), texture->GetHeight(), VK_FORMAT_R8G8B8A8_SRGB);
+        std::make_shared<VulkanImage>(device, extent, VK_FORMAT_R8G8B8A8_SRGB);
 
     uint32_t imageSize = texture->GetWidth() * texture->GetHeight() * 4;
-    vulkanImage->UploadData(commandPool, texture->GetData(), imageSize);
+    vulkanImage->TransferData(commandPool, texture->GetData(), imageSize);
 
-    return vulkanImage;
+    TPtr<VulkanImageView> vulkanImageView = std::make_shared<VulkanImageView>(device, vulkanImage);
+
+    return vulkanImageView;
 }
 
 
@@ -74,7 +79,8 @@ void Material::CreateGraphicTextures(TPtr<VulkanCommandPool> commandPool)
             VulkanImageBindingInfo vulkanBindingInfo;
 
             vulkanBindingInfo.bindingPoint = bindingInfo.bindingPoint;
-            vulkanBindingInfo.vulkanImage = CreateGraphicImage(_device, commandPool, bindingInfo.texture);
+            vulkanBindingInfo.vulkanImageView = CreateGraphicImage(_device, commandPool, bindingInfo.texture);
+            vulkanBindingInfo.vulkanSampler = std::make_shared<VulkanSampler>(_device);
 
             vulkanBindingInfoList.push_back(vulkanBindingInfo);
         }
@@ -129,7 +135,7 @@ std::optional<std::reference_wrapper<std::list<VulkanImageBindingInfo>>> Materia
 void Material::UpdateUniformBuffer(TPtr<VulkanCommandPool> commandPool, const glm::mat4x4& transform)
 {
 
-    _uniformBuffer->UploadData(commandPool, &transform, sizeof(transform));
+    _uniformBuffer->TransferData(commandPool, &transform, sizeof(transform));
 }
 
 TPtr<VulkanBuffer> Material::GetUniformBuffer()
@@ -137,7 +143,7 @@ TPtr<VulkanBuffer> Material::GetUniformBuffer()
     return _uniformBuffer;
 }
 
-void Material::CreatePipeline(TPtr<Mesh> mesh, const VkExtent2D& extent, VkRenderPass renderPass)
+void Material::CreatePipeline(TPtr<Mesh> mesh,  TPtr<VulkanRenderPass> renderPass, const VkExtent2D& extent )
 {
     TPtr<VulkanShader> vertexShader = GetGraphicShader(VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
     TPtr<VulkanShader> fragmentShader = GetGraphicShader(VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -198,8 +204,8 @@ void Material::UpdateDescriptorSet()
 
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView = textureBindingInfo.begin()->vulkanImage->GetRawImageView();
-    imageInfo.sampler = textureBindingInfo.begin()->vulkanImage->GetRawSampler();
+    imageInfo.imageView = textureBindingInfo.begin()->vulkanImageView->GetRawImageView();
+    imageInfo.sampler = textureBindingInfo.begin()->vulkanSampler->GetRawSampler();
 
     std::vector<VkDescriptorBufferInfo> bufferInfoArr{bufferInfo};
     std::vector<VkDescriptorImageInfo> imageInfoArr{imageInfo};
