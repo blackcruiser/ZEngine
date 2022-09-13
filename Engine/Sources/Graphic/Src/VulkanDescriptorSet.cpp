@@ -2,6 +2,8 @@
 #include "VulkanDescriptorPool.h"
 #include "VulkanDevice.h"
 
+#include <stdexcept>
+
 
 namespace TE {
 

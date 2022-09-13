@@ -4,6 +4,8 @@
 #include "VulkanPipelineLayout.h"
 #include "VulkanRenderPass.h"
 
+#include <stdexcept>
+
 
 namespace TE {
 

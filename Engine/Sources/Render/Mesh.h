@@ -2,7 +2,7 @@
 
 #include "CoreDefine.h"
 
-#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan.h>
 
 
 namespace TE {
