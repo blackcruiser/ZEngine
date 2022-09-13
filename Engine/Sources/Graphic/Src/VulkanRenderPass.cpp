@@ -1,9 +1,10 @@
 #include "VulkanRenderPass.h"
 #include "VulkanDevice.h"
 
+#include <stdexcept>
+
 
 namespace TE {
-
 
 VulkanRenderPass::VulkanRenderPass(TPtr<VulkanDevice> device, VkFormat format)
     : _device(device), _vkRenderPass(VK_NULL_HANDLE)

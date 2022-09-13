@@ -4,6 +4,8 @@
 
 #include <stdexcept>
 #include <set>
+#include <string>
+
 
 namespace TE {
 
@@ -20,7 +22,10 @@ _GPU(VK_NULL_HANDLE), _deviceExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME })
         std::set<std::string> requiredExtensions(_deviceExtensions.begin(), _deviceExtensions.end());
 
         for (const auto& extension : availableExtensions)
-            requiredExtensions.erase(extension.extensionName);
+        {
+            std::string name(extension.extensionName);
+            requiredExtensions.erase(name);
+        }
 
         if (requiredExtensions.empty())
         {

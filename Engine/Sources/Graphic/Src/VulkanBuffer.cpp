@@ -4,6 +4,9 @@
 #include "VulkanCommandPool.h"
 #include "VulkanDevice.h"
 
+#include <stdexcept>
+
+
 namespace TE {
 
 VulkanBuffer::VulkanBuffer(TPtr<VulkanDevice> device, uint32_t size, VkBufferUsageFlags usage,

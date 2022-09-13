@@ -1,10 +1,17 @@
 #include "ShaderResource.h"
 
-#define UNICODE
-#define NOMINMAX
-#include <Windows.h>
+#ifdef TOYENGINE_WINDOWS
+    #define UNICODE
+    #define NOMINMAX
+    #include <Windows.h>
+#else
+    #include <unistd.h>
+    #include <sys/types.h>
+#endif
 
 #include <fstream>
+#include <iostream>
+#include <array>
 
 namespace TE {
 
@@ -32,26 +39,29 @@ static std::vector<char> readFile(const std::string& filename)
     return buffer;
 }
 
-
 void ShaderResource::Load()
 {
+    const std::filesystem::path shaderDirectoryPath = "../Engine/Shaders";
+ 
+    std::filesystem::path shaderPath = shaderDirectoryPath / _sourcePath;
+    std::filesystem::path absoluteShaderPath = std::filesystem::absolute(shaderPath);
+    std::filesystem::path byteCodePath = std::filesystem::temp_directory_path() / (_sourcePath.stem() += ".spv");
+
+#ifdef TOYENGINE_WINDOWS
+    std::wstring glslc = L"glslc";
+    std::wstring shaderStageDesc = _stage == EShaderStage::Vertex ? L"vertex" : L"fragment";
+    std::wstring arg = std::format(L" -fshader-stage={} -o {} {}", shaderStageDesc, byteCodePath.wstring(),
+                                   absoluteShaderPath.wstring());
+    std::wstring command = glslc + arg;
+
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
 
     ZeroMemory(&si, sizeof(si));
     ZeroMemory(&pi, sizeof(pi));
     si.cb = sizeof(si);
-
-    const std::filesystem::path shaderDirectoryPath = "../Engine/Shaders";
-
-    std::wstring shaderStageDesc = _stage == EShaderStage::Vertex ? L"vertex" : L"fragment";
-    std::filesystem::path shaderAbsolutePath = shaderDirectoryPath / _sourcePath;
-    std::filesystem::path byteCodePath = std::filesystem::temp_directory_path() / (_sourcePath.stem() += ".spv");
-
-    std::wstring arg = std::format(L"glslc.exe -fshader-stage={} -o {} {}", shaderStageDesc, byteCodePath.wstring(),
-                                   shaderAbsolutePath.wstring());
-
-    if (CreateProcess(NULL, arg.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+    
+    if (CreateProcess(NULL, command.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
 
@@ -60,13 +70,33 @@ void ShaderResource::Load()
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
     }
+#else
+    std::string glslc = "glslc";
+    std::string shaderStageDesc = _stage == EShaderStage::Vertex ? "vertex" : "fragment";
+    std::string arg = " -fshader-stage=" + shaderStageDesc + " -o " + byteCodePath.string() + " " + shaderAbsolutePath.string();
+    
+    std::array<char, 128> buffer;
+    std::string result;
+
+    std::string command = glslc + arg;
+    FILE* pipe = popen(command.c_str(), "r");
+    if (pipe != nullptr)
+    {
+        while (fgets(buffer.data(), 128, pipe) != NULL) 
+            result += buffer.data();
+            
+        int returnCode = pclose(pipe);
+        std::cout << returnCode << std::endl << result << std::endl;
+    }
+#endif
 
     if (std::filesystem::exists(byteCodePath))
+    {
         _bytecodePath = byteCodePath;
+        _byteCode = readFile(_bytecodePath.string());
+    }
     else
         throw std::runtime_error("ShaderResource compile failed");
-
-    _byteCode = readFile(_bytecodePath.string());
 
     _isLoaded = true;
 }

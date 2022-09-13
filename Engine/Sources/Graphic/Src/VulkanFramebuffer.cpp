@@ -3,9 +3,12 @@
 #include "VulkanImageView.h"
 #include "VulkanRenderPass.h"
 
+#include <stdexcept>
+#include <algorithm>
+#include <iterator>
+
 
 namespace TE {
-
 
 VulkanFramebuffer::VulkanFramebuffer(TPtr<VulkanDevice> device, TPtr<VulkanRenderPass> renderPass, const TPtrArr<VulkanImageView>& imageViewArr, const VkExtent2D& extent)
     : _device(device), _vkFramebuffer(VK_NULL_HANDLE)

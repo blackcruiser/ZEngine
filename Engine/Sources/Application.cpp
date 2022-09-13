@@ -66,6 +66,10 @@ void Application::_CreateVulkanInstance()
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
     std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+#ifdef TOYENGINE_MACOS
+    extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+#endif
 
     const std::vector<const char*> validationLayers = {
 #ifdef TOYENGINE_DEBUG
@@ -76,12 +80,16 @@ void Application::_CreateVulkanInstance()
     VkInstanceCreateInfo vkInstanceCreateInfo{};
     vkInstanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     vkInstanceCreateInfo.pApplicationInfo = &vkAppInfo;
-    vkInstanceCreateInfo.enabledExtensionCount = glfwExtensionCount;
+    vkInstanceCreateInfo.enabledExtensionCount = extensions.size();
     vkInstanceCreateInfo.ppEnabledExtensionNames = extensions.data();
     vkInstanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
     vkInstanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+#ifdef TOYENGINE_MACOS
+    vkInstanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#endif
 
-    if (vkCreateInstance(&vkInstanceCreateInfo, nullptr, &_vkInstance) != VkResult::VK_SUCCESS)
+    VkResult result = vkCreateInstance(&vkInstanceCreateInfo, nullptr, &_vkInstance);
+    if (result != VkResult::VK_SUCCESS)
     {
         throw std::runtime_error("failed to create vulkan instance!");
         return;

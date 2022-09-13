@@ -1,6 +1,9 @@
 #include "VulkanShader.h"
 #include "VulkanDevice.h"
 
+#include <stdexcept>
+
+
 namespace TE {
 
 VulkanShader::VulkanShader(TPtr<VulkanDevice> device, const std::vector<char>& byteCode)
