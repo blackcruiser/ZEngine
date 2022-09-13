@@ -1,12 +1,13 @@
 #pragma once
 
-#include "CoreDefine.h"
+#include "ZEDefine.h"
+#include "ZEType.h"
 #include "SceneComponent.h"
 
 #include <glm/glm.hpp>
 
 
-namespace TE {
+namespace ZE {
 
 class CameraComponent : public SceneComponent
 {

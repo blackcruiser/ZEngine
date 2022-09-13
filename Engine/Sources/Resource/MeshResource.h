@@ -1,13 +1,14 @@
 #pragma once
 
 #include "BaseResource.h"
-#include "CoreDefine.h"
+#include "ZEDefine.h"
+#include "ZEType.h"
 
 #include <glm/glm.hpp>
 
 #include <filesystem>
 
-namespace TE {
+namespace ZE {
 
 class Mesh;
 
@@ -44,4 +45,4 @@ private:
 };
 
 
-} // namespace TE
+} // namespace ZE

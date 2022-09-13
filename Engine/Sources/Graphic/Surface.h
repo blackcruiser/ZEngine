@@ -1,9 +1,10 @@
-#include "CoreDefine.h"
+#include "ZEDefine.h"
+#include "ZEType.h"
 
 #include <vulkan/vulkan.h>
 
 
-namespace TE {
+namespace ZE {
 
 class VulkanGPU;
 class Window;

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "CoreDefine.h"
+#include "ZEDefine.h"
+#include "ZEType.h"
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -8,7 +9,7 @@
 #include <string>
 
 
-namespace TE {
+namespace ZE {
 
 class InputSystem;
 

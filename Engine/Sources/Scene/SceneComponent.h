@@ -1,9 +1,10 @@
 #pragma once
 
-#include "CoreDefine.h"
+#include "ZEDefine.h"
+#include "ZEType.h"
 
 
-namespace TE {
+namespace ZE {
 
 enum class EComponentType : int
 {
@@ -40,4 +41,4 @@ private:
     TWeakPtr<SceneObject> _sceneObject;
 };
 
-} // namespace TE
+} // namespace ZE

@@ -8,7 +8,7 @@
 #include <iterator>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanFramebuffer::VulkanFramebuffer(TPtr<VulkanDevice> device, TPtr<VulkanRenderPass> renderPass, const TPtrArr<VulkanImageView>& imageViewArr, const VkExtent2D& extent)
     : _device(device), _vkFramebuffer(VK_NULL_HANDLE)
@@ -47,4 +47,4 @@ VkFramebuffer VulkanFramebuffer::GetRawFramebuffer()
 }
 
 
-} // namespace TE
+} // namespace ZE

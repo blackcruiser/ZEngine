@@ -1,7 +1,7 @@
 #include "ScriptComponent.h"
 
 
-namespace TE {
+namespace ZE {
 
 ScriptComponent::ScriptComponent() : SceneComponent(EComponentType::Script)
 {

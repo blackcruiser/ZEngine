@@ -24,7 +24,7 @@
 #include "Scene/MeshComponent.h"
 
 
-namespace TE {
+namespace ZE {
 
 
 ForwardRenderer::ForwardRenderer(TPtr<VulkanDevice> device, TPtr<Surface> surface)
@@ -211,4 +211,4 @@ void ForwardRenderer::RenderFrame(TPtr<Scene> scene)
 }
 
 
-} // namespace TE
+} // namespace ZE

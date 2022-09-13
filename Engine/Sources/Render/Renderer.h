@@ -1,6 +1,7 @@
 #pragma once
 
-#include "CoreDefine.h"
+#include "ZEDefine.h"
+#include "ZEType.h"
 #include "Graphic/VulkanDevice.h"
 #include "Graphic/Window.h"
 
@@ -8,7 +9,7 @@
 #include <vulkan/vulkan.h>
 
 
-namespace TE {
+namespace ZE {
 
 class Scene;
 class SceneObject;
@@ -51,4 +52,4 @@ private:
     VkFence _inFlightFence;
 };
 
-} // namespace TE
+} // namespace ZE

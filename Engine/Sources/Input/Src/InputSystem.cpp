@@ -4,7 +4,7 @@
 #include <format>
 
 
-namespace TE {
+namespace ZE {
 
 InputSystem& InputSystem::GetInstance()
 {

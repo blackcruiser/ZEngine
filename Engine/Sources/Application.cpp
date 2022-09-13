@@ -12,9 +12,9 @@
 #include <string>
 
 
-namespace TE {
+namespace ZE {
 
-const std::string AppName("ToyEngine");
+const std::string AppName("ZEngine");
 const int kWidth = 800;
 const int kHeight = 800;
 
@@ -66,13 +66,13 @@ void Application::_CreateVulkanInstance()
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
     std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-#ifdef TOYENGINE_MACOS
+#ifdef ZE_PLATFORM_MACOS
     extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
     extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 #endif
 
     const std::vector<const char*> validationLayers = {
-#ifdef TOYENGINE_DEBUG
+#ifdef ZE_DEBUG
         "VK_LAYER_KHRONOS_validation"
 #endif
     };
@@ -84,7 +84,7 @@ void Application::_CreateVulkanInstance()
     vkInstanceCreateInfo.ppEnabledExtensionNames = extensions.data();
     vkInstanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
     vkInstanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
-#ifdef TOYENGINE_MACOS
+#ifdef ZE_PLATFORM_MACOS
     vkInstanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
 
@@ -126,4 +126,4 @@ void Application::_CleanupGlfw()
     glfwTerminate();
 }
 
-} // namespace TE
+} // namespace ZE

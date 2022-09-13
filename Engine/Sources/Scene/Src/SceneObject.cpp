@@ -1,7 +1,7 @@
 #include "SceneObject.h"
 
 
-namespace TE {
+namespace ZE {
 
 SceneObject::SceneObject()
 {

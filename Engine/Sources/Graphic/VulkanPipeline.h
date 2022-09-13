@@ -1,11 +1,12 @@
 #pragma once
 
-#include "CoreDefine.h"
+#include "ZEDefine.h"
+#include "ZEType.h"
 
 #include <vulkan/vulkan.h>
 
 
-namespace TE {
+namespace ZE {
 
 class VulkanDevice;
 class VulkanShader;
@@ -28,4 +29,4 @@ private:
     TPtr<VulkanDevice> _device;
 };
 
-} // namespace TE
+} // namespace ZE

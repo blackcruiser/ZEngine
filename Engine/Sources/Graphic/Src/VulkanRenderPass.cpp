@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanRenderPass::VulkanRenderPass(TPtr<VulkanDevice> device, VkFormat format)
     : _device(device), _vkRenderPass(VK_NULL_HANDLE)
@@ -64,4 +64,4 @@ VkRenderPass VulkanRenderPass::GetRawRenderPass()
 }
 
 
-} // namespace TE
+} // namespace ZE

@@ -1,6 +1,6 @@
 #include "ShaderResource.h"
 
-#ifdef TOYENGINE_WINDOWS
+#ifdef ZE_PLATFORM_WINDOWS
     #define UNICODE
     #define NOMINMAX
     #include <Windows.h>
@@ -13,7 +13,7 @@
 #include <iostream>
 #include <array>
 
-namespace TE {
+namespace ZE {
 
 ShaderResource::ShaderResource(EShaderStage stage, const std::filesystem::path& path) : _stage(stage), _sourcePath(path)
 {
@@ -47,7 +47,7 @@ void ShaderResource::Load()
     std::filesystem::path absoluteShaderPath = std::filesystem::absolute(shaderPath);
     std::filesystem::path byteCodePath = std::filesystem::temp_directory_path() / (_sourcePath.stem() += ".spv");
 
-#ifdef TOYENGINE_WINDOWS
+#ifdef ZE_PLATFORM_WINDOWS
     std::wstring glslc = L"glslc";
     std::wstring shaderStageDesc = _stage == EShaderStage::Vertex ? L"vertex" : L"fragment";
     std::wstring arg = std::format(L" -fshader-stage={} -o {} {}", shaderStageDesc, byteCodePath.wstring(),
@@ -121,4 +121,4 @@ const std::vector<char>& ShaderResource::GetByteCode()
     return _byteCode;
 }
 
-} // namespace TE
+} // namespace ZE

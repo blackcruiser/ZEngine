@@ -1,13 +1,14 @@
 #pragma once
 
-#include "CoreDefine.h"
+#include "ZEDefine.h"
+#include "ZEType.h"
 
 #include <vulkan/vulkan.h>
 
 #include <memory>
 
 
-namespace TE {
+namespace ZE {
 
 class VulkanGPU;
 class VulkanDevice;
