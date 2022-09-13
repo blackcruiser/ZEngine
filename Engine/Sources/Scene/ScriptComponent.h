@@ -1,10 +1,11 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 #include "SceneComponent.h"
 
 
-namespace TE {
+namespace ZE {
 
 class ScriptComponent : public SceneComponent
 {

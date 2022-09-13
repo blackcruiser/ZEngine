@@ -7,7 +7,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanGraphicPipeline::VulkanGraphicPipeline(
     TPtr<VulkanDevice> device, TPtr<VulkanShader> vertexShader, TPtr<VulkanShader> fragmentShader,
@@ -148,4 +148,4 @@ VkPipeline VulkanGraphicPipeline::GetRawPipeline()
     return _vkPipeline;
 }
 
-} // namespace TE
+} // namespace ZE

@@ -3,7 +3,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-namespace TE {
+namespace ZE {
 
 MeshResource::MeshResource(const std::filesystem::path& path) : _path(path), _mesh(nullptr)
 {
@@ -11,8 +11,6 @@ MeshResource::MeshResource(const std::filesystem::path& path) : _path(path), _me
 
 void MeshResource::Load()
 {
-    std::string inputfile = "cornell_box.obj";
-
     tinyobj::ObjReaderConfig reader_config;
     tinyobj::ObjReader reader;
 
@@ -101,4 +99,4 @@ TPtr<Mesh> MeshResource::GetMesh()
     return _mesh;
 }
 
-} // namespace TE
+} // namespace ZE

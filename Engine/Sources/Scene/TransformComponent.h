@@ -1,12 +1,13 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 #include "SceneComponent.h"
 
 #include <glm/glm.hpp>
 
 
-namespace TE {
+namespace ZE {
 
 class TransformComponent : public SceneComponent
 {

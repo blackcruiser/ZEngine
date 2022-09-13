@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 Scene::Scene()
 {
@@ -77,4 +77,4 @@ void Scene::Unload()
     }
 }
 
-} // namespace TE
+} // namespace ZE

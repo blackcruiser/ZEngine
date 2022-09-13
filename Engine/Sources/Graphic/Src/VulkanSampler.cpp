@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanSampler::VulkanSampler(TPtr<VulkanDevice> device)
     : _device(device), _vkSampler(VK_NULL_HANDLE)
@@ -44,4 +44,4 @@ VkSampler VulkanSampler::GetRawSampler()
 {
     return _vkSampler;
 }
-} // namespace TE
+} // namespace ZE

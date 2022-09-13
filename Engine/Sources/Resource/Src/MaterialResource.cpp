@@ -1,7 +1,7 @@
 #include "MaterialResource.h"
 
 
-namespace TE {
+namespace ZE {
 
 MaterialResource::MaterialResource() : _material(nullptr)
 {
@@ -103,4 +103,4 @@ TPtr<Material> MaterialResource::GetMaterial()
     return _material;
 }
 
-} // namespace TE
+} // namespace ZE

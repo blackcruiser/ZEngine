@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <algorithm>
 
-namespace TE {
+namespace ZE {
 
 Surface::Surface(VkInstance vkInstance, TPtr<VulkanGPU> GPU, TPtr<Window> window) : _vkInstance(vkInstance), _GPU(GPU), _window(window)
 {

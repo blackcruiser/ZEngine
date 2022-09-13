@@ -3,7 +3,7 @@
 #include "Resource/MeshResource.h"
 
 
-namespace TE {
+namespace ZE {
 
 Mesh::Mesh(TPtr<VulkanDevice> device, TPtr<MeshResource> meshResource)
     : _device(device), _owner(meshResource), _vertexBuffer(nullptr), _indexBuffer(nullptr), _verticesCount(0)
@@ -92,4 +92,4 @@ std::vector<VkVertexInputAttributeDescription> Mesh::GetVertexInputAttributeDesc
     return attributeDescriptions;
 }
 
-} // namespace TE
+} // namespace ZE

@@ -1,7 +1,7 @@
 #include "TransformComponent.h"
 
 
-namespace TE {
+namespace ZE {
 
 TransformComponent::TransformComponent() : SceneComponent(EComponentType::Transform), _transform(1)
 {

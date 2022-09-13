@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanSwapchain::VulkanSwapchain(TPtr<VulkanDevice> device, TPtr<Surface> surface, uint32_t imageCount)
     : _device(device), _surface(surface)
@@ -93,4 +93,4 @@ VkSwapchainKHR VulkanSwapchain::GetRawSwapchain()
 }
 
 
-} // namespace TE
+} // namespace ZE

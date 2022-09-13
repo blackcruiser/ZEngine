@@ -3,7 +3,7 @@
 #include "CoreDefines.h"
 
 
-namespace TE {
+namespace ZE {
 
 class Scene;
 
@@ -15,4 +15,4 @@ public:
     virtual void RenderFrame(TPtr<Scene> scene) = 0;
 };
 
-} // namespace TE
+} // namespace ZE
