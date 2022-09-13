@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CoreDefines.h"
 #include "BaseResource.h"
 
 #include <filesystem>

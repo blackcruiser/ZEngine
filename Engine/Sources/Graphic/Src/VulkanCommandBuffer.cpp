@@ -2,6 +2,9 @@
 #include "VulkanDevice.h"
 #include "VulkanCommandPool.h"
 
+#include <stdexcept>
+
+
 namespace TE {
 
 VulkanCommandBuffer::VulkanCommandBuffer(TPtr<VulkanCommandPool> commandPool) : _commandPool(commandPool), _vkCommandBuffer(VK_NULL_HANDLE)
