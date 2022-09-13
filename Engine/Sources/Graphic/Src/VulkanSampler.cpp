@@ -2,6 +2,8 @@
 #include "VulkanGPU.h"
 #include "VulkanDevice.h"
 
+#include <stdexcept>
+
 
 namespace TE {
 

@@ -2,7 +2,7 @@
 
 #include "CoreDefines.h"
 
-#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan.h>
 
 #include <memory>
 

@@ -5,8 +5,9 @@
 #include "ShaderResource.h"
 #include "TextureResource.h"
 
-#include <filesystem>
 #include <string>
+#include <list>
+#include <filesystem>
 #include <unordered_map>
 
 namespace TE {

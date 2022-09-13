@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <string>
 
+
 namespace TE {
 
 VulkanDevice::VulkanDevice(TPtr<VulkanGPU> GPU, TPtr<Surface> surface)
@@ -46,7 +47,11 @@ VulkanDevice::VulkanDevice(TPtr<VulkanGPU> GPU, TPtr<Surface> surface)
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    const std::vector<const char*> deviceExtensions = _GPU->GetExtensions();
+    std::vector<const char*> deviceExtensions = _GPU->GetExtensions();
+#ifdef TOYENGINE_MACOS
+    deviceExtensions.push_back("VK_KHR_portability_subset");
+#endif
+
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
 
