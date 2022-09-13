@@ -1,6 +1,6 @@
 #pragma once
 
-namespace TE {
+namespace ZE {
 
 class BaseResource
 {
@@ -16,4 +16,4 @@ protected:
     bool _isLoaded;
 };
 
-} // namespace TE
+} // namespace ZE

@@ -3,7 +3,7 @@
 #include "Resource/MeshResource.h"
 
 
-namespace TE {
+namespace ZE {
 
 MeshComponent::MeshComponent() : SceneComponent(EComponentType::Mesh), _mesh(nullptr)
 {
@@ -64,4 +64,4 @@ TPtr<MaterialResource> MeshComponent::GetMaterial(uint32_t slot)
         return nullptr;
 }
 
-} // namespace TE
+} // namespace ZE

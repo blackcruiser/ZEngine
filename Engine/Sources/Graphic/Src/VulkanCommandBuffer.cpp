@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanCommandBuffer::VulkanCommandBuffer(TPtr<VulkanCommandPool> commandPool) : _commandPool(commandPool), _vkCommandBuffer(VK_NULL_HANDLE)
 {

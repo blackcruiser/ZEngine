@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanDescriptorPool::VulkanDescriptorPool(TPtr<VulkanDevice> device,
                                            const std::vector<VkDescriptorPoolSize>& descriptorPoolSizeArr)
@@ -38,4 +38,4 @@ VkDescriptorPool VulkanDescriptorPool::GetRawDescriptorPool()
     return _descriptorPool;
 }
 
-} // namespace TE
+} // namespace ZE

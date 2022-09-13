@@ -7,7 +7,7 @@
 #include <vulkan/vulkan.h>
 
 
-namespace TE {
+namespace ZE {
 
 class SceneObject;
 class Mesh;

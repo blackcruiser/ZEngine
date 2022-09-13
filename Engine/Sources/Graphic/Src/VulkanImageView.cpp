@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanImageView::VulkanImageView(TPtr<VulkanDevice> device, TPtr<VulkanImage> image, VkFormat format)
     : _device(device), _image(image), _vkImageView(VK_NULL_HANDLE)
@@ -42,4 +42,4 @@ VkImageView VulkanImageView::GetRawImageView()
     return _vkImageView;
 }
 
-} // namespace TE
+} // namespace ZE

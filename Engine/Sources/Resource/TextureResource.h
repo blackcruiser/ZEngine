@@ -8,7 +8,7 @@
 #include <string>
 
 
-namespace TE {
+namespace ZE {
 
 class TextureResource : public BaseResource
 {
@@ -33,4 +33,4 @@ private:
     void* _data;
 };
 
-} // namespace TE
+} // namespace ZE

@@ -1,13 +1,14 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 #include "BaseResource.h"
 
 #include <filesystem>
 #include <string>
 
 
-namespace TE {
+namespace ZE {
 
 enum class EShaderStage : int
 {
@@ -34,4 +35,4 @@ private:
     std::vector<char> _byteCode;
 };
 
-} // namespace TE
+} // namespace ZE

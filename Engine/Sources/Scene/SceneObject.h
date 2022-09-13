@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 #include "SceneComponent.h"
 
 #include <glm/glm.hpp>
@@ -8,7 +9,7 @@
 #include <memory>
 
 
-namespace TE {
+namespace ZE {
 
 class SceneObject : public std::enable_shared_from_this<SceneObject>
 {

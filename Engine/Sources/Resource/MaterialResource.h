@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 #include "BaseResource.h"
 #include "ShaderResource.h"
 #include "TextureResource.h"
@@ -10,7 +11,7 @@
 #include <filesystem>
 #include <unordered_map>
 
-namespace TE {
+namespace ZE {
 
 class Material;
 
@@ -48,4 +49,4 @@ private:
     TPtr<Material> _material;
 };
 
-} // namespace TE
+} // namespace ZE
