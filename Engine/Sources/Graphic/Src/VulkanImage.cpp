@@ -5,6 +5,9 @@
 #include "VulkanCommandBuffer.h"
 #include "VulkanCommandPool.h"
 
+#include <stdexcept>
+
+
 namespace TE {
 
 VulkanImage::VulkanImage(TPtr<VulkanDevice> device, const VkExtent3D& extent, VkFormat format)

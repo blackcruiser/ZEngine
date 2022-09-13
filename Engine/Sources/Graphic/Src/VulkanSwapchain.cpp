@@ -3,8 +3,10 @@
 #include "Surface.h"
 #include "VulkanImage.h"
 
-namespace TE {
+#include <stdexcept>
 
+
+namespace TE {
 
 VulkanSwapchain::VulkanSwapchain(TPtr<VulkanDevice> device, TPtr<Surface> surface, uint32_t imageCount)
     : _device(device), _surface(surface)
