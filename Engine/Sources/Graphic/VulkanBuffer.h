@@ -8,7 +8,7 @@
 namespace ZE {
 
 class VulkanDevice;
-class VulkanCommandPool;
+class VulkanCommandBuffer;
 
 class VulkanBuffer
 {
@@ -16,16 +16,19 @@ public:
     VulkanBuffer(TPtr<VulkanDevice> device, uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
     ~VulkanBuffer();
 
-    void CopyFromBuffer(TPtr<VulkanCommandPool> commandPool, TPtr<VulkanBuffer> otherBuffer, VkDeviceSize size);
-    void TransferData(TPtr<VulkanCommandPool> commandPool, const void* data, uint32_t size);
+
+    void CopyFromBuffer(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> otherBuffer, VkDeviceSize size);
+    void TransferData(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> stagingBuffer, const void* data, uint32_t size);
 
     void* MapMemory(VkDeviceSize offset, VkDeviceSize size);
     void UnmapMemory();
 
+    uint32_t GetSize();
+
     VkBuffer GetRawBuffer();
     VkDeviceMemory GetRawMemory();
 
-private:
+protected:
     uint32_t _size;
     VkBufferUsageFlags _usage;
     VkMemoryPropertyFlags _properties;

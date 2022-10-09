@@ -9,12 +9,12 @@
 namespace ZE {
 
 class VulkanDevice;
-class VulkanDescriptorSet;
+class VulkanDescriptorSetLayout;
 
 class VulkanPipelineLayout
 {
 public:
-    VulkanPipelineLayout(TPtr<VulkanDevice> device, TPtr<VulkanDescriptorSet> descriptorSe);
+    VulkanPipelineLayout(TPtr<VulkanDevice> device, TPtrArr<VulkanDescriptorSetLayout>& descriptorSetLayoutArr);
     ~VulkanPipelineLayout();
 
     VkPipelineLayout GetRawPipelineLayout();
@@ -22,6 +22,7 @@ public:
 private:
     VkPipelineLayout _vkPipelineLayout;
 
+    TPtrArr<VulkanDescriptorSetLayout> _descriptorSetLayoutArr;
     TPtr<VulkanDevice> _device;
 };
 

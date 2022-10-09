@@ -1,35 +1,28 @@
 #include "VulkanDescriptorSet.h"
+#include "VulkanDescriptorSetLayout.h"
 #include "VulkanDescriptorPool.h"
 #include "VulkanDevice.h"
 
 #include <stdexcept>
+#include <algorithm>
+#include <iterator>
 
 
 namespace ZE {
 
-VulkanDescriptorSet::VulkanDescriptorSet(TPtr<VulkanDescriptorPool> descriptorPool, const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings)
-    : _descriptorPool(descriptorPool), _vkDescriptorSetLayout(VK_NULL_HANDLE), _vkDescriptorSet(VK_NULL_HANDLE)
+VulkanDescriptorSet::VulkanDescriptorSet(TPtr<VulkanDescriptorPool> descriptorPool, TPtr<VulkanDescriptorSetLayout> descriptorSetLayout)
+    : _descriptorPool(descriptorPool), _descriptorSetLayout(descriptorSetLayout), _vkDescriptorSet(VK_NULL_HANDLE)
 {
     TPtr<VulkanDevice> vulkanDevice = _descriptorPool->GetDevice();
     VkDevice vkDevice = vulkanDevice->GetRawDevice();
+    VkDescriptorSetLayout vkDescriptorSetLayout = descriptorSetLayout->GetRawDescriptorSetLayout();
 
-    // Layout
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = layoutBindings.size();
-    layoutInfo.pBindings = layoutBindings.data();
 
-    if (vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &_vkDescriptorSetLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create descriptor set layout!");
-    }
-
-    // Allocate
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = _descriptorPool->GetRawDescriptorPool();
     allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &_vkDescriptorSetLayout;
+    allocInfo.pSetLayouts = &vkDescriptorSetLayout;
 
     if (vkAllocateDescriptorSets(vkDevice, &allocInfo, &_vkDescriptorSet) != VK_SUCCESS)
     {
@@ -43,42 +36,34 @@ VulkanDescriptorSet::~VulkanDescriptorSet()
     VkDevice vkDevice = vulkanDevice->GetRawDevice();
 
     vkFreeDescriptorSets(vkDevice, _descriptorPool->GetRawDescriptorPool(), 1, &_vkDescriptorSet);
-    vkDestroyDescriptorSetLayout(vkDevice, _vkDescriptorSetLayout, nullptr);
 }
 
-void VulkanDescriptorSet::Update(const std::vector<VkDescriptorBufferInfo>& bufferInfoArr, const std::vector<VkDescriptorImageInfo>& imageInfoArr)
+void VulkanDescriptorSet::Update(uint32_t binding, uint32_t arrayElement, const VkDescriptorBufferInfo& bufferInfo)
 {
-    std::vector<VkWriteDescriptorSet> descriptorWriteArr;
+    VkWriteDescriptorSet descriptorWrite{};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = _vkDescriptorSet;
+    descriptorWrite.dstBinding = binding;
+    descriptorWrite.dstArrayElement = arrayElement;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pBufferInfo = &bufferInfo;
 
-    if (bufferInfoArr.size() > 0)
-    {
-        VkWriteDescriptorSet uniformBufferDescriptorWrite{};
-        uniformBufferDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        uniformBufferDescriptorWrite.dstSet = _vkDescriptorSet;
-        uniformBufferDescriptorWrite.dstBinding = 0;
-        uniformBufferDescriptorWrite.dstArrayElement = 0;
-        uniformBufferDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uniformBufferDescriptorWrite.descriptorCount = bufferInfoArr.size();;
-        uniformBufferDescriptorWrite.pBufferInfo = bufferInfoArr.data();
+    vkUpdateDescriptorSets(_descriptorPool->GetDevice()->GetRawDevice(), 1, &descriptorWrite, 0, nullptr);
+}
 
-        descriptorWriteArr.push_back(uniformBufferDescriptorWrite);
-    }
+void VulkanDescriptorSet::Update(uint32_t binding, uint32_t arrayElement, const VkDescriptorImageInfo& imageInfo)
+{
+    VkWriteDescriptorSet descriptorWrite{};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = _vkDescriptorSet;
+    descriptorWrite.dstBinding = binding;
+    descriptorWrite.dstArrayElement = arrayElement;
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pImageInfo = &imageInfo;
 
-    if (imageInfoArr.size() > 0)
-    {
-        VkWriteDescriptorSet samplerBufferDescriptorWrite{};
-        samplerBufferDescriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        samplerBufferDescriptorWrite.dstSet = _vkDescriptorSet;
-        samplerBufferDescriptorWrite.dstBinding = 1;
-        samplerBufferDescriptorWrite.dstArrayElement = 0;
-        samplerBufferDescriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerBufferDescriptorWrite.descriptorCount = imageInfoArr.size();
-        samplerBufferDescriptorWrite.pImageInfo = imageInfoArr.data();
-
-        descriptorWriteArr.push_back(samplerBufferDescriptorWrite);
-    }
-
-    vkUpdateDescriptorSets(_descriptorPool->GetDevice()->GetRawDevice(), static_cast<uint32_t>(descriptorWriteArr.size()), descriptorWriteArr.data(), 0, nullptr);
+    vkUpdateDescriptorSets(_descriptorPool->GetDevice()->GetRawDevice(), 1, &descriptorWrite, 0, nullptr);
 }
 
 const VkDescriptorSet& VulkanDescriptorSet::GetRawDescriptorSet()
@@ -86,8 +71,4 @@ const VkDescriptorSet& VulkanDescriptorSet::GetRawDescriptorSet()
     return _vkDescriptorSet;
 }
 
-const VkDescriptorSetLayout& VulkanDescriptorSet::GetRawDescriptorSetLayout()
-{
-    return _vkDescriptorSetLayout;
-}
 } // namespace ZE

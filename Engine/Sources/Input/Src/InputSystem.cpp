@@ -1,4 +1,5 @@
 #include "InputSystem.h"
+#include "Graphic/Window.h"
 
 #include <iostream>
 #include <format>
@@ -6,12 +7,36 @@
 
 namespace ZE {
 
-InputSystem& InputSystem::GetInstance()
+InputSystem* InputSystem::_instance = nullptr;
+
+void InputSystem::Initialize()
+{
+    assert(_instance == nullptr);
+
+    if (_instance != nullptr)
+        return;
+
+    _instance = new InputSystem();
+}
+
+void InputSystem::Cleanup()
+{
+    assert(_instance);
+
+    if (_instance == nullptr)
+        return;
+
+    delete _instance;
+    _instance = nullptr;
+}
+
+InputSystem& InputSystem::Get()
 {
     static InputSystem instance;
 
     return instance;
 }
+
 
 InputSystem::InputSystem()
 {
@@ -19,6 +44,18 @@ InputSystem::InputSystem()
 
 InputSystem::~InputSystem()
 {
+}
+
+void InputSystem::AttachTo(TPtr<Window> window)
+{
+    _window = window;
+    _window->RegisterInput(InputSystem::Get());
+}
+
+void InputSystem::DetachFrom(TPtr<Window> window)
+{
+    _window->UnregisterInput(InputSystem::Get());
+    _window = nullptr;
 }
 
 size_t InputSystem::RegisterMouseAction(MouseAction action)
@@ -45,15 +82,15 @@ void InputSystem::UnregisterKeyboardAction(size_t key)
 
 void InputSystem::cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    glm::vec2 position{ xpos, ypos };
-    for (const MouseAction& mouseAction : GetInstance()._mouseActions)
+    glm::vec2 position{xpos, ypos};
+    for (const MouseAction& mouseAction : Get()._mouseActions)
         mouseAction(position);
 }
 
 void InputSystem::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    for (const KeyboardAction& keyboardAction : GetInstance()._keyboardActions)
+    for (const KeyboardAction& keyboardAction : Get()._keyboardActions)
         keyboardAction(key, action);
 }
 
-}
+} // namespace ZE

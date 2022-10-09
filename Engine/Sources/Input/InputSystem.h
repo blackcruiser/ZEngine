@@ -11,19 +11,26 @@
 
 namespace ZE {
 
+class Window;
+
 typedef std::function<void(const glm::vec2&)> MouseAction;
 typedef std::function<void(int key, int action)> KeyboardAction;
 
 class InputSystem
 {
 public:
-    static InputSystem& GetInstance();
+    static void Initialize();
+    static void Cleanup();
+    static InputSystem& Get();
 
 private:
     InputSystem();
     ~InputSystem();
 
 public:
+    void AttachTo(TPtr<Window> window);
+    void DetachFrom(TPtr<Window> window);
+
     size_t RegisterMouseAction(MouseAction action);
     void UnregisterMouseAction(size_t key);
 
@@ -36,6 +43,10 @@ public:
 private:
     std::vector<MouseAction> _mouseActions;
     std::vector<KeyboardAction> _keyboardActions;
+
+    TPtr<Window> _window;
+
+    static InputSystem* _instance;
 };
 
 }

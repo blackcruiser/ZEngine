@@ -8,7 +8,7 @@
 
 namespace ZE {
 
-class Surface;
+class VulkanSurface;
 class VulkanDevice;
 
 class VulkanGPU
@@ -17,12 +17,13 @@ public:
     VulkanGPU(const VkInstance& vkInstance);
     ~VulkanGPU();
 
-    VkPhysicalDevice GetRawGPU();
     const std::vector<const char*>& GetExtensions();
+    VkPhysicalDevice GetRawGPU();
+    VkInstance GetVkInstance();
 
     std::vector<VkExtensionProperties> GetExtensionProperties(VkPhysicalDevice GPU);
     std::vector<VkQueueFamilyProperties> GetQueueFamilyProperties();
-    bool isSurfaceSupported(uint32_t queueFamilyIndex, TPtr<Surface> surface);
+    bool isSurfaceSupported(uint32_t queueFamilyIndex, TPtr<VulkanSurface> surface);
 
     uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 

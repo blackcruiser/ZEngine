@@ -14,7 +14,7 @@ class VulkanCommandBuffer;
 class VulkanCommandPool
 {
 public:
-    VulkanCommandPool(TPtr<VulkanDevice> device);
+    VulkanCommandPool(TPtr<VulkanDevice> device, uint32_t queueFamilyIndex);
     ~VulkanCommandPool();
 
     VkCommandPool GetRawCommandPool();
@@ -23,6 +23,7 @@ public:
 private:
     TPtr<VulkanDevice> _device;
 
+    uint32_t _queueFamilyIndex;
     VkCommandPool _vkCommandPool;
 };
 
