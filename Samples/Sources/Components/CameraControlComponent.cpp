@@ -7,8 +7,6 @@
 #include <glm/ext/matrix_transform.hpp>
 
 #include <functional>
-#include <format>
-#include <iostream>
 
 
 CameraControlComponent::CameraControlComponent() : cachedMousePosition(glm::zero<glm::vec2>())
@@ -23,16 +21,16 @@ CameraControlComponent::~CameraControlComponent()
 void CameraControlComponent::OnAttached()
 {
     ZE::MouseAction mouseAction = std::bind(&CameraControlComponent::OnMouseInput, this, std::placeholders::_1);
-    _mouseActionKey = ZE::InputSystem::GetInstance().RegisterMouseAction(mouseAction);
+    _mouseActionKey = ZE::InputSystem::Get().RegisterMouseAction(mouseAction);
 
     ZE::KeyboardAction keyboardAction = std::bind(&CameraControlComponent::OnKeyboardInput, this, std::placeholders::_1, std::placeholders::_2);
-    _keyboardActionKey = ZE::InputSystem::GetInstance().RegisterKeyboardAction(keyboardAction);
+    _keyboardActionKey = ZE::InputSystem::Get().RegisterKeyboardAction(keyboardAction);
 }
 
 void CameraControlComponent::OnDetached()
 {
-    ZE::InputSystem::GetInstance().UnregisterMouseAction(_mouseActionKey);
-    ZE::InputSystem::GetInstance().UnregisterKeyboardAction(_keyboardActionKey);
+    ZE::InputSystem::Get().UnregisterMouseAction(_mouseActionKey);
+    ZE::InputSystem::Get().UnregisterKeyboardAction(_keyboardActionKey);
 }
 
 void CameraControlComponent::OnMouseInput(const glm::vec2& position)

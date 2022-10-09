@@ -1,11 +1,11 @@
 #include "ForwardRenderer.h"
-#include "Graphic/Surface.h"
+#include "Graphic/VulkanSurface.h"
 #include "Graphic/VulkanBuffer.h"
 #include "Graphic/VulkanImage.h"
 #include "Graphic/VulkanImageView.h"
 #include "Graphic/VulkanShader.h"
 #include "Graphic/VulkanCommandBuffer.h"
-#include "Graphic/VulkanCommandPool.h"
+#include "Graphic/VulkanCommandBufferManager.h"
 #include "Graphic/VulkanDescriptorPool.h"
 #include "Graphic/VulkanDescriptorSet.h"
 #include "Graphic/VulkanPipelineLayout.h"
@@ -13,6 +13,8 @@
 #include "Graphic/VulkanSwapchain.h"
 #include "Graphic/VulkanRenderPass.h"
 #include "Graphic/VulkanFramebuffer.h"
+#include "Graphic/VulkanQueue.h"
+#include "RenderSystem.h"
 #include "Material.h"
 #include "Mesh.h"
 #include "Resource/MaterialResource.h"
@@ -23,61 +25,32 @@
 #include "Scene/CameraComponent.h"
 #include "Scene/MeshComponent.h"
 
+#include <algorithm>
+
 
 namespace ZE {
 
-ForwardRenderer::ForwardRenderer(TPtr<VulkanDevice> device, TPtr<Surface> surface)
-    : _device(device), _surface(surface)
+ForwardRenderer::ForwardRenderer()
 {
-    VkSurfaceFormatKHR surfaceFormat = _surface->GetSurfaceFormat();
-    VkSurfaceCapabilitiesKHR vkCapabilities = _surface->GetCpabilities();
-    _renderPass = std::make_shared<VulkanRenderPass>(_device, surfaceFormat.format);
-    _swapchain = std::make_shared<VulkanSwapchain>(_device, _surface, 2);
+    _imageAvailableSemaphore = RenderSystem::Get().GetDevice()->CreateGraphicSemaphore();
+    _renderFinishedSemaphore = RenderSystem::Get().GetDevice()->CreateGraphicSemaphore();
 
-    TPtrArr<VulkanImage> images = _swapchain->GetImages();
-    TPtrArr<VulkanImageView> imageViews;
-    std::transform(images.begin(), images.end(), std::back_inserter(imageViews), [&](TPtr<VulkanImage> image) {
-        return std::make_shared<VulkanImageView>(_device, image);
-    });
-
-    for (int i = 0; i < 2; i++)
-    {
-        TPtrArr<VulkanImageView> framebufferImageViews{imageViews[i]};
-        _framebuffers.push_back(std::make_shared<VulkanFramebuffer>(_device, _renderPass, framebufferImageViews, _surface->GetExtent()));
-    }
-
-
-    _commandPool = std::make_shared<VulkanCommandPool>(_device);
-    _commandBuffer = std::make_shared<VulkanCommandBuffer>(_commandPool);
-
-    _imageAvailableSemaphore = _device->CreateGraphicSemaphore();
-    _renderFinishedSemaphore = _device->CreateGraphicSemaphore();
-
-    _inFlightFence = _device->CreateFence(true);
-
-
-    VkDescriptorPoolSize uniformPoolSize{};
-    uniformPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uniformPoolSize.descriptorCount = 1;
-
-    VkDescriptorPoolSize samplerPoolSize{};
-    samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerPoolSize.descriptorCount = 1;
-
-    std::vector<VkDescriptorPoolSize> descriptorPoolSizeArr = {uniformPoolSize, samplerPoolSize};
-
-    _descriptorPool = std::make_shared<VulkanDescriptorPool>(_device, descriptorPoolSizeArr);
+    _inFlightFence = RenderSystem::Get().GetDevice()->CreateFence(true);
 }
 
 ForwardRenderer::~ForwardRenderer()
 {
-    _device->DestroyGraphicSemaphore(_imageAvailableSemaphore);
-    _device->DestroyGraphicSemaphore(_renderFinishedSemaphore);
-    _device->DestroyFence(_inFlightFence);
+    RenderSystem::Get().GetDevice()->DestroyGraphicSemaphore(_imageAvailableSemaphore);
+    RenderSystem::Get().GetDevice()->DestroyGraphicSemaphore(_renderFinishedSemaphore);
+    RenderSystem::Get().GetDevice()->DestroyFence(_inFlightFence);
 }
 
 void ForwardRenderer::Init(TPtr<Scene> scene)
 {
+    TPtr<VulkanCommandBuffer> commandBuffer = RenderSystem::Get().GetCommandBufferManager()->GetCommandBuffer(VulkanQueue::EType::Graphic);
+
+    commandBuffer->Begin();
+
     const TPtrArr<SceneObject>& objects = scene->GetObjects();
     for (TPtr<SceneObject> object : objects)
     {
@@ -90,123 +63,170 @@ void ForwardRenderer::Init(TPtr<Scene> scene)
 
         if (meshResource != nullptr)
         {
-            TPtr<Mesh> mesh = std::make_shared<Mesh>(_device, meshResource);
-            mesh->CreateVertexBuffer(_commandPool);
-            mesh->CreateIndexBuffer(_commandPool);
+            TPtr<Mesh> mesh = std::make_shared<Mesh>(meshResource);
+            mesh->CreateVertexBuffer(commandBuffer);
+            mesh->CreateIndexBuffer(commandBuffer);
             meshResource->SetMesh(mesh);
         }
 
         if (materialResource != nullptr)
         {
-            TPtr<Material> material = std::make_shared<Material>(_device, materialResource);
-            material->CreateGraphicShaders();
-            material->CreateGraphicTextures(_commandPool);
-            material->CreateDescriptorSet(_descriptorPool);
-            material->UpdateDescriptorSet();
-            material->CreatePipeline(meshResource->GetMesh(), _renderPass, _surface->GetExtent());
+            TPtr<Material> material = std::make_shared<Material>(materialResource);
+            material->BuildRenderResource(commandBuffer);
             materialResource->SetMaterial(material);
         }
     }
+
+    commandBuffer->End();
+
+    TPtr<VulkanQueue> transferQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
+    transferQueue->Submit(commandBuffer, {}, {}, {}, VK_NULL_HANDLE);
+    transferQueue->WaitIdle();
 }
 
-void ForwardRenderer::RenderFrame(TPtr<Scene> scene)
+void ForwardRenderer::RenderFrame(TPtr<Scene> scene, TPtr<Window> window)
 {
-    VkDevice vkDevice = _device->GetRawDevice();
-    vkWaitForFences(vkDevice, 1, &_inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(vkDevice, 1, &_inFlightFence);
+    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+    VkDevice vkDevice = device->GetRawDevice();
 
-    uint32_t imageIndex = _swapchain->AcquireNextImage(_imageAvailableSemaphore);
 
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
+    TPtr<VulkanCommandBuffer> commandBuffer = RenderSystem::Get().GetCommandBufferManager()->GetCommandBuffer(VulkanQueue::EType::Graphic);
 
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = _renderPass->GetRawRenderPass();
-    renderPassInfo.framebuffer = _framebuffers[imageIndex]->GetRawFramebuffer();
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = _surface->GetExtent();
+    commandBuffer->Begin();
 
-    VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
-
-    VkCommandBuffer vkCommandBuffer = _commandBuffer->GetRawCommandBuffer();
-    _commandBuffer->Begin();
-
-    vkCmdBeginRenderPass(vkCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    TPtr<CameraComponent> cameraComponent = scene->GetCamera();
-    glm::mat4x4 VP = cameraComponent->GetProjectMatrix() * cameraComponent->GetViewMatrix();
-
-    const TPtrArr<SceneObject>& objects = scene->GetObjects();
-    for (TPtr<SceneObject> object : objects)
-    {
+    const TPtrArr<SceneObject>& allObjects = scene->GetObjects();
+    TPtrArr<SceneObject> objectsToRender;
+    std::copy_if(allObjects.begin(), allObjects.end(), std::back_inserter(objectsToRender), [](TPtr<SceneObject> object) {
         TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
         if (meshComponent == nullptr)
-            continue;
+            return false;
 
         TPtr<MeshResource> meshResource = meshComponent->GetMesh();
         TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
         if (meshResource == nullptr || materialResource == nullptr)
-            continue;
+            return false;
 
         TPtr<Mesh> mesh = meshResource->GetMesh();
         TPtr<Material> material = materialResource->GetMaterial();
+        if (mesh == nullptr || material == nullptr)
+            return false;
+
+        return true;
+    });
 
 
-        vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->GetPipeline()->GetRawPipeline());
-
-        TPtr<TransformComponent> transformComponent = object->GetComponent<TransformComponent>();
-        glm::mat4x4 MVP = VP * transformComponent->GetTransform();
-
-        VkBuffer vertexBuffers[] = {mesh->GetVertexBuffer()->GetRawBuffer()};
-        VkDeviceSize offsets[] = {0};
-        // Vertex
-        vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(vkCommandBuffer, mesh->GetIndexBuffer()->GetRawBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-        // Fragment
-        material->UpdateUniformBuffer(_commandPool, MVP);
-
-        vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->GetPipelineLayout()->GetRawPipelineLayout(), 0, 1,
-                                &material->GetDescriptorSet()->GetRawDescriptorSet(), 0, nullptr);
-        vkCmdDrawIndexed(vkCommandBuffer, mesh->GetVerticesCount(), 1, 0, 0, 0);
-    }
-
-    vkCmdEndRenderPass(vkCommandBuffer);
-
-    _commandBuffer->End();
-
-    VkSemaphore waitSemaphores[] = {_imageAvailableSemaphore};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore signalSemaphores[] = {_renderFinishedSemaphore};
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &vkCommandBuffer;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
-
-    if (vkQueueSubmit(_device->GetGraphicQueue(), 1, &submitInfo, _inFlightFence) != VK_SUCCESS)
+    // Update Uniform Buffer
     {
-        throw std::runtime_error("failed to submit draw command buffer!");
+        TPtr<CameraComponent> cameraComponent = scene->GetCamera();
+        glm::mat4x4 VP = cameraComponent->GetProjectMatrix() * cameraComponent->GetViewMatrix();
+
+        for (TPtr<SceneObject>& object : objectsToRender)
+        {
+            TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
+            if (meshComponent == nullptr)
+                continue;
+
+            TPtr<MeshResource> meshResource = meshComponent->GetMesh();
+            TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
+            if (meshResource == nullptr || materialResource == nullptr)
+                continue;
+
+            TPtr<Mesh> mesh = meshResource->GetMesh();
+            TPtr<Material> material = materialResource->GetMaterial();
+            if (mesh == nullptr || material == nullptr)
+                continue;
+
+            TPtr<TransformComponent> transformComponent = object->GetComponent<TransformComponent>();
+            glm::mat4x4 MVP = VP * transformComponent->GetTransform();
+
+            // Update Global DescriptorSet
+            material->UpdateUniformBuffer(commandBuffer, MVP);
+        }
     }
 
-    VkSwapchainKHR swapchains[] = {_swapchain->GetRawSwapchain()};
-    VkPresentInfoKHR presentInfo{};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapchains;
-    presentInfo.pImageIndices = &imageIndex;
-    presentInfo.pResults = nullptr; // Optional
 
-    vkQueuePresentKHR(_device->GetPresentQueue(), &presentInfo);
+    // Begin render
+    vkWaitForFences(vkDevice, 1, &_inFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(vkDevice, 1, &_inFlightFence);
+
+    TPtr<VulkanSurface> surface = window->GetSurface();
+    VkSurfaceFormatKHR surfaceFormat = surface->GetSurfaceFormat();
+    VkExtent2D extent = surface->GetExtent();
+
+    TPtr<VulkanSwapchain> swapchain = window->GetSwapchain();
+
+
+    TPtrUnorderedSet<VulkanGraphicPipeline> usedPipelineSet;
+    TPtr<VulkanRenderPass> renderPass = std::make_shared<VulkanRenderPass>(device, surfaceFormat.format);
+
+    TPtr<VulkanImage> sceneImage = swapchain->AcquireNextImage(UINT64_MAX, _imageAvailableSemaphore, VK_NULL_HANDLE);
+    TPtrArr<VulkanImage> framebufferImageAttachments{sceneImage};
+    TPtrArr<VulkanImageView> framebufferImageViewAttachments;
+    std::transform(framebufferImageAttachments.begin(), framebufferImageAttachments.end(), std::back_inserter(framebufferImageViewAttachments), [](TPtr<VulkanImage> image) {
+        return std::make_shared<VulkanImageView>(image);
+    });
+
+    TPtr<VulkanFramebuffer> framebuffer = std::make_shared<VulkanFramebuffer>(device, renderPass, framebufferImageViewAttachments, extent);
+    VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
+
+
+    commandBuffer->BeginRenderPass(renderPass, framebuffer, {{0, 0}, extent}, {0, 0, 0, 1});
+
+
+    // Opaque Pass
+    {
+        for (TPtr<SceneObject>& object : objectsToRender)
+        {
+            TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
+            if (meshComponent == nullptr)
+                continue;
+
+            TPtr<MeshResource> meshResource = meshComponent->GetMesh();
+            TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
+            if (meshResource == nullptr || materialResource == nullptr)
+                continue;
+
+            TPtr<Mesh> mesh = meshResource->GetMesh();
+            TPtr<Material> material = materialResource->GetMaterial();
+            if (mesh == nullptr || material == nullptr)
+                continue;
+
+            VulkanGraphicPipelineDesc pipelineDesc{};
+            pipelineDesc.extent = extent;
+            mesh->BuildPipelineDesc(pipelineDesc);
+            material->BuildPipelineDesc(pipelineDesc);
+            TPtr<VulkanGraphicPipeline> pipeline = std::make_shared<VulkanGraphicPipeline>(device, pipelineDesc, renderPass);
+            usedPipelineSet.insert(pipeline);
+
+            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetRawPipeline());
+
+
+            // Vertex
+            VkBuffer vertexBuffers[] = {mesh->GetVertexBuffer()->GetRawBuffer()};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, vertexBuffers, offsets);
+            vkCmdBindIndexBuffer(vkCommandBuffer, mesh->GetIndexBuffer()->GetRawBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+            // Fragment
+            vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->GetPipelineLayout()->GetRawPipelineLayout(), 0, 1, &material->GetDescriptorSet()->GetRawDescriptorSet(), 0, nullptr);
+            vkCmdDrawIndexed(vkCommandBuffer, mesh->GetVerticesCount(), 1, 0, 0, 0);
+        }
+    }
+
+    commandBuffer->EndRenderPass();
+
+    commandBuffer->End();
+
+    std::vector<VkSemaphore> waitSemaphores{_imageAvailableSemaphore};
+    std::vector<VkPipelineStageFlags> waitStages{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    //std::vector<VkSemaphore> signalSemaphores{_renderFinishedSemaphore};
+    std::vector<VkSemaphore> signalSemaphores{};
+
+    graphicQueue->Submit(commandBuffer, waitSemaphores, waitStages, signalSemaphores, _inFlightFence);
+
+    graphicQueue->Present(swapchain, {});
+    graphicQueue->WaitIdle();
 }
 
 } // namespace ZE

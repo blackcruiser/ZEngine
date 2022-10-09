@@ -1,13 +1,11 @@
 #include "Application.h"
-#include "Graphic/VulkanDevice.h"
-#include "Graphic/VulkanGPU.h"
-#include "Graphic/Surface.h"
 #include "Graphic/Window.h"
+#include "Graphic/VulkanBufferManager.h"
 #include "Input/InputSystem.h"
+#include "Render/RenderSystem.h"
 #include "Render/ForwardRenderer.h"
 #include "Scene/Scene.h"
 
-#include <set>
 #include <stdexcept>
 #include <string>
 
@@ -15,85 +13,33 @@
 namespace ZE {
 
 const std::string AppName("ZEngine");
-const int kWidth = 800;
-const int kHeight = 800;
+const glm::ivec2 size{800, 800};
 
-Application::Application() : _device(nullptr), _window(nullptr), _renderer(nullptr)
+Application::Application()
+    : _renderer(nullptr)
 {
+    RenderSystem::Initialize();
+    InputSystem::Initialize();
 
-    _InitGlfw();
-    _CreateVulkanInstance();
+    _window = std::make_shared<Window>(AppName, size);
+    _window->CreateSurfaceAndSwapchain(RenderSystem::Get().GetDevice());
 
-    _window = std::make_shared<Window>(AppName, kWidth, kHeight);
-    _window->RegisterInput(InputSystem::GetInstance());
+    InputSystem::Get().AttachTo(_window);
 
-    _GPU = std::make_shared<VulkanGPU>(_vkInstance);
-    _surface = std::make_shared<Surface>(_vkInstance, _GPU, _window);
-    _device = std::make_shared<VulkanDevice>(_GPU, _surface);
-    _renderer = std::make_shared<ForwardRenderer>(_device, _surface);
+    _renderer = std::make_shared<ForwardRenderer>();
 }
 
 Application::~Application()
 {
     _renderer.reset();
-    _device.reset();
-    _surface.reset();
-    _GPU.reset();
 
-    _window->UnregisterInput(InputSystem::GetInstance());
+    InputSystem::Get().DetachFrom(_window);
+
+    _window->UnregisterInput(InputSystem::Get());
     _window.reset();
 
-    _CleanupVulkan();
-    _CleanupGlfw();
-}
-
-void Application::_InitGlfw()
-{
-    glfwInit();
-}
-
-void Application::_CreateVulkanInstance()
-{
-    // Instance
-    VkApplicationInfo vkAppInfo{};
-    vkAppInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    vkAppInfo.pApplicationName = AppName.c_str();
-    vkAppInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    vkAppInfo.pEngineName = "No Engine";
-    vkAppInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    vkAppInfo.apiVersion = VK_API_VERSION_1_0;
-
-    uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-#ifdef ZE_PLATFORM_MACOS
-    extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-    extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-#endif
-
-    const std::vector<const char*> validationLayers = {
-#ifdef ZE_DEBUG
-        "VK_LAYER_KHRONOS_validation"
-#endif
-    };
-
-    VkInstanceCreateInfo vkInstanceCreateInfo{};
-    vkInstanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    vkInstanceCreateInfo.pApplicationInfo = &vkAppInfo;
-    vkInstanceCreateInfo.enabledExtensionCount = extensions.size();
-    vkInstanceCreateInfo.ppEnabledExtensionNames = extensions.data();
-    vkInstanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-    vkInstanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
-#ifdef ZE_PLATFORM_MACOS
-    vkInstanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-#endif
-
-    VkResult result = vkCreateInstance(&vkInstanceCreateInfo, nullptr, &_vkInstance);
-    if (result != VkResult::VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create vulkan instance!");
-        return;
-    }
+    InputSystem::Cleanup();
+    RenderSystem::Cleanup();
 }
 
 void Application::Run(TPtr<Scene> scene)
@@ -106,24 +52,14 @@ void Application::Run(TPtr<Scene> scene)
     {
         glfwPollEvents();
 
-        _renderer->RenderFrame(scene);
+        _renderer->RenderFrame(scene, _window);
+
+        RenderSystem::Get().GetBufferManager()->Tick();
     }
 
-    _device->WaitIdle();
+    RenderSystem::Get().GetDevice()->WaitIdle();
 
     scene->Unload();
-}
-
-void Application::_CleanupVulkan()
-{
-
-    if (_vkInstance != VK_NULL_HANDLE)
-        vkDestroyInstance(_vkInstance, nullptr);
-}
-
-void Application::_CleanupGlfw()
-{
-    glfwTerminate();
 }
 
 } // namespace ZE
