@@ -59,30 +59,16 @@ VulkanBuffer::~VulkanBuffer()
         vkFreeMemory(vkDevice, _vkMemory, nullptr);
 }
 
-void VulkanBuffer::CopyFromBuffer(TPtr<VulkanCommandPool> commandPool, TPtr<VulkanBuffer> otherBuffer,
-                VkDeviceSize size)
+void VulkanBuffer::CopyFromBuffer(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> otherBuffer, VkDeviceSize size)
 {
-    TPtr<VulkanCommandBuffer> commandBuffer = std::make_shared<VulkanCommandBuffer>(commandPool);
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
-
-    commandBuffer->Begin();
 
     VkBufferCopy copyRegion{};
     copyRegion.size = size;
     vkCmdCopyBuffer(vkCommandBuffer, otherBuffer->GetRawBuffer(), _vkBuffer, 1, &copyRegion);
-
-    commandBuffer->End();
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &vkCommandBuffer;
-
-    vkQueueSubmit(_device->GetGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(_device->GetGraphicQueue());
 }
 
-void VulkanBuffer::TransferData(TPtr<VulkanCommandPool> commandPool, const void* data, uint32_t size)
+void VulkanBuffer::TransferData(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> stagingBuffer, const void* data, uint32_t size)
 {
     if (_properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
     {
@@ -93,13 +79,11 @@ void VulkanBuffer::TransferData(TPtr<VulkanCommandPool> commandPool, const void*
     }
     else if (_properties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
     {
-        TPtr<VulkanBuffer> stagingBuffer = std::make_shared<VulkanBuffer>(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
         void* mappedAddress = stagingBuffer->MapMemory(0, size);
         memcpy(mappedAddress, data, size);
         stagingBuffer->UnmapMemory();
 
-        CopyFromBuffer(commandPool, stagingBuffer, size);
+        CopyFromBuffer(commandBuffer, stagingBuffer, size);
     }
 }
 
@@ -116,9 +100,19 @@ void VulkanBuffer::UnmapMemory()
     vkUnmapMemory(_device->GetRawDevice(), _vkMemory);
 }
 
+uint32_t VulkanBuffer::GetSize()
+{
+    return _size;
+}
+
 VkBuffer VulkanBuffer::GetRawBuffer()
 {
     return _vkBuffer;
+}
+
+VkDeviceMemory VulkanBuffer::GetRawMemory()
+{
+    return _vkMemory;
 }
 
 } // namespace ZE

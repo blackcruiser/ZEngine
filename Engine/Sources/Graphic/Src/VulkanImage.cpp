@@ -76,7 +76,7 @@ VulkanImage::~VulkanImage()
     }
 }
 
-void VulkanImage::TransitionLayout(TPtr<VulkanCommandPool> commandPool, VkImageLayout oldLayout, VkImageLayout newLayout)
+void VulkanImage::TransitionLayout(TPtr<VulkanCommandBuffer> commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -115,32 +115,12 @@ void VulkanImage::TransitionLayout(TPtr<VulkanCommandPool> commandPool, VkImageL
         throw std::invalid_argument("unsupported layout transition!");
     }
 
-
-    TPtr<VulkanCommandBuffer> commandBuffer = std::make_shared<VulkanCommandBuffer>(commandPool);
-    VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
-
-    commandBuffer->Begin();
-    vkCmdPipelineBarrier(vkCommandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
-
-    commandBuffer->End();
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &vkCommandBuffer;
-
-    vkQueueSubmit(_device->GetGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(_device->GetGraphicQueue());
+    vkCmdPipelineBarrier(commandBuffer->GetRawCommandBuffer(), sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
 
-void VulkanImage::CopyFromBuffer(TPtr<VulkanCommandPool> commandPool, TPtr<VulkanBuffer> buffer, VkOffset3D offset, VkExtent3D extent)
+void VulkanImage::CopyFromBuffer(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> buffer, VkOffset3D offset, VkExtent3D extent)
 {
-    TPtr<VulkanCommandBuffer> commandBuffer = std::make_shared<VulkanCommandBuffer>(commandPool);
-    VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
-
-    commandBuffer->Begin();
-
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
     region.bufferRowLength = 0;
@@ -152,37 +132,30 @@ void VulkanImage::CopyFromBuffer(TPtr<VulkanCommandPool> commandPool, TPtr<Vulka
     region.imageOffset = offset;
     region.imageExtent = extent;
 
-    vkCmdCopyBufferToImage(vkCommandBuffer, buffer->GetRawBuffer(), _vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-    commandBuffer->End();
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &vkCommandBuffer;
-
-    vkQueueSubmit(_device->GetGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(_device->GetGraphicQueue());
+    vkCmdCopyBufferToImage(commandBuffer->GetRawCommandBuffer(), buffer->GetRawBuffer(), _vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 }
 
-void VulkanImage::TransferData(TPtr<VulkanCommandPool> commandPool, const void* data, uint32_t size)
+void VulkanImage::TransferData(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> stagingBuffer, const void* data, uint32_t size)
 {
     VkDeviceSize imageSize = size;
-
-    TPtr<VulkanBuffer> stagingBuffer = std::make_shared<VulkanBuffer>(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     void* mappedAddress = stagingBuffer->MapMemory(0, size);
     memcpy(mappedAddress, data, size);
     stagingBuffer->UnmapMemory();
 
-    TransitionLayout(commandPool, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    CopyFromBuffer(commandPool, stagingBuffer, {0, 0, 0}, _extent);
-    TransitionLayout(commandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    TransitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    CopyFromBuffer(commandBuffer, stagingBuffer, {0, 0, 0}, _extent);
+    TransitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 VkFormat VulkanImage::GetFormat()
 {
     return _format;
+}
+
+TPtr<VulkanDevice> VulkanImage::GetDevice()
+{
+    return _device;
 }
 
 VkImage VulkanImage::GetRawImage()

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10) 
 
 # set the project name 
-project(ToyEngine VERSION 1.0) 
+project(ZEngine VERSION 0.1) 
 
 set(CMAKE_CXX_STANDARD 20)
 

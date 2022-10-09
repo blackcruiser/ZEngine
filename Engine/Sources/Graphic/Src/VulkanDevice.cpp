@@ -1,57 +1,78 @@
 #include "VulkanDevice.h"
 #include "VulkanGPU.h"
-#include "Surface.h"
 
-#include <array>
-#include <limits>
-#include <set>
-#include <stdexcept>
 #include <string>
+#include <stdexcept>
 
 
 namespace ZE {
 
-VulkanDevice::VulkanDevice(TPtr<VulkanGPU> GPU, TPtr<Surface> surface)
-    : _GPU(GPU), _surface(surface), _vkDevice(VK_NULL_HANDLE), _vkGraphicQueue(VK_NULL_HANDLE),
-      _vkPresentQueue(VK_NULL_HANDLE), _graphicQueueFamilyIndex(std::numeric_limits<uint32_t>::max()),
-      _presentQueueFamilyIndex(std::numeric_limits<uint32_t>::max())
+VulkanDevice::VulkanDevice(TPtr<VulkanGPU> GPU)
+    : _GPU(GPU), _vkDevice(VK_NULL_HANDLE), _graphicQueueFamilyIndex(-1),
+      _computeQueueFamilyIndex(-1), _transferQueueFamilyIndex(-1)
 {
     // Queue
     std::vector<VkQueueFamilyProperties> queueFamilyProperties = _GPU->GetQueueFamilyProperties();
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    uint32_t queueCount = 0;
+
     for (size_t i = 0; i < queueFamilyProperties.size(); i++)
     {
-        if (_graphicQueueFamilyIndex == std::numeric_limits<uint32_t>::max() &&
-            queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            _graphicQueueFamilyIndex = static_cast<uint32_t>(i);
+        VkQueueFamilyProperties properties = queueFamilyProperties[i];
+        bool isFound = false;
 
-        if (_presentQueueFamilyIndex == std::numeric_limits<uint32_t>::max() && _GPU->isSurfaceSupported(i, _surface))
-            _presentQueueFamilyIndex = static_cast<uint32_t>(i);
+        if ((properties.queueFlags & VK_QUEUE_GRAPHICS_BIT) == VK_QUEUE_GRAPHICS_BIT)
+        {
+            _graphicQueueFamilyIndex = i;
+            isFound = true;
+        }
+
+        if ((properties.queueFlags & VK_QUEUE_COMPUTE_BIT) == VK_QUEUE_COMPUTE_BIT)
+        {
+            _computeQueueFamilyIndex = i;
+            isFound = true;
+        }
+
+        if ((properties.queueFlags & VK_QUEUE_TRANSFER_BIT) == VK_QUEUE_TRANSFER_BIT)
+        {
+            _transferQueueFamilyIndex = i;
+            isFound = true;
+        }
+
+        if (isFound)
+        {
+            VkDeviceQueueCreateInfo queueCreateInfo{};
+            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = i;
+            queueCreateInfo.queueCount = properties.queueCount;
+
+            queueCreateInfos.push_back(queueCreateInfo);
+            queueCount += properties.queueCount;
+        }
     }
 
-    if (_graphicQueueFamilyIndex >= queueFamilyProperties.size())
+    if (_computeQueueFamilyIndex == -1)
+        _computeQueueFamilyIndex = _graphicQueueFamilyIndex;
+
+    if (_transferQueueFamilyIndex == -1)
+        _transferQueueFamilyIndex = _computeQueueFamilyIndex;
+
+    std::vector<float> priorityArr(queueCount, 1.0f);
+    float* priorityPtr = priorityArr.data();
+    for (VkDeviceQueueCreateInfo& createInfo : queueCreateInfos)
     {
-        throw std::runtime_error("can't find Device Queue!");
+        createInfo.pQueuePriorities = priorityPtr;
+        priorityPtr++;
     }
 
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = {_graphicQueueFamilyIndex, _presentQueueFamilyIndex};
 
-    float queuePriority = 1.0f;
-    for (uint32_t queueFamily : uniqueQueueFamilies)
-    {
-        VkDeviceQueueCreateInfo queueCreateInfo{};
-        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCreateInfo.queueFamilyIndex = queueFamily;
-        queueCreateInfo.queueCount = 1;
-        queueCreateInfo.pQueuePriorities = &queuePriority;
-        queueCreateInfos.push_back(queueCreateInfo);
-    }
-
+    // Extensions
     std::vector<const char*> deviceExtensions = _GPU->GetExtensions();
 #ifdef ZE_PLATFORM_MACOS
     deviceExtensions.push_back("VK_KHR_portability_subset");
 #endif
 
+    // Features
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
 
@@ -67,10 +88,6 @@ VulkanDevice::VulkanDevice(TPtr<VulkanGPU> GPU, TPtr<Surface> surface)
     {
         throw std::runtime_error("create device fail!");
     }
-
-    // Queue
-    vkGetDeviceQueue(_vkDevice, _graphicQueueFamilyIndex, 0, &_vkGraphicQueue);
-    vkGetDeviceQueue(_vkDevice, _presentQueueFamilyIndex, 0, &_vkPresentQueue);
 }
 
 VulkanDevice::~VulkanDevice()
@@ -119,28 +136,6 @@ void VulkanDevice::DestroyFence(VkFence fence)
     vkDestroyFence(_vkDevice, fence, nullptr);
 }
 
-VkDescriptorSetLayout VulkanDevice::CreateDescriptorSetLayout(
-    const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings)
-{
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = layoutBindings.size();
-    layoutInfo.pBindings = layoutBindings.data();
-
-    VkDescriptorSetLayout descriptorSetLayout;
-    if (vkCreateDescriptorSetLayout(_vkDevice, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create descriptor set layout!");
-    }
-
-    return descriptorSetLayout;
-}
-
-void VulkanDevice::DestroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout)
-{
-    vkDestroyDescriptorSetLayout(_vkDevice, descriptorSetLayout, nullptr);
-}
-
 void VulkanDevice::WaitIdle()
 {
     vkDeviceWaitIdle(_vkDevice);
@@ -156,23 +151,18 @@ VkDevice VulkanDevice::GetRawDevice()
     return _vkDevice;
 }
 
-VkQueue VulkanDevice::GetGraphicQueue()
-{
-    return _vkGraphicQueue;
-}
-
-VkQueue VulkanDevice::GetPresentQueue()
-{
-    return _vkPresentQueue;
-}
-
 uint32_t VulkanDevice::GetGraphicQueueFamilyIndex()
 {
     return _graphicQueueFamilyIndex;
 }
 
-uint32_t VulkanDevice::GetPresentQueueFamilyIndex()
+uint32_t VulkanDevice::GetComputeQueueFamilyIndex()
 {
-    return _presentQueueFamilyIndex;
+    return _computeQueueFamilyIndex;
+}
+
+uint32_t VulkanDevice::GetTransferQueueFamilyIndex()
+{
+    return _transferQueueFamilyIndex;
 }
 } // namespace ZE

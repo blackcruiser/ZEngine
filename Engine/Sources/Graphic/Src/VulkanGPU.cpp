@@ -1,5 +1,5 @@
 #include "VulkanGPU.h"
-#include "Surface.h"
+#include "VulkanSurface.h"
 #include "VulkanDevice.h"
 
 #include <stdexcept>
@@ -9,8 +9,9 @@
 
 namespace ZE {
 
-VulkanGPU::VulkanGPU(const VkInstance& vkInstance) : _vkInstance(vkInstance),
-_GPU(VK_NULL_HANDLE), _deviceExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME })
+VulkanGPU::VulkanGPU(const VkInstance& vkInstance)
+    : _vkInstance(vkInstance),
+      _GPU(VK_NULL_HANDLE), _deviceExtensions({VK_KHR_SWAPCHAIN_EXTENSION_NAME})
 {
     std::vector<VkPhysicalDevice> GPUs = GetSupportedRawGPUs();
 
@@ -39,14 +40,19 @@ VulkanGPU::~VulkanGPU()
 {
 }
 
+const std::vector<const char*>& VulkanGPU::GetExtensions()
+{
+    return _deviceExtensions;
+}
+
 VkPhysicalDevice VulkanGPU::GetRawGPU()
 {
     return _GPU;
 }
 
-const std::vector<const char*>& VulkanGPU::GetExtensions()
+VkInstance VulkanGPU::GetVkInstance()
 {
-    return _deviceExtensions;
+    return _vkInstance;
 }
 
 std::vector<VkExtensionProperties> VulkanGPU::GetExtensionProperties(VkPhysicalDevice GPU)
@@ -71,7 +77,7 @@ std::vector<VkQueueFamilyProperties> VulkanGPU::GetQueueFamilyProperties()
     return queueFamilieProperties;
 }
 
-bool VulkanGPU::isSurfaceSupported(uint32_t queueFamilyIndex, TPtr<Surface> surface)
+bool VulkanGPU::isSurfaceSupported(uint32_t queueFamilyIndex, TPtr<VulkanSurface> surface)
 {
     VkBool32 isSupported;
     vkGetPhysicalDeviceSurfaceSupportKHR(_GPU, queueFamilyIndex, surface->GetRawSurface(), &isSupported);
@@ -109,4 +115,4 @@ std::vector<VkPhysicalDevice> VulkanGPU::GetSupportedRawGPUs()
     return devices;
 }
 
-}
+} // namespace ZE

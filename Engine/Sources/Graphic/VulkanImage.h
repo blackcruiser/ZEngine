@@ -8,7 +8,7 @@
 namespace ZE {
 
 class VulkanDevice;
-class VulkanCommandPool;
+class VulkanCommandBuffer;
 class VulkanBuffer;
 
 class VulkanImage
@@ -18,11 +18,13 @@ public:
     VulkanImage(TPtr<VulkanDevice> device, VkImage vkImage, const VkExtent3D& extent, VkFormat format);
     ~VulkanImage();
 
-    void TransitionLayout(TPtr<VulkanCommandPool> commandPool, VkImageLayout oldLayout, VkImageLayout newLayout);
-    void CopyFromBuffer(TPtr<VulkanCommandPool> commandPool, TPtr<VulkanBuffer> buffer, VkOffset3D offset, VkExtent3D extent);
-    void TransferData(TPtr<VulkanCommandPool> commandPool, const void* data, uint32_t size);
+    void TransitionLayout(TPtr<VulkanCommandBuffer> commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void CopyFromBuffer(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> buffer, VkOffset3D offset, VkExtent3D extent);
+    void TransferData(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> stagingBuffer, const void* data, uint32_t size);
 
     VkFormat GetFormat();
+
+    TPtr<VulkanDevice> GetDevice();
 
     VkImage GetRawImage();
 

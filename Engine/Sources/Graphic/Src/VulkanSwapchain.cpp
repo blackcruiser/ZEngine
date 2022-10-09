@@ -1,46 +1,36 @@
 #include "VulkanSwapchain.h"
 #include "VulkanDevice.h"
-#include "Surface.h"
+#include "VulkanSurface.h"
 #include "VulkanImage.h"
 
 #include <stdexcept>
+#include <assert.h>
 
 
 namespace ZE {
 
-VulkanSwapchain::VulkanSwapchain(TPtr<VulkanDevice> device, TPtr<Surface> surface, uint32_t imageCount)
-    : _device(device), _surface(surface)
+VulkanSwapchain::VulkanSwapchain(TPtr<VulkanDevice> device, TPtr<VulkanSurface> surface, uint32_t imageCount)
+    : _device(device), _surface(surface), _vkSwapchain(VK_NULL_HANDLE), _acquiredIndex(-1)
 {
     VkSurfaceFormatKHR surfaceFormat = _surface->GetSurfaceFormat();
     VkPresentModeKHR vkPresentMode = _surface->GetPresentMode();
-    VkSurfaceCapabilitiesKHR vkCapabilities = _surface->GetCpabilities();
+    VkSurfaceCapabilitiesKHR vkCapabilities = _surface->GetCpabilities(_device->GetGPU());
+    VkExtent2D extent = _surface->GetExtent();
 
-    _extent = _surface->GetExtent();
-    _format = surfaceFormat.format;
-
+    // Create
     VkSwapchainCreateInfoKHR vkSwapchainCreateInfo{};
     vkSwapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     vkSwapchainCreateInfo.surface = _surface->GetRawSurface();
     vkSwapchainCreateInfo.minImageCount = imageCount;
-    vkSwapchainCreateInfo.imageFormat = _format;
+    vkSwapchainCreateInfo.imageFormat = surfaceFormat.format;
     vkSwapchainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
-    vkSwapchainCreateInfo.imageExtent = _extent;
+    vkSwapchainCreateInfo.imageExtent = _surface->GetExtent();
     vkSwapchainCreateInfo.imageArrayLayers = 1;
     vkSwapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    if (_device->GetGraphicQueueFamilyIndex() != _device->GetPresentQueueFamilyIndex())
-    {
-        uint32_t queueFamilyIndexs[] = {_device->GetGraphicQueueFamilyIndex(), _device->GetPresentQueueFamilyIndex()};
-        vkSwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        vkSwapchainCreateInfo.queueFamilyIndexCount = 2;
-        vkSwapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndexs;
-    }
-    else
-    {
-        vkSwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        vkSwapchainCreateInfo.queueFamilyIndexCount = 0;     // Optional
-        vkSwapchainCreateInfo.pQueueFamilyIndices = nullptr; // Optional
-    }
+    vkSwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    vkSwapchainCreateInfo.queueFamilyIndexCount = 0;     // Optional
+    vkSwapchainCreateInfo.pQueueFamilyIndices = nullptr; // Optional
 
     vkSwapchainCreateInfo.preTransform = vkCapabilities.currentTransform;
     vkSwapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -52,6 +42,23 @@ VulkanSwapchain::VulkanSwapchain(TPtr<VulkanDevice> device, TPtr<Surface> surfac
     {
         throw std::runtime_error("failed to create swap chain!");
     }
+
+
+    // Get Images
+    uint32_t count = 0;
+    vkGetSwapchainImagesKHR(_device->GetRawDevice(), _vkSwapchain, &count, nullptr);
+
+    std::vector<VkImage> vkImages(count);
+    vkGetSwapchainImagesKHR(_device->GetRawDevice(), _vkSwapchain, &count, vkImages.data());
+
+    TPtrArr<VulkanImage> vulkanImages(count);
+    VkExtent3D extent3D{extent.width, extent.height, 1};
+    for (size_t i = 0; i < count; i++)
+    {
+        TPtr<VulkanImage> vulkanImage = std::make_shared<VulkanImage>(_device, vkImages[i], extent3D, surfaceFormat.format);
+        vulkanImages[i] = vulkanImage;
+    }
+    _imagerArr.swap(vulkanImages);
 }
 
 VulkanSwapchain::~VulkanSwapchain()
@@ -60,31 +67,21 @@ VulkanSwapchain::~VulkanSwapchain()
         vkDestroySwapchainKHR(_device->GetRawDevice(), _vkSwapchain, nullptr);
 }
 
-TPtrArr<VulkanImage> VulkanSwapchain::GetImages()
+uint32_t VulkanSwapchain::GetCurrentAcquiredIndex()
 {
-    uint32_t count = 0;
-    vkGetSwapchainImagesKHR(_device->GetRawDevice(), _vkSwapchain, &count, nullptr);
-
-    std::vector<VkImage> vkImages(count);
-    vkGetSwapchainImagesKHR(_device->GetRawDevice(), _vkSwapchain, &count, vkImages.data());
-
-    TPtrArr<VulkanImage> vulkanImages(count);
-    VkExtent3D extent3D{_extent.width, _extent.height, 1};
-    for (size_t i = 0; i < count; i++)
-    {
-        TPtr<VulkanImage> vulkanImage = std::make_shared<VulkanImage>(_device, vkImages[i], extent3D, _format);
-        vulkanImages[i] = vulkanImage;
-    }
-
-    return vulkanImages;
+    assert (_acquiredIndex >= 0);
+    
+    return _acquiredIndex;
 }
 
-uint32_t VulkanSwapchain::AcquireNextImage(VkSemaphore semaphore)
+TPtr<VulkanImage> VulkanSwapchain::AcquireNextImage(uint64_t timeout, VkSemaphore semaphore, VkFence fence)
 {
-    uint32_t imageIndex = 0;
-    vkAcquireNextImageKHR(_device->GetRawDevice(), _vkSwapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(_device->GetRawDevice(), _vkSwapchain, timeout, semaphore, fence, &_acquiredIndex);
 
-    return imageIndex;
+    if (result == VkResult::VK_SUCCESS)
+        return _imagerArr[_acquiredIndex];
+    else
+        return nullptr;
 }
 
 VkSwapchainKHR VulkanSwapchain::GetRawSwapchain()

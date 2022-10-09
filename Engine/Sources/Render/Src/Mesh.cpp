@@ -1,12 +1,15 @@
 #include "Mesh.h"
+#include "RenderSystem.h"
 #include "Graphic/VulkanBuffer.h"
+#include "Graphic/VulkanBufferManager.h"
+#include "Graphic/VulkanCommandBuffer.h"
 #include "Resource/MeshResource.h"
 
 
 namespace ZE {
 
-Mesh::Mesh(TPtr<VulkanDevice> device, TPtr<MeshResource> meshResource)
-    : _device(device), _owner(meshResource), _vertexBuffer(nullptr), _indexBuffer(nullptr), _verticesCount(0)
+Mesh::Mesh(TPtr<MeshResource> meshResource)
+    : _owner(meshResource), _vertexBuffer(nullptr), _indexBuffer(nullptr), _verticesCount(0)
 {
 }
 
@@ -19,7 +22,7 @@ uint32_t Mesh::GetVerticesCount()
     return _verticesCount;
 }
 
-void Mesh::CreateVertexBuffer(TPtr<VulkanCommandPool> commandPool)
+void Mesh::CreateVertexBuffer(TPtr<VulkanCommandBuffer> commandBuffer)
 {
     assert(_owner.expired() == false);
 
@@ -28,10 +31,12 @@ void Mesh::CreateVertexBuffer(TPtr<VulkanCommandPool> commandPool)
     const std::vector<VertexData>& vertices = MeshResource->GetVertices(0);
     uint32_t byteSize = vertices.size() * sizeof(VertexData);
 
-    _vertexBuffer = std::make_shared<VulkanBuffer>(_device, byteSize,
+    TPtr<VulkanBuffer> stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(byteSize);
+    _vertexBuffer = std::make_shared<VulkanBuffer>(commandBuffer->GetDevice(), byteSize,
                                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    _vertexBuffer->TransferData(commandPool, vertices.data(), byteSize);
+    _vertexBuffer->TransferData(commandBuffer, stagingBuffer, vertices.data(), byteSize);
+    RenderSystem::Get().GetBufferManager()->ReleaseStagingBuffer(stagingBuffer, commandBuffer);
 }
 
 TPtr<VulkanBuffer> Mesh::GetVertexBuffer()
@@ -39,7 +44,7 @@ TPtr<VulkanBuffer> Mesh::GetVertexBuffer()
     return _vertexBuffer;
 }
 
-void Mesh::CreateIndexBuffer(TPtr<VulkanCommandPool> commandPool)
+void Mesh::CreateIndexBuffer(TPtr<VulkanCommandBuffer> commandBuffer)
 {
     assert(_owner.expired() == false);
 
@@ -48,10 +53,12 @@ void Mesh::CreateIndexBuffer(TPtr<VulkanCommandPool> commandPool)
     const std::vector<uint32_t>& indexes = MeshResource->GetIndexes(0);
     uint32_t byteSize = indexes.size() * sizeof(uint32_t);
 
-    _indexBuffer = std::make_shared<VulkanBuffer>(_device, byteSize,
+    TPtr<VulkanBuffer> stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(byteSize);
+    _indexBuffer = std::make_shared<VulkanBuffer>(commandBuffer->GetDevice(), byteSize,
                                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    _indexBuffer->TransferData(commandPool, indexes.data(), byteSize);
+    _indexBuffer->TransferData(commandBuffer, stagingBuffer, indexes.data(), byteSize);
+    RenderSystem::Get().GetBufferManager()->ReleaseStagingBuffer(stagingBuffer, commandBuffer);
 
     _verticesCount = indexes.size();
 }
@@ -61,18 +68,16 @@ TPtr<VulkanBuffer> Mesh::GetIndexBuffer()
     return _indexBuffer;
 }
 
-VkVertexInputBindingDescription Mesh::GetVertexInputBindingDescription()
+void Mesh::BuildPipelineDesc(VulkanGraphicPipelineDesc& desc)
 {
     VkVertexInputBindingDescription bindingDescription{};
     bindingDescription.binding = 0;
     bindingDescription.stride = sizeof(VertexData);
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    return bindingDescription;
-}
+    desc.bindingDescription = bindingDescription;
 
-std::vector<VkVertexInputAttributeDescription> Mesh::GetVertexInputAttributeDescriptions()
-{
+
     std::vector<VkVertexInputAttributeDescription> attributeDescriptions(3);
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
@@ -89,7 +94,7 @@ std::vector<VkVertexInputAttributeDescription> Mesh::GetVertexInputAttributeDesc
     attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
     attributeDescriptions[2].offset = offsetof(VertexData, texCoord);
 
-    return attributeDescriptions;
+    desc.attributeDescriptions = attributeDescriptions;
 }
 
 } // namespace ZE
