@@ -25,22 +25,13 @@ class Surface;
 class ForwardRenderer : public RendererInterface
 {
 public:
-    ForwardRenderer(TPtr<VulkanDevice> device, TPtr<Surface> surface);
+    ForwardRenderer();
     virtual ~ForwardRenderer();
 
     virtual void Init(TPtr<Scene> scene) override;
-    virtual void RenderFrame(TPtr<Scene> scene) override;
+    virtual void RenderFrame(TPtr<Scene> scene, TPtr<Window> window) override;
 
 private:
-    TPtr<VulkanDevice> _device;
-    TPtr<Surface> _surface;
-    TPtr<VulkanRenderPass> _renderPass;
-    TPtrArr<VulkanFramebuffer> _framebuffers;
-    TPtr<VulkanSwapchain> _swapchain;
-    TPtr<VulkanDescriptorPool> _descriptorPool;
-    TPtr<VulkanCommandPool> _commandPool;
-    TPtr<VulkanCommandBuffer> _commandBuffer;
-
     VkSemaphore _imageAvailableSemaphore, _renderFinishedSemaphore;
     VkFence _inFlightFence;
 };

@@ -3,6 +3,8 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 
+#include "Graphic/VulkanPipeline.h"
+
 #include <vulkan/vulkan.h>
 
 
@@ -11,33 +13,31 @@ namespace ZE {
 class MeshResource;
 
 class VulkanBuffer;
-class VulkanCommandPool;
+class VulkanCommandBuffer;
 class VulkanDevice;
 
 
 class Mesh
 {
 public:
-    Mesh(TPtr<VulkanDevice> device, TPtr<MeshResource> meshResource);
+    Mesh(TPtr<MeshResource> meshResource);
     ~Mesh();
 
     uint32_t GetVerticesCount();
 
-    void CreateVertexBuffer(TPtr<VulkanCommandPool> commandPool);
+    void CreateVertexBuffer(TPtr<VulkanCommandBuffer> commandBuffer);
     TPtr<VulkanBuffer> GetVertexBuffer();
 
-    void CreateIndexBuffer(TPtr<VulkanCommandPool> commandPool);
+    void CreateIndexBuffer(TPtr<VulkanCommandBuffer> commandBuffer);
     TPtr<VulkanBuffer> GetIndexBuffer();
 
-    VkVertexInputBindingDescription GetVertexInputBindingDescription();
-    std::vector<VkVertexInputAttributeDescription> GetVertexInputAttributeDescriptions();
+    void BuildPipelineDesc(VulkanGraphicPipelineDesc& desc);
 
 private:
     TPtr<VulkanBuffer> _vertexBuffer, _indexBuffer;
     uint32_t _verticesCount;
 
     TWeakPtr<MeshResource> _owner;
-    TPtr<VulkanDevice> _device;
 };
 
 } // namespace ZE

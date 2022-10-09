@@ -6,11 +6,11 @@
 
 namespace ZE {
 
-VulkanCommandPool::VulkanCommandPool(TPtr<VulkanDevice> device)
-    : _device(device), _vkCommandPool(VK_NULL_HANDLE)
+VulkanCommandPool::VulkanCommandPool(TPtr<VulkanDevice> device, uint32_t queueFamilyIndex)
+    : _device(device), _queueFamilyIndex(queueFamilyIndex), _vkCommandPool(VK_NULL_HANDLE)
 {
     VkDevice vkDevice = _device->GetRawDevice();
-    uint32_t graphicQueueFamilyIndex = _device->GetGraphicQueueFamilyIndex();
+    uint32_t graphicQueueFamilyIndex = queueFamilyIndex;
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;

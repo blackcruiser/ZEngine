@@ -7,8 +7,8 @@
 
 namespace ZE {
 
-VulkanImageView::VulkanImageView(TPtr<VulkanDevice> device, TPtr<VulkanImage> image, VkFormat format)
-    : _device(device), _image(image), _vkImageView(VK_NULL_HANDLE)
+VulkanImageView::VulkanImageView(TPtr<VulkanImage> image, VkFormat format)
+    :  _image(image), _vkImageView(VK_NULL_HANDLE)
 {
     VkImageViewCreateInfo imageViewCreateInfo{};
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -25,7 +25,7 @@ VulkanImageView::VulkanImageView(TPtr<VulkanDevice> device, TPtr<VulkanImage> im
     imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(_device->GetRawDevice(), &imageViewCreateInfo, nullptr, &_vkImageView) != VK_SUCCESS)
+    if (vkCreateImageView(image->GetDevice()->GetRawDevice(), &imageViewCreateInfo, nullptr, &_vkImageView) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create image views!");
     }
@@ -34,7 +34,7 @@ VulkanImageView::VulkanImageView(TPtr<VulkanDevice> device, TPtr<VulkanImage> im
 VulkanImageView::~VulkanImageView()
 {
     if (_vkImageView != VK_NULL_HANDLE)
-        vkDestroyImageView(_device->GetRawDevice(), _vkImageView, nullptr);
+        vkDestroyImageView(_image->GetDevice()->GetRawDevice(), _vkImageView, nullptr);
 }
 
 VkImageView VulkanImageView::GetRawImageView()

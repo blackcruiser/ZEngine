@@ -10,12 +10,12 @@
 namespace ZE {
 
 class VulkanGPU;
-class Surface;
+class VulkanSurface;
 
 class VulkanDevice
 {
 public:
-    VulkanDevice(TPtr<VulkanGPU> GPU, TPtr<Surface> surface);
+    VulkanDevice(TPtr<VulkanGPU> GPU);
     ~VulkanDevice();
 
     VkSemaphore CreateGraphicSemaphore();
@@ -24,28 +24,21 @@ public:
     VkFence CreateFence(bool isSignaled);
     void DestroyFence(VkFence fence);
 
-    VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings);
-    void DestroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
-
-
     void WaitIdle();
 
     TPtr<VulkanGPU> GetGPU();
 
     VkDevice GetRawDevice();
-    VkQueue GetGraphicQueue();
-    VkQueue GetPresentQueue();
 
     uint32_t GetGraphicQueueFamilyIndex();
-    uint32_t GetPresentQueueFamilyIndex();
+    uint32_t GetComputeQueueFamilyIndex();
+    uint32_t GetTransferQueueFamilyIndex();
 
 private:
     VkDevice _vkDevice;
-    VkQueue _vkGraphicQueue, _vkPresentQueue;
-    uint32_t _graphicQueueFamilyIndex, _presentQueueFamilyIndex;
+    uint32_t _graphicQueueFamilyIndex, _computeQueueFamilyIndex, _transferQueueFamilyIndex;
 
     TPtr<VulkanGPU> _GPU;
-    TPtr<Surface> _surface;
 };
 
 } // namespace ZE

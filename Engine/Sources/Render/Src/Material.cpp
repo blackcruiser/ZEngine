@@ -1,6 +1,10 @@
 #include "Material.h"
+#include "Mesh.h"
+#include "RenderSystem.h"
 #include "Graphic/VulkanBuffer.h"
+#include "Graphic/VulkanBufferManager.h"
 #include "Graphic/VulkanDescriptorPool.h"
+#include "Graphic/VulkanDescriptorSetLayout.h"
 #include "Graphic/VulkanDescriptorSet.h"
 #include "Graphic/VulkanImage.h"
 #include "Graphic/VulkanImageView.h"
@@ -8,7 +12,7 @@
 #include "Graphic/VulkanPipelineLayout.h"
 #include "Graphic/VulkanPipeline.h"
 #include "Graphic/VulkanShader.h"
-#include "Mesh.h"
+#include "Graphic/VulkanCommandBuffer.h"
 #include "Resource/MaterialResource.h"
 #include "Resource/ShaderResource.h"
 #include "Resource/TextureResource.h"
@@ -16,17 +20,28 @@
 
 namespace ZE {
 
-Material::Material(TPtr<VulkanDevice> device, TPtr<MaterialResource> materialResource)
-    : _device(device), _owner(materialResource), _descriptorSet(nullptr), _pipelineLayout(nullptr), _pipeline(nullptr)
+Material::Material(TPtr<MaterialResource> materialResource)
+    : _owner(materialResource), _descriptorSet(nullptr), _pipelineLayout(nullptr)
 {
-    _uniformBuffer =
-        std::make_shared<VulkanBuffer>(device, sizeof(glm::mat4x4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 }
 
 Material::~Material()
 {
 }
+
+void Material::BuildRenderResource(TPtr<VulkanCommandBuffer> commandBuffer)
+{
+    CreateGraphicTextures(commandBuffer);
+    CreateGraphicBuffers(commandBuffer);
+    CreateGraphicShaders();
+
+    CreateDescriptorSetLayout();
+    CreateDescriptorSet();
+    LinkDescriptorSet();
+
+    CreatePipelineLayout();
+}
+
 
 VkShaderStageFlagBits ConvertShaderStageToVulkanBit(EShaderStage stage)
 {
@@ -42,28 +57,30 @@ VkShaderStageFlagBits ConvertShaderStageToVulkanBit(EShaderStage stage)
     }
 }
 
-TPtr<VulkanImageView> CreateGraphicImage(TPtr<VulkanDevice> device, TPtr<VulkanCommandPool> commandPool, TPtr<TextureResource> texture)
+TPtr<VulkanImageView> CreateGraphicImage(TPtr<VulkanDevice> device, TPtr<VulkanCommandBuffer> commandBuffer, TPtr<TextureResource> texture)
 {
     assert(texture->IsLoaded());
 
-    VkExtent3D extent{texture->GetWidth(), texture->GetHeight(), 1};
-    TPtr<VulkanImage> vulkanImage =
-        std::make_shared<VulkanImage>(device, extent, VK_FORMAT_R8G8B8A8_SRGB);
-
     uint32_t imageSize = texture->GetWidth() * texture->GetHeight() * 4;
-    vulkanImage->TransferData(commandPool, texture->GetData(), imageSize);
+    VkExtent3D extent{texture->GetWidth(), texture->GetHeight(), 1};
 
-    TPtr<VulkanImageView> vulkanImageView = std::make_shared<VulkanImageView>(device, vulkanImage);
+    TPtr<VulkanBuffer> stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(imageSize);
+    TPtr<VulkanImage> vulkanImage = std::make_shared<VulkanImage>(device, extent, VkFormat::VK_FORMAT_R8G8B8A8_SRGB);
+    vulkanImage->TransferData(commandBuffer, stagingBuffer, texture->GetData(), imageSize);
+    RenderSystem::Get().GetBufferManager()->ReleaseStagingBuffer(stagingBuffer, commandBuffer);
+
+    TPtr<VulkanImageView> vulkanImageView = std::make_shared<VulkanImageView>(vulkanImage);
 
     return vulkanImageView;
 }
 
 
-void Material::CreateGraphicTextures(TPtr<VulkanCommandPool> commandPool)
+void Material::CreateGraphicTextures(TPtr<VulkanCommandBuffer> commandBuffer)
 {
     assert(_owner.expired() == false);
 
     TPtr<MaterialResource> materialResource = _owner.lock();
+    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
 
     const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& textureMap =
         materialResource->GetTextureMap();
@@ -79,8 +96,8 @@ void Material::CreateGraphicTextures(TPtr<VulkanCommandPool> commandPool)
             VulkanImageBindingInfo vulkanBindingInfo;
 
             vulkanBindingInfo.bindingPoint = bindingInfo.bindingPoint;
-            vulkanBindingInfo.vulkanImageView = CreateGraphicImage(_device, commandPool, bindingInfo.texture);
-            vulkanBindingInfo.vulkanSampler = std::make_shared<VulkanSampler>(_device);
+            vulkanBindingInfo.vulkanImageView = CreateGraphicImage(device, commandBuffer, bindingInfo.texture);
+            vulkanBindingInfo.vulkanSampler = std::make_shared<VulkanSampler>(device);
 
             vulkanBindingInfoList.push_back(vulkanBindingInfo);
         }
@@ -90,7 +107,10 @@ void Material::CreateGraphicTextures(TPtr<VulkanCommandPool> commandPool)
     }
 }
 
-
+void Material::CreateGraphicBuffers(TPtr<VulkanCommandBuffer> commandBuffer)
+{
+    _uniformBuffer = std::make_shared<VulkanBuffer>(commandBuffer->GetDevice(), sizeof(glm::mat4x4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+}
 
 TPtr<VulkanShader> CreateGraphicShader(TPtr<VulkanDevice> device, VkShaderStageFlagBits shaderStage,
                                        TPtr<ShaderResource> shader)
@@ -106,73 +126,25 @@ void Material::CreateGraphicShaders()
     assert(_owner.expired() == false);
     TPtr<MaterialResource> materialResource = _owner.lock();
 
+    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
     const TPtrUnorderedMap<EShaderStage, ShaderResource>& shaderMap = materialResource->GetShaderMap();
     for (auto& [stage, shader] : shaderMap)
     {
         VkShaderStageFlagBits vulkanBit = ConvertShaderStageToVulkanBit(stage);
-        TPtr<VulkanShader> vulkanShader = CreateGraphicShader(_device, vulkanBit, shader);
+        TPtr<VulkanShader> vulkanShader = CreateGraphicShader(device, vulkanBit, shader);
         _shaders.insert(std::make_pair(vulkanBit, vulkanShader));
     }
 }
 
-TPtr<VulkanShader> Material::GetGraphicShader(VkShaderStageFlagBits stage)
+void Material::CreateDescriptorSetLayout()
 {
-    if (_shaders.find(stage) == _shaders.end())
-        return nullptr;
-    else
-        return _shaders[stage];
-}
+    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
 
-std::optional<std::reference_wrapper<std::list<VulkanImageBindingInfo>>> Material::GetGraphicTexture(
-    VkShaderStageFlagBits stage)
-{
-    if (_textures.find(stage) == _textures.end())
-        return std::optional<std::reference_wrapper<std::list<VulkanImageBindingInfo>>>();
-    else
-        return _textures[stage];
-}
-
-void Material::UpdateUniformBuffer(TPtr<VulkanCommandPool> commandPool, const glm::mat4x4& transform)
-{
-
-    _uniformBuffer->TransferData(commandPool, &transform, sizeof(transform));
-}
-
-TPtr<VulkanBuffer> Material::GetUniformBuffer()
-{
-    return _uniformBuffer;
-}
-
-void Material::CreatePipeline(TPtr<Mesh> mesh,  TPtr<VulkanRenderPass> renderPass, const VkExtent2D& extent )
-{
-    TPtr<VulkanShader> vertexShader = GetGraphicShader(VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT);
-    TPtr<VulkanShader> fragmentShader = GetGraphicShader(VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
-
-    VkVertexInputBindingDescription bindingDescription = mesh->GetVertexInputBindingDescription();
-    std::vector<VkVertexInputAttributeDescription> attributeDescriptions = mesh->GetVertexInputAttributeDescriptions();
-
-    _pipelineLayout = std::make_shared<VulkanPipelineLayout>(_device, _descriptorSet);
-
-    _pipeline = std::make_shared<VulkanGraphicPipeline>(_device, vertexShader, fragmentShader, extent, bindingDescription, attributeDescriptions, _pipelineLayout, renderPass);
-}
-
-TPtr<VulkanPipelineLayout> Material::GetPipelineLayout()
-{
-    return _pipelineLayout;
-}
-
-TPtr<VulkanGraphicPipeline> Material::GetPipeline()
-{
-    return _pipeline;
-}
-
-void Material::CreateDescriptorSet(TPtr<VulkanDescriptorPool> descriptorPool)
-{
-    VkDescriptorSetLayoutBinding uniformDescriptorSetLayoutBinding{};
-    uniformDescriptorSetLayoutBinding.binding = 0;
-    uniformDescriptorSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uniformDescriptorSetLayoutBinding.descriptorCount = 1;
-    uniformDescriptorSetLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    VkDescriptorSetLayoutBinding matrixDescriptorSetlayoutBinding{};
+    matrixDescriptorSetlayoutBinding.binding = 0;
+    matrixDescriptorSetlayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    matrixDescriptorSetlayoutBinding.descriptorCount = 1;
+    matrixDescriptorSetlayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutBinding samplerDescriptorSetlayoutBinding{};
     samplerDescriptorSetlayoutBinding.binding = 1;
@@ -180,10 +152,51 @@ void Material::CreateDescriptorSet(TPtr<VulkanDescriptorPool> descriptorPool)
     samplerDescriptorSetlayoutBinding.descriptorCount = 1;
     samplerDescriptorSetlayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings = {uniformDescriptorSetLayoutBinding,
-                                                                             samplerDescriptorSetlayoutBinding};
+    std::vector<VkDescriptorSetLayoutBinding> localDescriptorSetLayoutBindings = {
+        matrixDescriptorSetlayoutBinding, samplerDescriptorSetlayoutBinding};
 
-    _descriptorSet = std::make_shared<VulkanDescriptorSet>(descriptorPool, descriptorSetLayoutBindings);
+    _descriptorSetLayout = std::make_shared<VulkanDescriptorSetLayout>(device, localDescriptorSetLayoutBindings);
+}
+
+void Material::CreateDescriptorSet()
+{
+    TPtr<VulkanDescriptorPool> descriptorPool = RenderSystem::Get().GetDescriptorPool();
+
+    _descriptorSet = std::make_shared<VulkanDescriptorSet>(descriptorPool, _descriptorSetLayout);
+}
+
+void Material::LinkDescriptorSet()
+{
+    {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = _uniformBuffer->GetRawBuffer();
+        bufferInfo.offset = 0;
+        bufferInfo.range = _uniformBuffer->GetSize();
+
+        _descriptorSet->Update(0, 0, bufferInfo);
+    }
+
+    {
+        if (_textures.find(VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) == _textures.end())
+            return;
+
+        std::list<VulkanImageBindingInfo>& textureBindingInfo = _textures.at(VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = textureBindingInfo.begin()->vulkanImageView->GetRawImageView();
+        imageInfo.sampler = textureBindingInfo.begin()->vulkanSampler->GetRawSampler();
+
+        _descriptorSet->Update(1, 0, imageInfo);
+    }
+}
+
+void Material::CreatePipelineLayout()
+{
+    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+
+    TPtrArr<VulkanDescriptorSetLayout> descriptorSetLayoutArr{_descriptorSetLayout};
+    _pipelineLayout = std::make_shared<VulkanPipelineLayout>(device, descriptorSetLayoutArr);
 }
 
 TPtr<VulkanDescriptorSet> Material::GetDescriptorSet()
@@ -191,26 +204,31 @@ TPtr<VulkanDescriptorSet> Material::GetDescriptorSet()
     return _descriptorSet;
 }
 
-void Material::UpdateDescriptorSet()
+TPtr<VulkanPipelineLayout> Material::GetPipelineLayout()
 {
-    std::optional<std::reference_wrapper<std::list<VulkanImageBindingInfo>>> textureBindingInfoWrap =
-        GetGraphicTexture(VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
-    std::list<VulkanImageBindingInfo> textureBindingInfo = textureBindingInfoWrap.value();
+    return _pipelineLayout;
+}
 
-    VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = GetUniformBuffer()->GetRawBuffer();
-    bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(glm::mat4x4);
+void Material::BuildPipelineDesc(VulkanGraphicPipelineDesc& desc)
+{
+    if (_shaders.find(VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT) != _shaders.end())
+        desc.vertexShader = _shaders[VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT];
+    else
+        desc.vertexShader = nullptr;
 
-    VkDescriptorImageInfo imageInfo{};
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView = textureBindingInfo.begin()->vulkanImageView->GetRawImageView();
-    imageInfo.sampler = textureBindingInfo.begin()->vulkanSampler->GetRawSampler();
+    if (_shaders.find(VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) != _shaders.end())
+        desc.fragmentShader = _shaders[VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT];
+    else
+        desc.fragmentShader = nullptr;
 
-    std::vector<VkDescriptorBufferInfo> bufferInfoArr{bufferInfo};
-    std::vector<VkDescriptorImageInfo> imageInfoArr{imageInfo};
+    desc.pipelineLayout = _pipelineLayout;
+}
 
-    _descriptorSet->Update(bufferInfoArr, imageInfoArr);
+void Material::UpdateUniformBuffer(TPtr<VulkanCommandBuffer> commandBuffer, const glm::mat4x4& mvp)
+{
+    TPtr<VulkanBuffer> stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(sizeof(mvp));
+    _uniformBuffer->TransferData(commandBuffer, stagingBuffer, &mvp, sizeof(mvp));
+    RenderSystem::Get().GetBufferManager()->ReleaseStagingBuffer(stagingBuffer, commandBuffer);
 }
 
 } // namespace ZE
