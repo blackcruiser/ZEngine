@@ -9,34 +9,32 @@
 
 namespace ZE {
 
+
 VulkanGraphicPipeline::VulkanGraphicPipeline(
-    TPtr<VulkanDevice> device, TPtr<VulkanShader> vertexShader, TPtr<VulkanShader> fragmentShader,
-    const VkExtent2D& extent, VkVertexInputBindingDescription& bindingDescription,
-    std::vector<VkVertexInputAttributeDescription>& attributeDescriptions, TPtr<VulkanPipelineLayout> pipelineLayout,
-    TPtr<VulkanRenderPass> renderPass)
-    : _device(device), _vkPipeline(VK_NULL_HANDLE)
+    TPtr<VulkanDevice> device, const VulkanGraphicPipelineDesc& desc, TPtr<VulkanRenderPass> renderPass)
+    : _device(device),  _vertexShader(desc.vertexShader), _fragmentShader(desc.vertexShader), _pipelineLayout(desc.pipelineLayout), _renderPass(renderPass), _vkPipeline(VK_NULL_HANDLE)
 {
     // Pipeline
     VkPipelineShaderStageCreateInfo vkVertexShaderStageCreateInfo{};
     vkVertexShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vkVertexShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vkVertexShaderStageCreateInfo.pName = "main";
-    vkVertexShaderStageCreateInfo.module = vertexShader->GetRawShader();
+    vkVertexShaderStageCreateInfo.module = desc.vertexShader->GetRawShader();
 
     VkPipelineShaderStageCreateInfo vkFragmentShaderStageCreateInfo{};
     vkFragmentShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vkFragmentShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     vkFragmentShaderStageCreateInfo.pName = "main";
-    vkFragmentShaderStageCreateInfo.module = fragmentShader->GetRawShader();
+    vkFragmentShaderStageCreateInfo.module = desc.fragmentShader->GetRawShader();
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {vkVertexShaderStageCreateInfo, vkFragmentShaderStageCreateInfo};
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(desc.attributeDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = &desc.bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = desc.attributeDescriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -46,14 +44,14 @@ VulkanGraphicPipeline::VulkanGraphicPipeline(
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)extent.width;
-    viewport.height = (float)extent.height;
+    viewport.width = (float)desc.extent.width;
+    viewport.height = (float)desc.extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = extent;
+    scissor.extent = desc.extent;
 
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -125,7 +123,7 @@ VulkanGraphicPipeline::VulkanGraphicPipeline(
     pipelineInfo.pDepthStencilState = nullptr; // Optional
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = nullptr; // Optional
-    pipelineInfo.layout = pipelineLayout->GetRawPipelineLayout();
+    pipelineInfo.layout = desc.pipelineLayout->GetRawPipelineLayout();
     pipelineInfo.renderPass = renderPass->GetRawRenderPass();
     pipelineInfo.subpass = 0;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional

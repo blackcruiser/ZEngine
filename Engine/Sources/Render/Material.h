@@ -1,6 +1,6 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
-#include "Graphic/VulkanDevice.h"
+#include "Graphic/VulkanPipeline.h"
 
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
@@ -17,10 +17,10 @@ class VulkanShader;
 class VulkanBuffer;
 class VulkanDescriptorPool;
 class VulkanDescriptorSet;
+class VulkanDescriptorSetLayout;
 class VulkanPipelineLayout;
 class VulkanGraphicPipeline;
-class VulkanRenderPass;
-class VulkanCommandPool;
+class VulkanCommandBuffer;
 class MaterialResource;
 class Mesh;
 
@@ -34,36 +34,38 @@ struct VulkanImageBindingInfo
 class Material
 {
 public:
-    Material(TPtr<VulkanDevice> device, TPtr<MaterialResource> material);
+    Material(TPtr<MaterialResource> material);
     ~Material();
 
-    void CreateGraphicTextures(TPtr<VulkanCommandPool> commandPool);
-    std::optional<std::reference_wrapper<std::list<VulkanImageBindingInfo>>> GetGraphicTexture(
-        VkShaderStageFlagBits stage);
+    void BuildRenderResource(TPtr<VulkanCommandBuffer> commandBuffer);
 
+private:
+    void CreateGraphicTextures(TPtr<VulkanCommandBuffer> commandBuffer);
+    void CreateGraphicBuffers(TPtr<VulkanCommandBuffer> commandBuffer);
     void CreateGraphicShaders();
-    TPtr<VulkanShader> GetGraphicShader(VkShaderStageFlagBits stage);
 
-    void UpdateUniformBuffer(TPtr<VulkanCommandPool> commandPool, const glm::mat4x4& transform);
-    TPtr<VulkanBuffer> GetUniformBuffer();
+    void CreateDescriptorSetLayout();
+    void CreateDescriptorSet();
+    void LinkDescriptorSet();
+    void CreatePipelineLayout();
 
-    void CreatePipeline(TPtr<Mesh> mesh, TPtr<VulkanRenderPass> renderPass,  const VkExtent2D& extent);
-    TPtr<VulkanPipelineLayout> GetPipelineLayout();
-    TPtr<VulkanGraphicPipeline> GetPipeline();
-
-    void CreateDescriptorSet(TPtr<VulkanDescriptorPool> descriptorPool);
+public:
     TPtr<VulkanDescriptorSet> GetDescriptorSet();
-    void UpdateDescriptorSet();
+
+    TPtr<VulkanPipelineLayout> GetPipelineLayout();
+    void BuildPipelineDesc(VulkanGraphicPipelineDesc& desc);
+
+    void UpdateUniformBuffer(TPtr<VulkanCommandBuffer> commandBuffer, const glm::mat4x4& mvp);
 
 private:
     TPtrUnorderedMap<VkShaderStageFlagBits, VulkanShader> _shaders;
     std::unordered_map<VkShaderStageFlagBits, std::list<VulkanImageBindingInfo>> _textures;
     TPtr<VulkanBuffer> _uniformBuffer;
+    TPtr<VulkanDescriptorSetLayout> _descriptorSetLayout;
     TPtr<VulkanDescriptorSet> _descriptorSet;
     TPtr<VulkanPipelineLayout> _pipelineLayout;
-    TPtr<VulkanGraphicPipeline> _pipeline;
+    VulkanGraphicPipelineDesc _pipelineDesc;
 
-    TPtr<VulkanDevice> _device;
     TWeakPtr<MaterialResource> _owner;
 };
 

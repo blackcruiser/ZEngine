@@ -9,24 +9,25 @@
 namespace ZE {
 
 class VulkanDescriptorPool;
+class VulkanDescriptorSetLayout;
 
 
 class VulkanDescriptorSet
 {
 public:
 public:
-    VulkanDescriptorSet(TPtr<VulkanDescriptorPool> descriptorPool, const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings);
+    VulkanDescriptorSet(TPtr<VulkanDescriptorPool> descriptorPool, TPtr<VulkanDescriptorSetLayout> descriptorSetLayout);
     ~VulkanDescriptorSet();
 
-    void Update(const std::vector<VkDescriptorBufferInfo>& bufferInfoArr, const std::vector<VkDescriptorImageInfo>& ImageInfoArr);
+    void Update(uint32_t binding, uint32_t arrayElement, const VkDescriptorBufferInfo& bufferInfo);
+    void Update(uint32_t binding, uint32_t arrayElement, const VkDescriptorImageInfo& imageInfo);
 
     const VkDescriptorSet& GetRawDescriptorSet();
-    const VkDescriptorSetLayout& GetRawDescriptorSetLayout();
 
 private:
-    VkDescriptorSetLayout _vkDescriptorSetLayout;
     VkDescriptorSet _vkDescriptorSet;
 
+    TPtr<VulkanDescriptorSetLayout> _descriptorSetLayout;
     TPtr<VulkanDescriptorPool> _descriptorPool;
 };
 
