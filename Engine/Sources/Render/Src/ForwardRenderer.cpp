@@ -52,6 +52,7 @@ void ForwardRenderer::Init(TPtr<Scene> scene)
     commandBuffer->Begin();
 
     const TPtrArr<SceneObject>& objects = scene->GetObjects();
+
     for (TPtr<SceneObject> object : objects)
     {
         TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
@@ -59,8 +60,6 @@ void ForwardRenderer::Init(TPtr<Scene> scene)
             continue;
 
         TPtr<MeshResource> meshResource = meshComponent->GetMesh();
-        TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
-
         if (meshResource != nullptr)
         {
             TPtr<Mesh> mesh = std::make_shared<Mesh>(meshResource);
@@ -69,11 +68,24 @@ void ForwardRenderer::Init(TPtr<Scene> scene)
             meshResource->SetMesh(mesh);
         }
 
+        TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
         if (materialResource != nullptr)
         {
             TPtr<Material> material = std::make_shared<Material>(materialResource);
-            material->BuildRenderResource(commandBuffer);
             materialResource->SetMaterial(material);
+
+            for (int i = 0; i < static_cast<int>(EPassType::PassCount); i++)
+            {
+                EPassType passType = static_cast<EPassType>(i);
+
+                TPtr<PassResource> passResource = materialResource->GetPass(passType);
+                if (passResource != nullptr)
+                {
+                    TPtr<Pass> pass = std::make_shared<Pass>(passResource);
+                    material->SetPass(passType, pass);
+                    pass->BuildRenderResource(commandBuffer);
+                }
+            }
         }
     }
 
@@ -89,6 +101,9 @@ void ForwardRenderer::RenderFrame(TPtr<Scene> scene, TPtr<Window> window)
     TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
     VkDevice vkDevice = device->GetRawDevice();
 
+    // Begin render
+    vkWaitForFences(vkDevice, 1, &_inFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(vkDevice, 1, &_inFlightFence);
 
     TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
     TPtr<VulkanCommandBuffer> commandBuffer = RenderSystem::Get().GetCommandBufferManager()->GetCommandBuffer(VulkanQueue::EType::Graphic);
@@ -124,31 +139,30 @@ void ForwardRenderer::RenderFrame(TPtr<Scene> scene, TPtr<Window> window)
         for (TPtr<SceneObject>& object : objectsToRender)
         {
             TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
-            if (meshComponent == nullptr)
-                continue;
 
             TPtr<MeshResource> meshResource = meshComponent->GetMesh();
             TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
-            if (meshResource == nullptr || materialResource == nullptr)
-                continue;
 
             TPtr<Mesh> mesh = meshResource->GetMesh();
             TPtr<Material> material = materialResource->GetMaterial();
-            if (mesh == nullptr || material == nullptr)
-                continue;
 
             TPtr<TransformComponent> transformComponent = object->GetComponent<TransformComponent>();
             glm::mat4x4 MVP = VP * transformComponent->GetTransform();
 
-            // Update Global DescriptorSet
-            material->UpdateUniformBuffer(commandBuffer, MVP);
+            for (int i = 0; i < static_cast<int>(EPassType::PassCount); i++)
+            {
+                EPassType passType = static_cast<EPassType>(i);
+
+                TPtr<Pass> pass = material->GetPass(passType);
+                if (pass)
+                {
+                    // Update Global DescriptorSet
+                    pass->UpdateUniformBuffer(commandBuffer, MVP);
+                }
+            }
         }
     }
 
-
-    // Begin render
-    vkWaitForFences(vkDevice, 1, &_inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(vkDevice, 1, &_inFlightFence);
 
     TPtr<VulkanSurface> surface = window->GetSurface();
     VkSurfaceFormatKHR surfaceFormat = surface->GetSurfaceFormat();
@@ -176,26 +190,22 @@ void ForwardRenderer::RenderFrame(TPtr<Scene> scene, TPtr<Window> window)
 
     // Opaque Pass
     {
+        EPassType passType = EPassType::BasePass;
         for (TPtr<SceneObject>& object : objectsToRender)
         {
             TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
-            if (meshComponent == nullptr)
-                continue;
 
             TPtr<MeshResource> meshResource = meshComponent->GetMesh();
             TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
-            if (meshResource == nullptr || materialResource == nullptr)
-                continue;
 
             TPtr<Mesh> mesh = meshResource->GetMesh();
             TPtr<Material> material = materialResource->GetMaterial();
-            if (mesh == nullptr || material == nullptr)
-                continue;
+            TPtr<Pass> pass = material->GetPass(passType);
 
             VulkanGraphicPipelineDesc pipelineDesc{};
             pipelineDesc.extent = extent;
             mesh->BuildPipelineDesc(pipelineDesc);
-            material->BuildPipelineDesc(pipelineDesc);
+            pass->BuildPipelineDesc(pipelineDesc);
             TPtr<VulkanGraphicPipeline> pipeline = std::make_shared<VulkanGraphicPipeline>(device, pipelineDesc, renderPass);
             usedPipelineSet.insert(pipeline);
 
@@ -209,7 +219,7 @@ void ForwardRenderer::RenderFrame(TPtr<Scene> scene, TPtr<Window> window)
             vkCmdBindIndexBuffer(vkCommandBuffer, mesh->GetIndexBuffer()->GetRawBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
             // Fragment
-            vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->GetPipelineLayout()->GetRawPipelineLayout(), 0, 1, &material->GetDescriptorSet()->GetRawDescriptorSet(), 0, nullptr);
+            vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pass->GetPipelineLayout()->GetRawPipelineLayout(), 0, 1, &pass->GetDescriptorSet()->GetRawDescriptorSet(), 0, nullptr);
             vkCmdDrawIndexed(vkCommandBuffer, mesh->GetVerticesCount(), 1, 0, 0, 0);
         }
     }
@@ -220,7 +230,7 @@ void ForwardRenderer::RenderFrame(TPtr<Scene> scene, TPtr<Window> window)
 
     std::vector<VkSemaphore> waitSemaphores{_imageAvailableSemaphore};
     std::vector<VkPipelineStageFlags> waitStages{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    //std::vector<VkSemaphore> signalSemaphores{_renderFinishedSemaphore};
+    // std::vector<VkSemaphore> signalSemaphores{_renderFinishedSemaphore};
     std::vector<VkSemaphore> signalSemaphores{};
 
     graphicQueue->Submit(commandBuffer, waitSemaphores, waitStages, signalSemaphores, _inFlightFence);

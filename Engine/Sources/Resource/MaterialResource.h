@@ -15,17 +15,25 @@ namespace ZE {
 
 class Material;
 
+enum class EPassType : int
+{
+    BasePass = 0,
+    DepthPass = 1,
+    PassCount
+};
+
+
 struct TextureBindingInfo
 {
     uint32_t bindingPoint;
     TPtr<TextureResource> texture;
 };
 
-class MaterialResource : public BaseResource
+class PassResource : public BaseResource
 {
 public:
-    MaterialResource();
-    virtual ~MaterialResource();
+    PassResource();
+    virtual ~PassResource();
 
     virtual void Load() override;
     virtual void Unload() override;
@@ -38,14 +46,33 @@ public:
     TPtr<TextureResource> GetTexture(const EShaderStage& stage);
     const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& GetTextureMap();
 
-    void SetMaterial(TPtr<Material> material);
-    TPtr<Material> GetMaterial();
-
 private:
     // EBlendType _blendType;
     TPtrUnorderedMap<EShaderStage, ShaderResource> _shaderMap;
     std::unordered_map<EShaderStage, std::list<TextureBindingInfo>> _textureMap;
+};
 
+class MaterialResource : public BaseResource
+{
+public:
+    MaterialResource();
+    virtual ~MaterialResource();
+
+    virtual void Load() override;
+    virtual void Unload() override;
+
+    void SetPass(EPassType passType, TPtr<PassResource> pass);
+    TPtr<PassResource> GetPass(EPassType passType);
+
+private:
+    TPtrUnorderedMap<EPassType, PassResource> _passMap;
+
+public:
+    // ToDo
+    void SetMaterial(TPtr<Material> material);
+    TPtr<Material> GetMaterial();
+
+private:
     TPtr<Material> _material;
 };
 

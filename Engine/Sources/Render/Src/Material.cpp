@@ -13,23 +13,22 @@
 #include "Graphic/VulkanPipeline.h"
 #include "Graphic/VulkanShader.h"
 #include "Graphic/VulkanCommandBuffer.h"
-#include "Resource/MaterialResource.h"
 #include "Resource/ShaderResource.h"
 #include "Resource/TextureResource.h"
 
 
 namespace ZE {
 
-Material::Material(TPtr<MaterialResource> materialResource)
-    : _owner(materialResource), _descriptorSet(nullptr), _pipelineLayout(nullptr)
+Pass::Pass(TPtr<PassResource> passResource)
+    : _owner(passResource), _descriptorSet(nullptr), _pipelineLayout(nullptr)
 {
 }
 
-Material::~Material()
+Pass::~Pass()
 {
 }
 
-void Material::BuildRenderResource(TPtr<VulkanCommandBuffer> commandBuffer)
+void Pass::BuildRenderResource(TPtr<VulkanCommandBuffer> commandBuffer)
 {
     CreateGraphicTextures(commandBuffer);
     CreateGraphicBuffers(commandBuffer);
@@ -75,15 +74,15 @@ TPtr<VulkanImageView> CreateGraphicImage(TPtr<VulkanDevice> device, TPtr<VulkanC
 }
 
 
-void Material::CreateGraphicTextures(TPtr<VulkanCommandBuffer> commandBuffer)
+void Pass::CreateGraphicTextures(TPtr<VulkanCommandBuffer> commandBuffer)
 {
     assert(_owner.expired() == false);
 
-    TPtr<MaterialResource> materialResource = _owner.lock();
+    TPtr<PassResource> passResource = _owner.lock();
     TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
 
     const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& textureMap =
-        materialResource->GetTextureMap();
+        passResource->GetTextureMap();
 
     for (auto& [stage, textureList] : textureMap)
     {
@@ -107,7 +106,7 @@ void Material::CreateGraphicTextures(TPtr<VulkanCommandBuffer> commandBuffer)
     }
 }
 
-void Material::CreateGraphicBuffers(TPtr<VulkanCommandBuffer> commandBuffer)
+void Pass::CreateGraphicBuffers(TPtr<VulkanCommandBuffer> commandBuffer)
 {
     _uniformBuffer = std::make_shared<VulkanBuffer>(commandBuffer->GetDevice(), sizeof(glm::mat4x4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
@@ -121,13 +120,13 @@ TPtr<VulkanShader> CreateGraphicShader(TPtr<VulkanDevice> device, VkShaderStageF
     return std::make_shared<VulkanShader>(device, shader->GetByteCode());
 }
 
-void Material::CreateGraphicShaders()
+void Pass::CreateGraphicShaders()
 {
     assert(_owner.expired() == false);
-    TPtr<MaterialResource> materialResource = _owner.lock();
+    TPtr<PassResource> passResource = _owner.lock();
 
     TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
-    const TPtrUnorderedMap<EShaderStage, ShaderResource>& shaderMap = materialResource->GetShaderMap();
+    const TPtrUnorderedMap<EShaderStage, ShaderResource>& shaderMap = passResource->GetShaderMap();
     for (auto& [stage, shader] : shaderMap)
     {
         VkShaderStageFlagBits vulkanBit = ConvertShaderStageToVulkanBit(stage);
@@ -136,7 +135,7 @@ void Material::CreateGraphicShaders()
     }
 }
 
-void Material::CreateDescriptorSetLayout()
+void Pass::CreateDescriptorSetLayout()
 {
     TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
 
@@ -158,14 +157,14 @@ void Material::CreateDescriptorSetLayout()
     _descriptorSetLayout = std::make_shared<VulkanDescriptorSetLayout>(device, localDescriptorSetLayoutBindings);
 }
 
-void Material::CreateDescriptorSet()
+void Pass::CreateDescriptorSet()
 {
     TPtr<VulkanDescriptorPool> descriptorPool = RenderSystem::Get().GetDescriptorPool();
 
     _descriptorSet = std::make_shared<VulkanDescriptorSet>(descriptorPool, _descriptorSetLayout);
 }
 
-void Material::LinkDescriptorSet()
+void Pass::LinkDescriptorSet()
 {
     {
         VkDescriptorBufferInfo bufferInfo{};
@@ -191,7 +190,7 @@ void Material::LinkDescriptorSet()
     }
 }
 
-void Material::CreatePipelineLayout()
+void Pass::CreatePipelineLayout()
 {
     TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
 
@@ -199,17 +198,17 @@ void Material::CreatePipelineLayout()
     _pipelineLayout = std::make_shared<VulkanPipelineLayout>(device, descriptorSetLayoutArr);
 }
 
-TPtr<VulkanDescriptorSet> Material::GetDescriptorSet()
+TPtr<VulkanDescriptorSet> Pass::GetDescriptorSet()
 {
     return _descriptorSet;
 }
 
-TPtr<VulkanPipelineLayout> Material::GetPipelineLayout()
+TPtr<VulkanPipelineLayout> Pass::GetPipelineLayout()
 {
     return _pipelineLayout;
 }
 
-void Material::BuildPipelineDesc(VulkanGraphicPipelineDesc& desc)
+void Pass::BuildPipelineDesc(VulkanGraphicPipelineDesc& desc)
 {
     if (_shaders.find(VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT) != _shaders.end())
         desc.vertexShader = _shaders[VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT];
@@ -224,11 +223,33 @@ void Material::BuildPipelineDesc(VulkanGraphicPipelineDesc& desc)
     desc.pipelineLayout = _pipelineLayout;
 }
 
-void Material::UpdateUniformBuffer(TPtr<VulkanCommandBuffer> commandBuffer, const glm::mat4x4& mvp)
+void Pass::UpdateUniformBuffer(TPtr<VulkanCommandBuffer> commandBuffer, const glm::mat4x4& mvp)
 {
     TPtr<VulkanBuffer> stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(sizeof(mvp));
     _uniformBuffer->TransferData(commandBuffer, stagingBuffer, &mvp, sizeof(mvp));
     RenderSystem::Get().GetBufferManager()->ReleaseStagingBuffer(stagingBuffer, commandBuffer);
+}
+
+Material::Material(TPtr<MaterialResource> materialResource)
+    : _owner(materialResource)
+{
+}
+
+Material::~Material()
+{
+}
+
+void Material::SetPass(EPassType passType, TPtr<Pass> pass)
+{
+    _passMap.insert(std::make_pair(passType, pass));
+}
+
+TPtr<Pass> Material::GetPass(EPassType passType)
+{
+    if (_passMap.find(passType) == _passMap.end())
+        return nullptr;
+    else
+        return _passMap[passType];
 }
 
 } // namespace ZE
