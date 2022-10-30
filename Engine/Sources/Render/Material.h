@@ -1,5 +1,6 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "Resource/MaterialResource.h"
 #include "Graphic/VulkanPipeline.h"
 
 #include <glm/glm.hpp>
@@ -21,7 +22,6 @@ class VulkanDescriptorSetLayout;
 class VulkanPipelineLayout;
 class VulkanGraphicPipeline;
 class VulkanCommandBuffer;
-class MaterialResource;
 class Mesh;
 
 struct VulkanImageBindingInfo
@@ -31,11 +31,11 @@ struct VulkanImageBindingInfo
     TPtr<VulkanSampler> vulkanSampler;
 };
 
-class Material
+class Pass
 {
 public:
-    Material(TPtr<MaterialResource> material);
-    ~Material();
+    Pass(TPtr<PassResource> passResource);
+    ~Pass();
 
     void BuildRenderResource(TPtr<VulkanCommandBuffer> commandBuffer);
 
@@ -66,6 +66,20 @@ private:
     TPtr<VulkanPipelineLayout> _pipelineLayout;
     VulkanGraphicPipelineDesc _pipelineDesc;
 
+    TWeakPtr<PassResource> _owner;
+};
+
+class Material
+{
+public:
+    Material(TPtr<MaterialResource> material);
+    ~Material();
+
+    void SetPass(EPassType passType, TPtr<Pass> pass);
+    TPtr<Pass> GetPass(EPassType passType);
+
+private:
+    TPtrUnorderedMap<EPassType, Pass> _passMap;
     TWeakPtr<MaterialResource> _owner;
 };
 
