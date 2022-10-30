@@ -3,15 +3,15 @@
 
 namespace ZE {
 
-MaterialResource::MaterialResource() : _material(nullptr)
+PassResource::PassResource()
 {
 }
 
-MaterialResource::~MaterialResource()
+PassResource::~PassResource()
 {
 }
 
-void MaterialResource::Load()
+void PassResource::Load()
 {
     for (auto& [stage, shader] : _shaderMap)
     {
@@ -27,7 +27,7 @@ void MaterialResource::Load()
     }
 }
 
-void MaterialResource::Unload()
+void PassResource::Unload()
 {
     for (auto& [stage, shader] : _shaderMap)
     {
@@ -43,14 +43,13 @@ void MaterialResource::Unload()
     }
 }
 
-
-void MaterialResource::SetShader(const EShaderStage& stage, TPtr<ShaderResource> shader)
+void PassResource::SetShader(const EShaderStage& stage, TPtr<ShaderResource> shader)
 {
     if (_shaderMap.find(stage) == _shaderMap.end())
         _shaderMap.insert(std::make_pair(stage, shader));
 }
 
-TPtr<ShaderResource> MaterialResource::GetShader(const EShaderStage& stage)
+TPtr<ShaderResource> PassResource::GetShader(const EShaderStage& stage)
 {
     if (_shaderMap.find(stage) == _shaderMap.end())
         return nullptr;
@@ -58,12 +57,12 @@ TPtr<ShaderResource> MaterialResource::GetShader(const EShaderStage& stage)
         return _shaderMap[stage];
 }
 
-const TPtrUnorderedMap<EShaderStage, ShaderResource>& MaterialResource::GetShaderMap()
+const TPtrUnorderedMap<EShaderStage, ShaderResource>& PassResource::GetShaderMap()
 {
     return _shaderMap;
 }
 
-void MaterialResource::SetTexture(const EShaderStage& stage, uint32_t bindingPoint, TPtr<TextureResource> texture)
+void PassResource::SetTexture(const EShaderStage& stage, uint32_t bindingPoint, TPtr<TextureResource> texture)
 {
     if (_textureMap.find(stage) == _textureMap.end())
         _textureMap.insert(std::make_pair(stage, std::list<TextureBindingInfo>()));
@@ -71,7 +70,7 @@ void MaterialResource::SetTexture(const EShaderStage& stage, uint32_t bindingPoi
     _textureMap[stage].push_back(TextureBindingInfo{bindingPoint, texture});
 }
 
-TPtr<TextureResource> MaterialResource::GetTexture(const EShaderStage& stage)
+TPtr<TextureResource> PassResource::GetTexture(const EShaderStage& stage)
 {
     if (_textureMap.find(stage) == _textureMap.end())
         return nullptr;
@@ -88,10 +87,46 @@ TPtr<TextureResource> MaterialResource::GetTexture(const EShaderStage& stage)
     }
 }
 
-const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& MaterialResource::GetTextureMap()
+const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& PassResource::GetTextureMap()
 {
     return _textureMap;
 }
+
+
+MaterialResource::MaterialResource()
+    : _material(nullptr)
+{
+}
+
+MaterialResource::~MaterialResource()
+{
+}
+
+void MaterialResource::Load()
+{
+    for (auto &[passType, pass] : _passMap)
+        pass->Load();
+}
+
+void MaterialResource::Unload()
+{
+    for (auto &[passType, pass] : _passMap)
+        pass->Unload();
+}
+
+void MaterialResource::SetPass(EPassType passType, TPtr<PassResource> pass)
+{
+    _passMap.insert(std::make_pair(passType, pass));
+}
+
+TPtr<PassResource> MaterialResource::GetPass(EPassType passType)
+{
+    if (_passMap.find(passType) == _passMap.end())
+        return nullptr;
+    else
+        return _passMap[passType];
+}
+
 
 void MaterialResource::SetMaterial(TPtr<Material> material)
 {
