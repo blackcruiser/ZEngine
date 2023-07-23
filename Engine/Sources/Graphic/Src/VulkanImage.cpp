@@ -10,7 +10,7 @@
 
 namespace ZE {
 
-VulkanImage::VulkanImage(TPtr<VulkanDevice> device, const VkExtent3D& extent, VkFormat format)
+VulkanImage::VulkanImage(TPtr<VulkanDevice> device, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
     : _hasOwnship(true), _device(device), _extent(extent), _format(format), _vkImage(VK_NULL_HANDLE), _vkMemory(VK_NULL_HANDLE)
 {
     VkDeviceSize size = _extent.width * _extent.height * 4;
@@ -26,7 +26,7 @@ VulkanImage::VulkanImage(TPtr<VulkanDevice> device, const VkExtent3D& extent, Vk
     imageInfo.format = format;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.usage = usageFlags;
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -52,7 +52,7 @@ VulkanImage::VulkanImage(TPtr<VulkanDevice> device, const VkExtent3D& extent, Vk
     vkBindImageMemory(vkDevice, _vkImage, _vkMemory, 0);
 }
 
-VulkanImage::VulkanImage(TPtr<VulkanDevice> device, VkImage vkImage, const VkExtent3D& extent, VkFormat format)
+VulkanImage::VulkanImage(TPtr<VulkanDevice> device, VkImage vkImage, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
     : _hasOwnship(false), _device(device), _extent(extent), _format(format), _vkImage(vkImage), _vkMemory(VK_NULL_HANDLE)
 {
 }
@@ -146,6 +146,11 @@ void VulkanImage::TransferData(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Vul
     TransitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     CopyFromBuffer(commandBuffer, stagingBuffer, {0, 0, 0}, _extent);
     TransitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+VkExtent3D VulkanImage::GetExtent()
+{
+    return _extent;
 }
 
 VkFormat VulkanImage::GetFormat()
