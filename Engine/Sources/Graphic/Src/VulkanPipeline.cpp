@@ -12,22 +12,30 @@ namespace ZE {
 
 VulkanGraphicPipeline::VulkanGraphicPipeline(
     TPtr<VulkanDevice> device, const VulkanGraphicPipelineDesc& desc, TPtr<VulkanRenderPass> renderPass)
-    : _device(device),  _vertexShader(desc.vertexShader), _fragmentShader(desc.vertexShader), _pipelineLayout(desc.pipelineLayout), _renderPass(renderPass), _vkPipeline(VK_NULL_HANDLE)
+    : _device(device),  _vertexShader(desc.vertexShader), _fragmentShader(desc.fragmentShader), _pipelineLayout(desc.pipelineLayout), _renderPass(renderPass), _vkPipeline(VK_NULL_HANDLE)
 {
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+
     // Pipeline
     VkPipelineShaderStageCreateInfo vkVertexShaderStageCreateInfo{};
     vkVertexShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vkVertexShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vkVertexShaderStageCreateInfo.pName = "main";
     vkVertexShaderStageCreateInfo.module = desc.vertexShader->GetRawShader();
+    shaderStages.push_back(vkVertexShaderStageCreateInfo);
+    
 
-    VkPipelineShaderStageCreateInfo vkFragmentShaderStageCreateInfo{};
-    vkFragmentShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vkFragmentShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    vkFragmentShaderStageCreateInfo.pName = "main";
-    vkFragmentShaderStageCreateInfo.module = desc.fragmentShader->GetRawShader();
+    if (desc.fragmentShader)
+    {
+        VkPipelineShaderStageCreateInfo vkFragmentShaderStageCreateInfo{};
+        vkFragmentShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vkFragmentShaderStageCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        vkFragmentShaderStageCreateInfo.pName = "main";
+        vkFragmentShaderStageCreateInfo.module = desc.fragmentShader->GetRawShader();
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = {vkVertexShaderStageCreateInfo, vkFragmentShaderStageCreateInfo};
+        shaderStages.push_back(vkFragmentShaderStageCreateInfo);
+    }
+
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -82,6 +90,14 @@ VulkanGraphicPipeline::VulkanGraphicPipeline(
     multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
     multisampling.alphaToOneEnable = VK_FALSE;      // Optional
 
+    VkPipelineDepthStencilStateCreateInfo depthStencil{};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_TRUE;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_GREATER;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.stencilTestEnable = VK_FALSE;
+
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -111,16 +127,16 @@ VulkanGraphicPipeline::VulkanGraphicPipeline(
     colorBlending.blendConstants[2] = 0.0f; // Optional
     colorBlending.blendConstants[3] = 0.0f; // Optional
 
-    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    VkGraphicsPipelineCreateInfo pipelineInfo{}; 
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.stageCount = 2;
-    pipelineInfo.pStages = shaderStages;
+    pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+    pipelineInfo.pStages = shaderStages.data();
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = nullptr; // Optional
+    pipelineInfo.pDepthStencilState = &depthStencil; // Optional
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = nullptr; // Optional
     pipelineInfo.layout = desc.pipelineLayout->GetRawPipelineLayout();

@@ -11,12 +11,12 @@
 #include "Graphic/VulkanPipelineLayout.h"
 #include "Graphic/VulkanPipeline.h"
 #include "Graphic/VulkanSwapchain.h"
-#include "Graphic/VulkanRenderPass.h"
-#include "Graphic/VulkanFramebuffer.h"
 #include "Graphic/VulkanQueue.h"
 #include "RenderSystem.h"
 #include "Material.h"
 #include "Mesh.h"
+#include "DirectionalLightPass.h"
+#include "DepthPass.h"
 #include "Resource/MaterialResource.h"
 #include "Resource/MeshResource.h"
 #include "Scene/Scene.h"
@@ -36,6 +36,9 @@ ForwardRenderer::ForwardRenderer()
     _renderFinishedSemaphore = RenderSystem::Get().GetDevice()->CreateGraphicSemaphore();
 
     _inFlightFence = RenderSystem::Get().GetDevice()->CreateFence(true);
+
+    _depthPass = std::make_shared<DepthPass>();
+    _directionalLightPass = std::make_shared<DirectionalLightPass>();
 }
 
 ForwardRenderer::~ForwardRenderer()
@@ -96,20 +99,9 @@ void ForwardRenderer::Init(TPtr<Scene> scene)
     transferQueue->WaitIdle();
 }
 
-void ForwardRenderer::RenderFrame(TPtr<Scene> scene, TPtr<Window> window)
+TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene)
 {
-    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
-    VkDevice vkDevice = device->GetRawDevice();
-
-    // Begin render
-    vkWaitForFences(vkDevice, 1, &_inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(vkDevice, 1, &_inFlightFence);
-
-    TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
-    TPtr<VulkanCommandBuffer> commandBuffer = RenderSystem::Get().GetCommandBufferManager()->GetCommandBuffer(VulkanQueue::EType::Graphic);
-
-    commandBuffer->Begin();
-
+    //Filter Objects
     const TPtrArr<SceneObject>& allObjects = scene->GetObjects();
     TPtrArr<SceneObject> objectsToRender;
     std::copy_if(allObjects.begin(), allObjects.end(), std::back_inserter(objectsToRender), [](TPtr<SceneObject> object) {
@@ -163,68 +155,46 @@ void ForwardRenderer::RenderFrame(TPtr<Scene> scene, TPtr<Window> window)
         }
     }
 
+    return objectsToRender;
+}
+
+void ForwardRenderer::RenderFrame(TPtr<Scene> scene, TPtr<Window> window)
+{
+    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+    VkDevice vkDevice = device->GetRawDevice();
 
     TPtr<VulkanSurface> surface = window->GetSurface();
     VkSurfaceFormatKHR surfaceFormat = surface->GetSurfaceFormat();
     VkExtent2D extent = surface->GetExtent();
 
-    TPtr<VulkanSwapchain> swapchain = window->GetSwapchain();
-
-
-    TPtrUnorderedSet<VulkanGraphicPipeline> usedPipelineSet;
-    TPtr<VulkanRenderPass> renderPass = std::make_shared<VulkanRenderPass>(device, surfaceFormat.format);
-
-    TPtr<VulkanImage> sceneImage = swapchain->AcquireNextImage(UINT64_MAX, _imageAvailableSemaphore, VK_NULL_HANDLE);
-    TPtrArr<VulkanImage> framebufferImageAttachments{sceneImage};
-    TPtrArr<VulkanImageView> framebufferImageViewAttachments;
-    std::transform(framebufferImageAttachments.begin(), framebufferImageAttachments.end(), std::back_inserter(framebufferImageViewAttachments), [](TPtr<VulkanImage> image) {
-        return std::make_shared<VulkanImageView>(image);
-    });
-
-    TPtr<VulkanFramebuffer> framebuffer = std::make_shared<VulkanFramebuffer>(device, renderPass, framebufferImageViewAttachments, extent);
+    TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
+    TPtr<VulkanCommandBuffer> commandBuffer = RenderSystem::Get().GetCommandBufferManager()->GetCommandBuffer(VulkanQueue::EType::Graphic);
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
 
+    vkWaitForFences(vkDevice, 1, &_inFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(vkDevice, 1, &_inFlightFence);
 
-    commandBuffer->BeginRenderPass(renderPass, framebuffer, {{0, 0}, extent}, {0, 0, 0, 1});
+    TPtr<VulkanSwapchain> swapchain = window->GetSwapchain();
+    TPtr<VulkanImage> sceneImage = swapchain->AcquireNextImage(UINT64_MAX, _imageAvailableSemaphore, VK_NULL_HANDLE);  
 
+    commandBuffer->Begin();
 
-    // Opaque Pass
-    {
-        PassType passType = PassType::BasePass;
-        for (TPtr<SceneObject>& object : objectsToRender)
-        {
-            TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
+    TPtrArr<SceneObject> objectsToRender = Prepare(commandBuffer, scene);
 
-            TPtr<MeshResource> meshResource = meshComponent->GetMesh();
-            TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
+    //Depth Pass
+    TPtr<VulkanImage> depthImage = std::make_shared<VulkanImage>(device, VkExtent3D{extent.width, extent.height, 1}, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    TPtr<VulkanImageView> depthImageView = std::make_shared<VulkanImageView>(depthImage, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
+    TPtr<RenderTargets> depthRenderTargets = std::make_shared<RenderTargets>();
+    depthRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::None};
+    _depthPass->Execute(objectsToRender, commandBuffer, depthRenderTargets);
 
-            TPtr<Mesh> mesh = meshResource->GetMesh();
-            TPtr<Material> material = materialResource->GetMaterial();
-            TPtr<Pass> pass = material->GetPass(passType);
-
-            VulkanGraphicPipelineDesc pipelineDesc{};
-            pipelineDesc.extent = extent;
-            mesh->BuildPipelineDesc(pipelineDesc);
-            pass->BuildPipelineDesc(pipelineDesc);
-            TPtr<VulkanGraphicPipeline> pipeline = std::make_shared<VulkanGraphicPipeline>(device, pipelineDesc, renderPass);
-            usedPipelineSet.insert(pipeline);
-
-            vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetRawPipeline());
-
-
-            // Vertex
-            VkBuffer vertexBuffers[] = {mesh->GetVertexBuffer()->GetRawBuffer()};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(vkCommandBuffer, mesh->GetIndexBuffer()->GetRawBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-            // Fragment
-            vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pass->GetPipelineLayout()->GetRawPipelineLayout(), 0, 1, &pass->GetDescriptorSet()->GetRawDescriptorSet(), 0, nullptr);
-            vkCmdDrawIndexed(vkCommandBuffer, mesh->GetVerticesCount(), 1, 0, 0, 0);
-        }
-    }
-
-    commandBuffer->EndRenderPass();
+    //Light Pass
+    TPtr<RenderTargets> sceneRenderTargets = std::make_shared<RenderTargets>();
+    TPtrArr<VulkanImage> framebufferImageAttachments{sceneImage};
+    std::transform(framebufferImageAttachments.begin(), framebufferImageAttachments.end(), std::back_inserter(sceneRenderTargets->colors), [](TPtr<VulkanImage> image) {
+        return RenderTargetBinding(std::make_shared<VulkanImageView>(image), ERenderTargetLoadAction::Clear);
+    });
+    _directionalLightPass->Execute(objectsToRender, commandBuffer, sceneRenderTargets);
 
     commandBuffer->End();
 

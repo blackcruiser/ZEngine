@@ -12,7 +12,9 @@ class VulkanDevice;
 class VulkanRenderPass
 {
 public:
-    VulkanRenderPass(TPtr<VulkanDevice> device, VkFormat format);
+    VulkanRenderPass(TPtr<VulkanDevice> device, const std::vector<VkAttachmentDescription>& colorAttachmentDescriptionArr, const VkAttachmentDescription& depthAttachment);
+    VulkanRenderPass(TPtr<VulkanDevice> device, const std::vector<VkAttachmentDescription>& colorAttachmentDescriptionArr);
+    VulkanRenderPass(TPtr<VulkanDevice> device, const VkAttachmentDescription& depthAttachment);
     ~VulkanRenderPass();
 
     VkRenderPass GetRawRenderPass();
