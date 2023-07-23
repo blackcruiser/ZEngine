@@ -10,14 +10,9 @@
 namespace ZE {
 
 class SceneObject;
-class Mesh;
-class Material;
-class VulkanCommandPool;
+class DirectionalLightPass;
+class DepthPass;
 class VulkanCommandBuffer;
-class VulkanDescriptorPool;
-class VulkanRenderPass;
-class VulkanSwapchain;
-class VulkanFramebuffer;
 class VulkanDevice;
 class Surface;
 
@@ -29,11 +24,16 @@ public:
     virtual ~ForwardRenderer();
 
     virtual void Init(TPtr<Scene> scene) override;
+    TPtrArr<SceneObject> Prepare(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene);
+    void Draw(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene);
     virtual void RenderFrame(TPtr<Scene> scene, TPtr<Window> window) override;
 
 private:
     VkSemaphore _imageAvailableSemaphore, _renderFinishedSemaphore;
     VkFence _inFlightFence;
+
+    TPtr<DepthPass> _depthPass;
+    TPtr<DirectionalLightPass> _directionalLightPass;
 };
 
 }

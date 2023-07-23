@@ -12,6 +12,7 @@ class VulkanQueue;
 class VulkanDescriptorPool;
 class VulkanCommandBufferManager;
 class VulkanBufferManager;
+class VulkanGraphicPipeline;
 
 class RenderSystem
 {
@@ -35,6 +36,7 @@ public:
     TPtr<VulkanDescriptorPool> GetDescriptorPool();
     TPtr<VulkanCommandBufferManager> GetCommandBufferManager();
     TPtr<VulkanBufferManager> GetBufferManager();
+    TPtrSet<VulkanGraphicPipeline>& GetPipelineCache();
 
 private:
     static RenderSystem* _instance;
@@ -46,6 +48,7 @@ private:
     TPtr<VulkanDescriptorPool> _descriptorPool;
     TPtr<VulkanCommandBufferManager> _commandBufferManager;
     TPtr<VulkanBufferManager> _bufferManager;
+    TPtrSet<VulkanGraphicPipeline> _pipelineCache;
 };
 
 } // namespace ZE

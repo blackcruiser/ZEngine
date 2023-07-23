@@ -72,6 +72,7 @@ RenderSystem::~RenderSystem()
 {
     _device->WaitIdle();
 
+    _pipelineCache.clear();
     _bufferManager.reset();
     _commandBufferManager.reset();
     _descriptorPool.reset();
@@ -170,6 +171,11 @@ TPtr<VulkanCommandBufferManager> RenderSystem::GetCommandBufferManager()
  TPtr<VulkanBufferManager> RenderSystem::GetBufferManager()
  {
     return _bufferManager;
+ }
+
+TPtrSet<VulkanGraphicPipeline>& RenderSystem::GetPipelineCache()
+ {
+    return _pipelineCache;
  }
 
 } // namespace ZE
