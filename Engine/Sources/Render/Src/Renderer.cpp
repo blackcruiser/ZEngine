@@ -12,7 +12,9 @@
 #include "Graphic/VulkanPipeline.h"
 #include "Graphic/VulkanSwapchain.h"
 #include "Graphic/VulkanQueue.h"
+#include "Frame.h"
 #include "RenderSystem.h"
+#include "RenderTargets.h"
 #include "Material.h"
 #include "Mesh.h"
 #include "DirectionalLightPass.h"
@@ -32,9 +34,6 @@ namespace ZE {
 
 ForwardRenderer::ForwardRenderer()
 {
-    _imageAvailableSemaphore = RenderSystem::Get().GetDevice()->CreateGraphicSemaphore();
-    _renderFinishedSemaphore = RenderSystem::Get().GetDevice()->CreateGraphicSemaphore();
-
     _inFlightFence = RenderSystem::Get().GetDevice()->CreateFence(true);
 
     _depthPass = std::make_shared<DepthPass>();
@@ -43,8 +42,6 @@ ForwardRenderer::ForwardRenderer()
 
 ForwardRenderer::~ForwardRenderer()
 {
-    RenderSystem::Get().GetDevice()->DestroyGraphicSemaphore(_imageAvailableSemaphore);
-    RenderSystem::Get().GetDevice()->DestroyGraphicSemaphore(_renderFinishedSemaphore);
     RenderSystem::Get().GetDevice()->DestroyFence(_inFlightFence);
 }
 
@@ -158,55 +155,25 @@ TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<VulkanCommandBuffer> commandB
     return objectsToRender;
 }
 
-void ForwardRenderer::RenderFrame(TPtr<Scene> scene, TPtr<Window> window)
+void ForwardRenderer::RenderFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene, TPtr<Frame> frame)
 {
-    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
-    VkDevice vkDevice = device->GetRawDevice();
-
-    TPtr<VulkanSurface> surface = window->GetSurface();
-    VkSurfaceFormatKHR surfaceFormat = surface->GetSurfaceFormat();
-    VkExtent2D extent = surface->GetExtent();
-
-    TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
-    TPtr<VulkanCommandBuffer> commandBuffer = RenderSystem::Get().GetCommandBufferManager()->GetCommandBuffer(VulkanQueue::EType::Graphic);
-    VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
-
-    vkWaitForFences(vkDevice, 1, &_inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(vkDevice, 1, &_inFlightFence);
-
-    TPtr<VulkanSwapchain> swapchain = window->GetSwapchain();
-    TPtr<VulkanImage> sceneImage = swapchain->AcquireNextImage(UINT64_MAX, _imageAvailableSemaphore, VK_NULL_HANDLE);  
+    TPtr<VulkanDevice> device = commandBuffer->GetDevice();
 
     commandBuffer->Begin();
 
     TPtrArr<SceneObject> objectsToRender = Prepare(commandBuffer, scene);
 
     //Depth Pass
-    TPtr<VulkanImage> depthImage = std::make_shared<VulkanImage>(device, VkExtent3D{extent.width, extent.height, 1}, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    TPtr<VulkanImage> depthImage = std::make_shared<VulkanImage>(device, frame->GetExtent(), VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     TPtr<VulkanImageView> depthImageView = std::make_shared<VulkanImageView>(depthImage, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
     TPtr<RenderTargets> depthRenderTargets = std::make_shared<RenderTargets>();
     depthRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::None};
-    _depthPass->Execute(objectsToRender, commandBuffer, depthRenderTargets);
+    _depthPass->Execute(objectsToRender, commandBuffer, frame, depthRenderTargets);
 
     //Light Pass
-    TPtr<RenderTargets> sceneRenderTargets = std::make_shared<RenderTargets>();
-    TPtrArr<VulkanImage> framebufferImageAttachments{sceneImage};
-    std::transform(framebufferImageAttachments.begin(), framebufferImageAttachments.end(), std::back_inserter(sceneRenderTargets->colors), [](TPtr<VulkanImage> image) {
-        return RenderTargetBinding(std::make_shared<VulkanImageView>(image), ERenderTargetLoadAction::Clear);
-    });
-    _directionalLightPass->Execute(objectsToRender, commandBuffer, sceneRenderTargets);
+    _directionalLightPass->Execute(objectsToRender, commandBuffer, frame, frame->GetFrameBuffer());
 
     commandBuffer->End();
-
-    std::vector<VkSemaphore> waitSemaphores{_imageAvailableSemaphore};
-    std::vector<VkPipelineStageFlags> waitStages{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    // std::vector<VkSemaphore> signalSemaphores{_renderFinishedSemaphore};
-    std::vector<VkSemaphore> signalSemaphores{};
-
-    graphicQueue->Submit(commandBuffer, waitSemaphores, waitStages, signalSemaphores, _inFlightFence);
-
-    graphicQueue->Present(swapchain, {});
-    graphicQueue->WaitIdle();
 }
 
 

@@ -25,13 +25,13 @@ ZE::TPtr<ZE::Scene> CreateSampleScene()
 
 
     ZE::TPtr<ZE::MeshResource> meshResource =
-        std::make_shared<ZE::MeshResource>("../Samples/Resources/Meshes/viking_room.obj");
+        std::make_shared<ZE::MeshResource>("Samples/Resources/Meshes/viking_room.obj");
     ZE::TPtr<ZE::ShaderResource> vertexShaderResource =
         std::make_shared<ZE::ShaderResource>(ZE::EShaderStage::Vertex, "LocalToClipSpaceVertexShader.glsl");
     ZE::TPtr<ZE::ShaderResource> fragmentShaderResource =
         std::make_shared<ZE::ShaderResource>(ZE::EShaderStage::Fragment, "LambertBlinnPhoneFragmentShader.glsl");
     ZE::TPtr<ZE::TextureResource> texture =
-        std::make_shared<ZE::TextureResource>("../Samples/Resources/Textures/viking_room.png");
+        std::make_shared<ZE::TextureResource>("Samples/Resources/Textures/viking_room.png");
 
     ZE::TPtr<ZE::PassResource> depthPass = std::make_shared<ZE::PassResource>();
     depthPass->SetShader(ZE::EShaderStage::Vertex, vertexShaderResource);

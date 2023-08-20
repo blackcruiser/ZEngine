@@ -2,6 +2,7 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "RenderSystem.h"
+#include "RenderTargets.h"
 #include "Scene/SceneObject.h"
 #include "Scene/MeshComponent.h"
 #include "Resource/MaterialResource.h"
