@@ -1,4 +1,6 @@
 #include "RenderPass.h"
+#include "RenderTargets.h"
+#include "Frame.h"
 #include "Graphic/VulkanCommandBuffer.h"
 #include "Graphic/VulkanRenderPass.h"
 #include "Graphic/VulkanFramebuffer.h"
@@ -66,6 +68,7 @@ void RenderPass::Execute(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanComman
     }
 
     TPtr<VulkanFramebuffer> framebuffer = std::make_shared<VulkanFramebuffer>(device, _renderPass, framebufferImageArr, extent2D);
+    frame->PutFramebuffer(framebuffer);
     commandBuffer->BeginRenderPass(_renderPass, framebuffer, {{0, 0}, extent2D}, {0, 0, 0, 1});
 
     Draw(objectsToRender, commandBuffer, renderTargets);
@@ -73,4 +76,4 @@ void RenderPass::Execute(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanComman
     commandBuffer->EndRenderPass();
 }
 
-}
+} // namespace ZE
