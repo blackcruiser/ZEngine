@@ -1,9 +1,12 @@
 #include "Application.h"
+#include "Graphic/VulkanDevice.h"
 #include "Graphic/Window.h"
 #include "Graphic/VulkanBufferManager.h"
+#include "Graphic/VulkanCommandBufferManager.h"
 #include "Input/InputSystem.h"
 #include "Render/RenderSystem.h"
 #include "Render/ForwardRenderer.h"
+#include "Render/Frame.h"
 #include "Scene/Scene.h"
 
 #include <stdexcept>
@@ -48,11 +51,37 @@ void Application::Run(TPtr<Scene> scene)
 
     _renderer->Init(scene);
 
+    TPtr<Frame> LastFrame;
     while (!_window->ShouldClose())
     {
         glfwPollEvents();
 
-        _renderer->RenderFrame(scene, _window);
+
+        TPtr<VulkanSwapchain> swapchain = _window->GetSwapchain();
+        TPtr<Frame> frame = make_shared<Frame>(RenderSystem::Get().GetDevice(), swapchain);
+        TPtr<VulkanCommandBuffer> commandBuffer = frame->GetCachedCommandBuffer();
+
+        // vkWaitForFences(vkDevice, 1, &_inFlightFence, VK_TRUE, UINT64_MAX);
+        // vkResetFences(vkDevice, 1, &_inFlightFence);
+
+        _renderer->RenderFrame(commandBuffer, scene, frame);
+
+        std::vector<VkSemaphore> waitSemaphores{frame->GetAvailableSemaphore()};
+        std::vector<VkPipelineStageFlags> waitStages{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+        VkSemaphore submitSemaphore = RenderSystem::Get().GetDevice()->CreateGraphicSemaphore();
+        frame->PutSemaphore(submitSemaphore);
+
+        TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
+        graphicQueue->Submit(commandBuffer, waitSemaphores, waitStages, {submitSemaphore}, frame->GetFence());
+        graphicQueue->Present(swapchain, {submitSemaphore});
+
+        if (frame)
+        {
+            VkFence fence = frame->GetFence();
+            vkWaitForFences(RenderSystem::Get().GetDevice()->GetRawDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+        }
+        LastFrame = frame;
 
         RenderSystem::Get().GetBufferManager()->Tick();
     }
