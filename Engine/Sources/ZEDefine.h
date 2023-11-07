@@ -1,16 +1,20 @@
 #pragma once
 
 // Release / Debug
-#define ZE_DEBUG
+#define ZE_DEBUG 1
 
 #ifndef ZE_DEBUG
-#define ZE_RELEASE
+#define ZE_RELEASE 1
 #endif
 
+#define DETECT_MEMORY_LEAK 0
 
 // Platform
 #if (defined _WIN64) || (defined _WIN32)
     #define ZE_PLATFORM_WINDOWS
+    #if ZE_DEBUG && DETECT_MEMORY_LEAK
+        #include <vld.h>
+    #endif
 #elif __APPLE__
     #include "TargetConditionals.h"
     #if TARGET_OS_IPHONE && TARGET_OS_SIMULATOR

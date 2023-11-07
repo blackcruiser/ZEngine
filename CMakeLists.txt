@@ -67,6 +67,28 @@ add_subdirectory(${ThirdPartiesSourcesDirectory}/tinyobjloader)
 add_library(stb_image INTERFACE)
 target_include_directories(stb_image INTERFACE ${ThirdPartiesSourcesDirectory}/stb)
 
+## VLD
+if (WIN32)
+    add_library(VLD_DBGHELP SHARED IMPORTED)
+    set_target_properties(VLD_DBGHELP PROPERTIES
+        IMPORTED_LOCATION "C:/Program Files (x86)/Visual Leak Detector/bin/Win64/dbghelp.dll"
+        IMPORTED_IMPLIB "C:/Program Files (x86)/Visual Leak Detector/lib/Win64/vld.lib")
+
+    add_library(VLD_MANIFEST SHARED IMPORTED)
+    set_target_properties(VLD_MANIFEST PROPERTIES
+        IMPORTED_LOCATION "C:/Program Files (x86)/Visual Leak Detector/bin/Win64/Microsoft.DTfW.DHL.manifest"
+        IMPORTED_IMPLIB "C:/Program Files (x86)/Visual Leak Detector/lib/Win64/vld.lib")
+
+    add_library(VLD_MAIN SHARED IMPORTED)
+    set_target_properties(VLD_MAIN PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "C:/Program Files (x86)/Visual Leak Detector/include"
+        IMPORTED_LOCATION "C:/Program Files (x86)/Visual Leak Detector/bin/Win64/vld_x64.dll"
+        IMPORTED_IMPLIB "C:/Program Files (x86)/Visual Leak Detector/lib/Win64/vld.lib")
+        
+    add_library(VLD INTERFACE)
+    target_link_libraries(VLD INTERFACE VLD_MAIN VLD_DBGHELP VLD_MANIFEST)
+endif()
+
 
 # Engine
 # should not use file(GLOB ...)
@@ -77,7 +99,7 @@ add_library(Engine ${GraphicSources} ${GraphicIncludes} ${InputSources} ${InputI
 target_include_directories(Engine 
                             PUBLIC ${EngineSourcesDirectory}
                             PRIVATE ${GraphicSourceDirectory} ${InputSourceDirectory} ${RenderSourceDirectory} ${SceneSourceDirectory} ${ResourceSourceDirectory})
-target_link_libraries(Engine PUBLIC glfw glm::glm Vulkan::Vulkan tinyobjloader stb_image)
+target_link_libraries(Engine PUBLIC glfw glm::glm Vulkan::Vulkan tinyobjloader stb_image VLD)
 
 
 # Samples
@@ -96,3 +118,8 @@ aux_source_directory(${SamplesDirectory}/Win64 SamplePlatformSources)
 add_executable(Samples ${SampleComponentSources} ${SampleComponentIncludes} ${SamplePlatformSources} ${SamplePlatformIncludes}) 
 target_include_directories(Samples PRIVATE ${SamplesDirectory})
 target_link_libraries(Samples PRIVATE Engine)
+
+# Copy DLLS for debugging project
+add_custom_command(TARGET Samples POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:Samples> $<TARGET_FILE_DIR:Samples>
+    COMMAND_EXPAND_LISTS)
