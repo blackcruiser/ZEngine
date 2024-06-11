@@ -20,7 +20,7 @@ public:
     Frame(TPtr<VulkanDevice> device, TPtr<VulkanSwapchain> swapchain);
     ~Frame();
 
-    TPtr<RenderTargets> GetFrameBuffer();
+    TPtr<VulkanImageView> GetFrameBuffer();
     VkExtent3D GetExtent();
 
     VkSemaphore GetAvailableSemaphore();
@@ -34,7 +34,7 @@ public:
 
 private:
     TPtr<VulkanDevice> _cachedDevice;
-    TPtr<RenderTargets> _renderTargets;
+    TPtr<VulkanImageView> _renderTarget;
 
     VkExtent3D _extent;
     VkSemaphore _imageAvailableSemaphore;

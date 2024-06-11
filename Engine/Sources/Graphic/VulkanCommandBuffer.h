@@ -33,7 +33,7 @@ public:
     void Begin();
     void End();
 
-    void BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPtr<VulkanFramebuffer> framebuffer, const VkRect2D& renderArea, const VkClearValue& clearColor);
+    void BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPtr<VulkanFramebuffer> framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors);
     void EndRenderPass();
 
     uint32_t GetExecuteCount();

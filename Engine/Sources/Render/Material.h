@@ -53,7 +53,7 @@ public:
     TPtr<VulkanDescriptorSet> GetDescriptorSet();
 
     TPtr<VulkanPipelineLayout> GetPipelineLayout();
-    void BuildPipelineDesc(VulkanGraphicPipelineDesc& desc);
+    void ApplyPipelineState(RHIPipelineState& state);
 
     void UpdateUniformBuffer(TPtr<VulkanCommandBuffer> commandBuffer, const glm::mat4x4& mvp);
 
@@ -64,7 +64,11 @@ private:
     TPtr<VulkanDescriptorSetLayout> _descriptorSetLayout;
     TPtr<VulkanDescriptorSet> _descriptorSet;
     TPtr<VulkanPipelineLayout> _pipelineLayout;
-    VulkanGraphicPipelineDesc _pipelineDesc;
+
+    VkCullModeFlagBits cullingType;
+    RHIDepthStencilState depthStencilState;
+    std::vector<RHIBlendState> blendStates;
+    std::vector<RHIShaderState> shaderStates;
 
     TWeakPtr<PassResource> _owner;
 };
