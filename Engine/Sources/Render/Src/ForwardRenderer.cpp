@@ -1,4 +1,5 @@
 #include "ForwardRenderer.h"
+#include "Graphic/VulkanDevice.h"
 #include "Graphic/VulkanSurface.h"
 #include "Graphic/VulkanBuffer.h"
 #include "Graphic/VulkanImage.h"
@@ -92,8 +93,10 @@ void ForwardRenderer::Init(TPtr<Scene> scene)
     commandBuffer->End();
 
     TPtr<VulkanQueue> transferQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
-    transferQueue->Submit(commandBuffer, {}, {}, {}, VK_NULL_HANDLE);
-    transferQueue->WaitIdle();
+    VkFence fence = RenderSystem::Get().GetDevice()->CreateFence(false);
+    transferQueue->Submit(commandBuffer, {}, {}, {}, fence);
+    vkWaitForFences(RenderSystem::Get().GetDevice()->GetRawDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+    RenderSystem::Get().GetDevice()->DestroyFence(fence);
 }
 
 TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene)
@@ -166,14 +169,19 @@ void ForwardRenderer::RenderFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<
     //Depth Pass
     TPtr<VulkanImage> depthImage = std::make_shared<VulkanImage>(device, frame->GetExtent(), VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     TPtr<VulkanImageView> depthImageView = std::make_shared<VulkanImageView>(depthImage, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
+
     TPtr<RenderTargets> depthRenderTargets = std::make_shared<RenderTargets>();
     depthRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::None};
     _depthPass->Execute(objectsToRender, commandBuffer, frame, depthRenderTargets);
 
     //Light Pass
-    _directionalLightPass->Execute(objectsToRender, commandBuffer, frame, frame->GetFrameBuffer());
+    TPtr<RenderTargets> lightingRenderTargets = std::make_shared<RenderTargets>();
+    lightingRenderTargets->colors = {RenderTargetBinding{frame->GetFrameBuffer(), ERenderTargetLoadAction::Clear}};
+    lightingRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Load};
+    _directionalLightPass->Execute(objectsToRender, commandBuffer, frame, lightingRenderTargets);
 
     commandBuffer->End();
 }
+
 
 } // namespace ZE

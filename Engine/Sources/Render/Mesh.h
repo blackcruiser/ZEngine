@@ -31,7 +31,7 @@ public:
     void CreateIndexBuffer(TPtr<VulkanCommandBuffer> commandBuffer);
     TPtr<VulkanBuffer> GetIndexBuffer();
 
-    void BuildPipelineDesc(VulkanGraphicPipelineDesc& desc);
+    void ApplyPipelineState(RHIPipelineState& state);
 
 private:
     TPtr<VulkanBuffer> _vertexBuffer, _indexBuffer;

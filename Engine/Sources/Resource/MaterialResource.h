@@ -2,6 +2,7 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "ZEMaterialTypes.h"
 #include "BaseResource.h"
 #include "ShaderResource.h"
 #include "TextureResource.h"
@@ -38,6 +39,16 @@ public:
     virtual void Load() override;
     virtual void Unload() override;
 
+    void SetCullintType(ECullingType cullingType);
+    ECullingType GetCullingType();
+    
+    void SetBlendState(uint32_t index, const BlendState& blendState);
+    const BlendState& GetBlendState(uint32_t index);
+    const std::vector<BlendState>& GetBlendStates();
+
+    void SetDepthStencilState(const DepthStencilState& depthStencilState);
+    const DepthStencilState& GetDepthStencilState();
+
     void SetShader(const EShaderStage& stage, TPtr<ShaderResource> shader);
     TPtr<ShaderResource> GetShader(const EShaderStage& stage);
     const TPtrUnorderedMap<EShaderStage, ShaderResource>& GetShaderMap();
@@ -47,7 +58,9 @@ public:
     const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& GetTextureMap();
 
 private:
-    // EBlendType _blendType;
+    ECullingType _cullingType;
+    DepthStencilState _depthStencilState;
+    std::vector<BlendState> _blendStates;
     TPtrUnorderedMap<EShaderStage, ShaderResource> _shaderMap;
     std::unordered_map<EShaderStage, std::list<TextureBindingInfo>> _textureMap;
 };

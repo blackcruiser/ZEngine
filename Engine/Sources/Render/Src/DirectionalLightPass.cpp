@@ -43,11 +43,10 @@ void DirectionalLightPass::Draw(TPtrArr<SceneObject> objectsToRender, TPtr<Vulka
         TPtr<Material> material = materialResource->GetMaterial();
         TPtr<Pass> pass = material->GetPass(passType);
 
-        VulkanGraphicPipelineDesc pipelineDesc{};
-        pipelineDesc.extent = extent2D;
-        mesh->BuildPipelineDesc(pipelineDesc);
-        pass->BuildPipelineDesc(pipelineDesc);
-        TPtr<VulkanGraphicPipeline> pipeline = std::make_shared<VulkanGraphicPipeline>(device, pipelineDesc, _renderPass);
+        RHIPipelineState pipelineState;
+        mesh->ApplyPipelineState(pipelineState);
+        pass->ApplyPipelineState(pipelineState);
+        TPtr<VulkanGraphicPipeline> pipeline = std::make_shared<VulkanGraphicPipeline>(device, pipelineState, _renderPass);
         RenderSystem::Get().GetPipelineCache().insert(pipeline);
 
         vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetRawPipeline());
