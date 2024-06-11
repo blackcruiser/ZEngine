@@ -64,7 +64,7 @@ void VulkanCommandBuffer::End()
     _status = EStatus::Executable;
 }
 
-void VulkanCommandBuffer::BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPtr<VulkanFramebuffer> framebuffer, const VkRect2D& renderArea, const VkClearValue& clearColor)
+void VulkanCommandBuffer::BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPtr<VulkanFramebuffer> framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors)
 {
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -72,8 +72,8 @@ void VulkanCommandBuffer::BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPt
     renderPassInfo.framebuffer = framebuffer->GetRawFramebuffer();
     renderPassInfo.renderArea = renderArea;
 
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+    renderPassInfo.clearValueCount = clearColors.size();
+    renderPassInfo.pClearValues = clearColors.data();
 
     vkCmdBeginRenderPass(_vkCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }

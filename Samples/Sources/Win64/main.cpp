@@ -6,6 +6,7 @@
 #include "Resource/MeshResource.h"
 #include "Resource/ShaderResource.h"
 #include "Resource/TextureResource.h"
+#include "Resource/ZEMaterialTypes.h"
 #include "Scene/CameraComponent.h"
 #include "Scene/MeshComponent.h"
 #include "Scene/Scene.h"
@@ -42,9 +43,14 @@ ZE::TPtr<ZE::Scene> CreateSampleScene()
     pass->SetShader(ZE::EShaderStage::Fragment, fragmentShaderResource);
     pass->SetTexture(ZE::EShaderStage::Fragment, 0, texture);
 
+    ZE::DepthStencilState depthStencilState;
+    depthStencilState.zTestType = ZE::EZTestType::Never;
+    depthStencilState.zWriteType = ZE::EZWriteType::Enable;
+    pass->SetDepthStencilState(depthStencilState);
+
     ZE::TPtr<ZE::MaterialResource> materialResource = std::make_shared<ZE::MaterialResource>();
-    materialResource->SetPass(ZE::PassType::DepthPass, depthPass);
-    materialResource->SetPass(ZE::PassType::BasePass, pass);
+    materialResource->SetPass(ZE::EPassType::DepthPass, depthPass);
+    materialResource->SetPass(ZE::EPassType::BasePass, pass);
 
     ZE::TPtr<ZE::MeshComponent> meshComponent = std::make_shared<ZE::MeshComponent>();
     meshComponent->SetMesh(meshResource);

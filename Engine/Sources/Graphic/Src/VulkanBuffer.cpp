@@ -57,6 +57,9 @@ VulkanBuffer::~VulkanBuffer()
 
     if (_vkBuffer != VK_NULL_HANDLE)
         vkDestroyBuffer(vkDevice, _vkBuffer, nullptr);
+
+    _vkMemory = VK_NULL_HANDLE;
+    _vkBuffer = VK_NULL_HANDLE;
 }
 
 void VulkanBuffer::CopyFromBuffer(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> otherBuffer, VkDeviceSize size)

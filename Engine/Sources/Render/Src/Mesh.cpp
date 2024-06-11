@@ -68,17 +68,15 @@ TPtr<VulkanBuffer> Mesh::GetIndexBuffer()
     return _indexBuffer;
 }
 
-void Mesh::BuildPipelineDesc(VulkanGraphicPipelineDesc& desc)
+void Mesh::ApplyPipelineState(RHIPipelineState& state)
 {
-    VkVertexInputBindingDescription bindingDescription{};
+    VkVertexInputBindingDescription& bindingDescription = state.vertexInputBinding;
     bindingDescription.binding = 0;
     bindingDescription.stride = sizeof(VertexData);
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    desc.bindingDescription = bindingDescription;
-
-
-    std::vector<VkVertexInputAttributeDescription> attributeDescriptions(3);
+    std::vector<VkVertexInputAttributeDescription>& attributeDescriptions = state.vertexInputAttributes;
+    attributeDescriptions.resize(3);
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
     attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -93,8 +91,6 @@ void Mesh::BuildPipelineDesc(VulkanGraphicPipelineDesc& desc)
     attributeDescriptions[2].location = 2;
     attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
     attributeDescriptions[2].offset = offsetof(VertexData, texCoord);
-
-    desc.attributeDescriptions = attributeDescriptions;
 }
 
 } // namespace ZE

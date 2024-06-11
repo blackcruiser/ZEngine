@@ -35,7 +35,7 @@ void VulkanQueue::Submit(TPtr<VulkanCommandBuffer> commandBuffer, const std::vec
 
     if (vkQueueSubmit(_vkQueue, 1, &submitInfo, fence) != VK_SUCCESS)
     {
-        throw std::runtime_error("failed to submit draw command buffer!");
+       // throw std::runtime_error("failed to submit draw command buffer!");
     }
 }
 
