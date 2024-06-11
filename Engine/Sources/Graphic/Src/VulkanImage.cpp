@@ -69,11 +69,9 @@ VulkanImage::~VulkanImage()
         if (_vkMemory != VK_NULL_HANDLE)
             vkFreeMemory(vkDevice, _vkMemory, nullptr);
     }
-    else
-    {
-        _vkMemory = VK_NULL_HANDLE;
-        _vkImage = VK_NULL_HANDLE;
-    }
+
+    _vkMemory = VK_NULL_HANDLE;
+    _vkImage = VK_NULL_HANDLE;
 }
 
 void VulkanImage::TransitionLayout(TPtr<VulkanCommandBuffer> commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout)

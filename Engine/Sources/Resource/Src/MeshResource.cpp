@@ -33,8 +33,8 @@ void MeshResource::Load()
 
     for (const tinyobj::shape_t& shape : shapes)
     {
-        std::vector<VertexData> verticesData(shape.mesh.indices.size());
-        std::vector<uint32_t> indexesData(shape.mesh.indices.size());
+        std::vector<VertexData> verticesData;
+        std::vector<uint32_t> indexesData;
 
         for (tinyobj::index_t index : shape.mesh.indices)
         {

@@ -2,6 +2,7 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "PipelineState.h"
 
 #include <vulkan/vulkan.h>
 
@@ -13,21 +14,10 @@ class VulkanShader;
 class VulkanPipelineLayout;
 class VulkanRenderPass;
 
-
-struct VulkanGraphicPipelineDesc
-{
-    TPtr<VulkanShader> vertexShader;
-    TPtr<VulkanShader> fragmentShader;
-    VkExtent2D extent;
-    VkVertexInputBindingDescription bindingDescription;
-    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
-    TPtr<VulkanPipelineLayout> pipelineLayout;
-};
-
 class VulkanGraphicPipeline
 {
 public:
-    VulkanGraphicPipeline(TPtr<VulkanDevice> device, const VulkanGraphicPipelineDesc& desc, TPtr<VulkanRenderPass> renderPass);
+    VulkanGraphicPipeline(TPtr<VulkanDevice> device, const RHIPipelineState& state, TPtr<VulkanRenderPass> renderPass);
     ~VulkanGraphicPipeline();
 
     VkPipeline GetRawPipeline();
@@ -36,8 +26,6 @@ private:
     VkPipeline _vkPipeline;
 
     TPtr<VulkanDevice> _device;
-    TPtr<VulkanShader> _vertexShader, _fragmentShader;
-    TPtr<VulkanPipelineLayout> _pipelineLayout;
     TPtr<VulkanRenderPass> _renderPass;
 };
 

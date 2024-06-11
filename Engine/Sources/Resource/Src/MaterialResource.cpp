@@ -3,6 +3,9 @@
 
 namespace ZE {
 
+/*
+* PassResource
+*/
 PassResource::PassResource()
 {
 }
@@ -41,6 +44,43 @@ void PassResource::Unload()
             bindingInfo.texture->Unload();
         }
     }
+}
+
+void PassResource::SetCullintType(ECullingType cullingType)
+{
+    _cullingType =  cullingType;
+}
+
+ECullingType PassResource::GetCullingType()
+{
+    return _cullingType;
+}
+
+void PassResource::SetBlendState(uint32_t index, const BlendState& blendState)
+{
+    if (index >= _blendStates.size())
+        _blendStates.emplace_back();
+    _blendStates[index] = blendState;
+}
+
+const BlendState& PassResource::GetBlendState(uint32_t index)
+{
+    return _blendStates[index];
+}
+
+const std::vector<BlendState>& PassResource::GetBlendStates()
+{
+    return _blendStates;
+}
+
+void PassResource::SetDepthStencilState(const DepthStencilState& depthStencilState)
+{
+    _depthStencilState = depthStencilState;
+}
+
+const DepthStencilState& PassResource::GetDepthStencilState()
+{
+    return _depthStencilState;
 }
 
 void PassResource::SetShader(const EShaderStage& stage, TPtr<ShaderResource> shader)
@@ -93,6 +133,9 @@ const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& PassResou
 }
 
 
+/*
+* MaterialResource
+*/
 MaterialResource::MaterialResource()
     : _material(nullptr)
 {

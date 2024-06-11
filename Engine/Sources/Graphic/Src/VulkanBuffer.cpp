@@ -57,6 +57,9 @@ VulkanBuffer::~VulkanBuffer()
 
     if (_vkMemory != VK_NULL_HANDLE)
         vkFreeMemory(vkDevice, _vkMemory, nullptr);
+
+    _vkMemory = VK_NULL_HANDLE;
+    _vkBuffer = VK_NULL_HANDLE;
 }
 
 void VulkanBuffer::CopyFromBuffer(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> otherBuffer, VkDeviceSize size)
