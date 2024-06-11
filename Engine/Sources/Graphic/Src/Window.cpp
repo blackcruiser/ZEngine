@@ -30,6 +30,8 @@ Window::Window(const std::string& title, const glm::ivec2& size)
         throw std::runtime_error("failed to create window!");
         return;
     }
+
+    glfwSetInputMode(_glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 Window::~Window()
@@ -85,13 +87,25 @@ GLFWwindow* Window::GetRawWindow()
     return _glfwWindow;
 }
 
+void MouseButtonFunc(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
+    {
+        int mode = glfwGetInputMode(window, GLFW_CURSOR);
+        
+        if (mode == GLFW_CURSOR_DISABLED)
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        else
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+}
 
 void Window::RegisterInput(const InputSystem& inputSystem)
 {
-    glfwSetInputMode(_glfwWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     glfwSetCursorPosCallback(_glfwWindow, InputSystem::cursor_position_callback);
-    glfwSetKeyCallback(_glfwWindow, InputSystem::key_callback);
+    //glfwSetKeyCallback(_glfwWindow, InputSystem::key_callback);
+    glfwSetMouseButtonCallback(_glfwWindow, &MouseButtonFunc);
 }
 
 void Window::UnregisterInput(const InputSystem& inputSystem)

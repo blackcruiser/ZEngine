@@ -15,11 +15,9 @@ Frame::Frame(TPtr<VulkanDevice> device, TPtr<VulkanSwapchain> swapchain)
     _fence = device->CreateFence(false);
 
     TPtr<VulkanImage> sceneImage = swapchain->AcquireNextImage(UINT64_MAX, _imageAvailableSemaphore, VK_NULL_HANDLE);
-    TPtr<VulkanImageView> sceneImageView = std::make_shared<VulkanImageView>(sceneImage);
+    _renderTarget = std::make_shared<VulkanImageView>(sceneImage);
 
-    _extent = sceneImageView->GetExtent();
-    _renderTargets = std::make_shared<RenderTargets>();
-    _renderTargets->colors.push_back(RenderTargetBinding(sceneImageView, ERenderTargetLoadAction::None));
+    _extent = _renderTarget->GetExtent();
 
     _cachedCommandBuffer = RenderSystem::Get().GetCommandBufferManager()->GetCommandBuffer(VulkanQueue::EType::Graphic);
 }
@@ -35,9 +33,9 @@ Frame::~Frame()
     }
 }
 
-TPtr<RenderTargets> Frame::GetFrameBuffer()
+TPtr<VulkanImageView> Frame::GetFrameBuffer()
 {
-    return _renderTargets;
+    return _renderTarget;
 }
 
 VkExtent3D Frame::GetExtent()

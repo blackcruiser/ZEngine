@@ -6,6 +6,7 @@
 #include "Resource/MeshResource.h"
 #include "Resource/ShaderResource.h"
 #include "Resource/TextureResource.h"
+#include "Resource/RenderStates.h"
 #include "Scene/CameraComponent.h"
 #include "Scene/MeshComponent.h"
 #include "Scene/Scene.h"
@@ -34,17 +35,31 @@ ZE::TPtr<ZE::Scene> CreateSampleScene()
         std::make_shared<ZE::TextureResource>("Samples/Resources/Textures/viking_room.png");
 
     ZE::TPtr<ZE::PassResource> depthPass = std::make_shared<ZE::PassResource>();
-    depthPass->SetShader(ZE::EShaderStage::Vertex, vertexShaderResource);
-    depthPass->SetTexture(ZE::EShaderStage::Fragment, 0, texture);
+    {
+        depthPass->SetShader(ZE::EShaderStage::Vertex, vertexShaderResource);
+        depthPass->SetTexture(ZE::EShaderStage::Fragment, 0, texture);
+
+        ZE::DepthStencilState depthStencilState;
+        depthStencilState.zTestType = ZE::ECompareOperation::Greater;
+        depthStencilState.zWriteType = ZE::EZWriteType::Enable;
+        depthPass->SetDepthStencilState(depthStencilState);
+    }
 
     ZE::TPtr<ZE::PassResource> pass = std::make_shared<ZE::PassResource>();
-    pass->SetShader(ZE::EShaderStage::Vertex, vertexShaderResource);
-    pass->SetShader(ZE::EShaderStage::Fragment, fragmentShaderResource);
-    pass->SetTexture(ZE::EShaderStage::Fragment, 0, texture);
+    {
+        pass->SetShader(ZE::EShaderStage::Vertex, vertexShaderResource);
+        pass->SetShader(ZE::EShaderStage::Fragment, fragmentShaderResource);
+        pass->SetTexture(ZE::EShaderStage::Fragment, 0, texture);
+
+        ZE::DepthStencilState depthStencilState;
+        depthStencilState.zTestType = ZE::ECompareOperation::Equal;
+        depthStencilState.zWriteType = ZE::EZWriteType::Disable;
+        pass->SetDepthStencilState(depthStencilState);
+    }
 
     ZE::TPtr<ZE::MaterialResource> materialResource = std::make_shared<ZE::MaterialResource>();
-    materialResource->SetPass(ZE::PassType::DepthPass, depthPass);
-    materialResource->SetPass(ZE::PassType::BasePass, pass);
+    materialResource->SetPass(ZE::EPassType::DepthPass, depthPass);
+    materialResource->SetPass(ZE::EPassType::BasePass, pass);
 
     ZE::TPtr<ZE::MeshComponent> meshComponent = std::make_shared<ZE::MeshComponent>();
     meshComponent->SetMesh(meshResource);

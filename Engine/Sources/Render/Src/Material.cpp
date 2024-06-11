@@ -1,3 +1,5 @@
+#include <array>
+
 #include "Material.h"
 #include "Mesh.h"
 #include "RenderSystem.h"
@@ -19,9 +21,208 @@
 
 namespace ZE {
 
+VkShaderStageFlagBits ConvertShaderStageToVulkanBit(EShaderStage stage)
+{
+    switch (stage)
+    {
+    case EShaderStage::Vertex:
+        return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+    case EShaderStage::Fragment:
+        return VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    default:
+        return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+    }
+}
+
+VkCullModeFlagBits ConvertCullingTypeToVulkanBit(ECullingType cullingType)
+{
+    switch ( cullingType)
+    {
+    case ECullingType::None:
+        return VkCullModeFlagBits::VK_CULL_MODE_NONE;
+    case ECullingType::Font:
+        return VkCullModeFlagBits::VK_CULL_MODE_FRONT_BIT;
+    case ECullingType::Back:
+        return VkCullModeFlagBits::VK_CULL_MODE_BACK_BIT;
+    default:
+        return VkCullModeFlagBits::VK_CULL_MODE_NONE;
+    }
+}
+
+VkBlendFactor ConvertBlendFactorToVulkan(EBlendFactor blendFactor)
+{
+    switch (blendFactor)
+    {
+    case EBlendFactor::Zero:
+        return VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+    case EBlendFactor::One:
+        return VkBlendFactor::VK_BLEND_FACTOR_ONE;
+    case EBlendFactor::SrcColor:
+        return VkBlendFactor::VK_BLEND_FACTOR_SRC_COLOR;
+    case EBlendFactor::SrcAlpha:
+        return VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
+    case EBlendFactor::DstColor:
+        return VkBlendFactor::VK_BLEND_FACTOR_DST_COLOR;
+    case EBlendFactor::DstAlpha:
+        return VkBlendFactor::VK_BLEND_FACTOR_DST_ALPHA;
+    case EBlendFactor::OneMinusSrcColor:
+        return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+    case EBlendFactor::OneMinusSrcAlpha:
+        return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    case EBlendFactor::OneMinusDstColor:
+        return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+    case EBlendFactor::OneMinusDstAlpha:
+        return VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+    }
+
+    return VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+}
+
+VkBlendOp ConvertBlendOperationToVulkan(EBlendOperation blendOperation)
+{
+    switch (blendOperation)
+    {
+    case EBlendOperation::Add:
+        return VkBlendOp::VK_BLEND_OP_ADD;
+    case EBlendOperation::Sub:
+        return VkBlendOp::VK_BLEND_OP_SUBTRACT;
+    }
+
+    return VkBlendOp::VK_BLEND_OP_ADD;
+}
+
+VkCompareOp ConvertCompareOperationToVulkan(ECompareOperation compareOperation)
+{
+    switch (compareOperation)
+    {
+    case ECompareOperation::Never:
+        return VkCompareOp::VK_COMPARE_OP_NEVER;
+    case ECompareOperation::Less:
+        return VkCompareOp::VK_COMPARE_OP_LESS;
+    case ECompareOperation::Equal:
+        return VkCompareOp::VK_COMPARE_OP_EQUAL;
+    case ECompareOperation::LEqual:
+        return VkCompareOp::VK_COMPARE_OP_LESS_OR_EQUAL;
+    case ECompareOperation::Greater:
+        return VkCompareOp::VK_COMPARE_OP_GREATER;
+    case ECompareOperation::NotEqual:
+        return VkCompareOp::VK_COMPARE_OP_NOT_EQUAL;
+    case ECompareOperation::GEqual:
+        return VkCompareOp::VK_COMPARE_OP_GREATER_OR_EQUAL;
+    case ECompareOperation::Always:
+        return VkCompareOp::VK_COMPARE_OP_ALWAYS;
+    }
+
+    return VkCompareOp::VK_COMPARE_OP_NEVER;
+}
+
+RHIBlendState ConvertBlendStateToVulkan(const BlendState& blendState)
+{
+    RHIBlendState outBlendState;
+
+    outBlendState.srcFactor = ConvertBlendFactorToVulkan(blendState.srcFactor);
+    outBlendState.dstFactor = ConvertBlendFactorToVulkan(blendState.dstFactor);
+    outBlendState.srcAlphaFactor = ConvertBlendFactorToVulkan(blendState.srcAlphaFactor);
+    outBlendState.dstAlphaFactor = ConvertBlendFactorToVulkan(blendState.dstAlphaFactor);
+
+    outBlendState.operation = ConvertBlendOperationToVulkan(blendState.operation);
+
+    return outBlendState;
+}
+
+VkStencilOp ConvertStencilOperationToVulkan(EStencilOperation stencilOperation)
+{
+    switch (stencilOperation)
+    {
+    case EStencilOperation::Keep:
+        return VkStencilOp::VK_STENCIL_OP_KEEP;
+    case EStencilOperation::Zero:
+        return VkStencilOp::VK_STENCIL_OP_ZERO;
+    case EStencilOperation::Replace:
+        return VkStencilOp::VK_STENCIL_OP_REPLACE;
+    case EStencilOperation::IncreaseSaturate:
+        return VkStencilOp::VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+    case EStencilOperation::DecreaseSaturate:
+        return VkStencilOp::VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+    case EStencilOperation::Invert:
+        return VkStencilOp::VK_STENCIL_OP_INVERT;
+    case EStencilOperation::IncreaseWrap:
+        return VkStencilOp::VK_STENCIL_OP_INCREMENT_AND_WRAP;
+    case EStencilOperation::DecreaseWrap:
+        return VkStencilOp::VK_STENCIL_OP_DECREMENT_AND_WRAP;
+    }
+
+    return VkStencilOp::VK_STENCIL_OP_KEEP;
+}
+
+VkStencilOpState ConvertStencilOperationStateToVulkan(const StencilOperationState& stencilOperationState)
+{
+    VkStencilOpState outStencilOpState;
+
+    outStencilOpState.failOp = ConvertStencilOperationToVulkan(stencilOperationState.failOperation);
+    outStencilOpState.passOp = ConvertStencilOperationToVulkan(stencilOperationState.passOperation);
+    outStencilOpState.depthFailOp = ConvertStencilOperationToVulkan(stencilOperationState.depthFailOperation);
+
+    outStencilOpState.compareOp = ConvertCompareOperationToVulkan(stencilOperationState.compareFunction);
+
+    outStencilOpState.compareMask = stencilOperationState.readMask;
+    outStencilOpState.writeMask = stencilOperationState.writeMask;
+    outStencilOpState.reference = stencilOperationState.ref;
+
+    return outStencilOpState;
+}
+
+RHIDepthStencilState ConvertDepthStencilStateToVulkan(const DepthStencilState& depthStencilState)
+{
+    RHIDepthStencilState outDepthStencilState;
+
+    outDepthStencilState.front = ConvertStencilOperationStateToVulkan(depthStencilState.front);
+    outDepthStencilState.back = ConvertStencilOperationStateToVulkan(depthStencilState.back);
+    outDepthStencilState.stencilTestEnable = depthStencilState.front.compareFunction != ECompareOperation::Never && depthStencilState.back.compareFunction != ECompareOperation::Never;
+
+    outDepthStencilState.depthTestEnable = depthStencilState.zTestType == ECompareOperation::Never ? 0 : 1;
+    outDepthStencilState.depthWriteEnable = depthStencilState.zWriteType == EZWriteType::Enable ? 1 : 0;
+    outDepthStencilState.depthCompareOp = ConvertCompareOperationToVulkan(depthStencilState.zTestType);
+
+    return outDepthStencilState;
+}
+
+VkShaderStageFlagBits ConvertShaderStageToVulkan(EShaderStage shaderStage)
+{
+    switch (shaderStage)
+    {
+    case EShaderStage::Vertex:
+        return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+    case EShaderStage::Fragment:
+        return VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
+    }
+
+    return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
+}
+
 Pass::Pass(TPtr<PassResource> passResource)
     : _owner(passResource), _descriptorSet(nullptr), _pipelineLayout(nullptr)
 {
+    for (const BlendState& blendState : passResource->GetBlendStates())
+    {
+        RHIBlendState outBlendState = ConvertBlendStateToVulkan(blendState);
+        blendStates.push_back(outBlendState);
+    }
+
+    depthStencilState = ConvertDepthStencilStateToVulkan(passResource->GetDepthStencilState());
+    rasterizationState.cullingType = ConvertCullingTypeToVulkanBit(passResource->GetCullingType());
+
+    for (auto [shaderStage, shaderResource] : passResource->GetShaderMap())
+    {
+        RHIShaderState shaderState;
+
+        shaderState.name = "main";
+        shaderState.shaderModule = VK_NULL_HANDLE;
+        shaderState.stage = ConvertShaderStageToVulkan(shaderStage);
+
+        shaderStates.push_back(shaderState);
+    }
 }
 
 Pass::~Pass()
@@ -42,19 +243,6 @@ void Pass::BuildRenderResource(TPtr<VulkanCommandBuffer> commandBuffer)
 }
 
 
-VkShaderStageFlagBits ConvertShaderStageToVulkanBit(EShaderStage stage)
-{
-    switch (stage)
-    {
-    case EShaderStage::Vertex:
-        return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
-    case EShaderStage::Fragment:
-        return VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    default:
-        return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
-    }
-}
 
 TPtr<VulkanImageView> CreateGraphicImage(TPtr<VulkanDevice> device, TPtr<VulkanCommandBuffer> commandBuffer, TPtr<TextureResource> texture)
 {
@@ -132,6 +320,14 @@ void Pass::CreateGraphicShaders()
         VkShaderStageFlagBits vulkanBit = ConvertShaderStageToVulkanBit(stage);
         TPtr<VulkanShader> vulkanShader = CreateGraphicShader(device, vulkanBit, shader);
         _shaders.insert(std::make_pair(vulkanBit, vulkanShader));
+
+        for (RHIShaderState& shaderState : shaderStates)
+        {
+            if (shaderState.stage == vulkanBit)
+            {
+                shaderState.shaderModule = vulkanShader->GetRawShader();
+            }
+        }
     }
 }
 
@@ -208,19 +404,72 @@ TPtr<VulkanPipelineLayout> Pass::GetPipelineLayout()
     return _pipelineLayout;
 }
 
-void Pass::BuildPipelineDesc(VulkanGraphicPipelineDesc& desc)
+void Pass::ApplyPipelineState(RHIPipelineState& state)
 {
-    if (_shaders.find(VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT) != _shaders.end())
-        desc.vertexShader = _shaders[VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT];
-    else
-        desc.vertexShader = nullptr;
+    VkPipelineDepthStencilStateCreateInfo& depthStencil = state.depthStencilState;
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = depthStencilState.depthTestEnable;
+    depthStencil.depthWriteEnable = depthStencilState.depthWriteEnable;
+    depthStencil.depthCompareOp = depthStencilState.depthCompareOp;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.stencilTestEnable = VK_FALSE;
 
-    if (_shaders.find(VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) != _shaders.end())
-        desc.fragmentShader = _shaders[VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT];
-    else
-        desc.fragmentShader = nullptr;
+    std::vector<VkPipelineShaderStageCreateInfo>& shaderStages = state.shaderStages;
+    for (const RHIShaderState& shaderState : shaderStates)
+    {
+        VkPipelineShaderStageCreateInfo vkFragmentShaderStageCreateInfo{};
+        vkFragmentShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vkFragmentShaderStageCreateInfo.stage = shaderState.stage;
+        vkFragmentShaderStageCreateInfo.pName = shaderState.name.c_str();
+        vkFragmentShaderStageCreateInfo.module = shaderState.shaderModule;
 
-    desc.pipelineLayout = _pipelineLayout;
+        shaderStages.push_back(vkFragmentShaderStageCreateInfo);
+    }
+
+    VkPipelineRasterizationStateCreateInfo& rasterizer = state.rasterizeationState;
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.depthClampEnable = VK_FALSE;
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizer.lineWidth = 1.0f;
+    rasterizer.cullMode =  rasterizationState.cullingType;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizer.depthBiasEnable = VK_FALSE;
+    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+    rasterizer.depthBiasClamp = 0.0f;          // Optional
+    rasterizer.depthBiasSlopeFactor = 0.0f;    // Optional
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    colorBlendAttachment.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = VK_FALSE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;             // Optional
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;             // Optional
+    colorBlendAttachment.blendEnable = VK_TRUE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    state.colorBlendAttachments.push_back(colorBlendAttachment);
+
+    VkPipelineColorBlendStateCreateInfo& colorBlending = state.colorBlendState;
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable = VK_FALSE;
+    colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+    colorBlending.attachmentCount = static_cast<uint32_t>(state.colorBlendAttachments.size());
+    colorBlending.pAttachments = state.colorBlendAttachments.data();
+    colorBlending.blendConstants[0] = 0.0f; // Optional
+    colorBlending.blendConstants[1] = 0.0f; // Optional
+    colorBlending.blendConstants[2] = 0.0f; // Optional
+    colorBlending.blendConstants[3] = 0.0f; // Optional
+
+    state.layout = _pipelineLayout->GetRawPipelineLayout();
 }
 
 void Pass::UpdateUniformBuffer(TPtr<VulkanCommandBuffer> commandBuffer, const glm::mat4x4& mvp)
