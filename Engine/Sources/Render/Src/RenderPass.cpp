@@ -80,10 +80,10 @@ void RenderPass::Execute(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanComman
     frame->PutFramebuffer(framebuffer);
     commandBuffer->BeginRenderPass(_renderPass, framebuffer, {{0, 0}, extent2D}, clearValues);
 
-    VkViewport viewport{0.0f, 0.0f, extent2D.width, extent2D.height, 0.0f, 1.0f};
+    VkViewport viewport{0.0f, 0.0f, static_cast<float>(extent2D.width), static_cast<float>(extent2D.height), 0.0f, 1.0f};
     vkCmdSetViewport(commandBuffer->GetRawCommandBuffer(), 0, 1, &viewport);
 
-    VkRect2D scissor{0, 0, extent2D.width, extent2D.height};
+    VkRect2D scissor{0, 0, static_cast<int32_t>(extent2D.width), static_cast<int32_t>(extent2D.height)};
     vkCmdSetScissor(commandBuffer->GetRawCommandBuffer(), 0, 1, &scissor);
 
     Draw(objectsToRender, commandBuffer, renderTargets);
