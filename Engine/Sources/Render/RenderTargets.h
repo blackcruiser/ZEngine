@@ -9,11 +9,11 @@ namespace ZE {
 
 class VulkanImageView;
 
-enum class ERenderTargetLoadAction
+enum class ERenderTargetLoadAction : uint8_t
 {
-    None = 0,
     Load,
     Clear,
+    DontCare,
 };
 
 struct RenderTargetBinding
