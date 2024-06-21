@@ -10,6 +10,21 @@
 
 namespace ZE {
 
+VkAttachmentLoadOp ConvertRenderTargetLoadActionToVulkan(ERenderTargetLoadAction loadAction)
+{
+    switch (loadAction)
+    {
+    case ERenderTargetLoadAction::Load:
+        return VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_LOAD;
+    case ERenderTargetLoadAction::Clear:
+        return VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_CLEAR;
+    case ERenderTargetLoadAction::DontCare:
+        return VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    }
+
+    return VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+}
+
 RenderPass::RenderPass()
     : _renderPass(nullptr)
 {
@@ -36,7 +51,7 @@ void RenderPass::Execute(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanComman
         VkAttachmentDescription attachment{};
         attachment.format = image->GetFormat();
         attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachment.loadOp = ConvertRenderTargetLoadActionToVulkan(bindings.loadAction);
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

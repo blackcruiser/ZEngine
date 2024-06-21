@@ -27,13 +27,25 @@ struct RHIShaderState
     std::string name;
 };
 
+struct RHIRasterizationState
+{
+    VkCullModeFlagBits cullingType;
+};
+
 struct RHIPipelineState
 {
+    RHIPipelineState() : vertexInputBinding{}, vertexInputState{}, rasterizeationState{}, inputAssemblyState{}, depthStencilState{}, colorBlendState{}, layout(VK_NULL_HANDLE)
+    {
+    }
+
     VkVertexInputBindingDescription vertexInputBinding;
+    VkPipelineVertexInputStateCreateInfo vertexInputState;
+    VkPipelineRasterizationStateCreateInfo rasterizeationState;
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyState;
     std::vector<VkVertexInputAttributeDescription> vertexInputAttributes;
-    VkCullModeFlagBits cullingType;
-    RHIDepthStencilState depthStencilState;
-    std::vector<RHIBlendState> blendStates;
-    std::vector<RHIShaderState> shaderStates;
+    VkPipelineDepthStencilStateCreateInfo depthStencilState;
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+    VkPipelineColorBlendStateCreateInfo colorBlendState;
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     VkPipelineLayout layout;
 };
