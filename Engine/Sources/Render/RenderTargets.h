@@ -3,6 +3,8 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 
+#include <glm/vec4.hpp>
+
 #include <optional>
 
 namespace ZE {
@@ -18,13 +20,14 @@ enum class ERenderTargetLoadAction : uint8_t
 
 struct RenderTargetBinding
 {
-    RenderTargetBinding(TPtr<VulkanImageView> inTarget, ERenderTargetLoadAction inAction)
-        : target(inTarget), loadAction(inAction)
+    RenderTargetBinding(TPtr<VulkanImageView> inTarget, ERenderTargetLoadAction inAction, glm::vec4 inClearValue)
+        : target(inTarget), loadAction(inAction), clearValue(inClearValue)
     {
     }
 
     TPtr<VulkanImageView> target;
     ERenderTargetLoadAction loadAction;
+    glm::vec4 clearValue;
 };
 
 struct RenderTargets

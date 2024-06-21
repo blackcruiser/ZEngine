@@ -171,13 +171,13 @@ void ForwardRenderer::RenderFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<
     TPtr<VulkanImageView> depthImageView = std::make_shared<VulkanImageView>(depthImage, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
 
     TPtr<RenderTargets> depthRenderTargets = std::make_shared<RenderTargets>();
-    depthRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Clear};
+    depthRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Clear, {0.0f, 0.0f, 0.0f, 0.0f}};
     _depthPass->Execute(objectsToRender, commandBuffer, frame, depthRenderTargets);
 
     //Light Pass
     TPtr<RenderTargets> lightingRenderTargets = std::make_shared<RenderTargets>();
-    lightingRenderTargets->colors = {RenderTargetBinding{frame->GetFrameBuffer(), ERenderTargetLoadAction::Clear}};
-    lightingRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Load};
+    lightingRenderTargets->colors = {RenderTargetBinding{frame->GetFrameBuffer(), ERenderTargetLoadAction::Clear, {0.0f, 0.0f, 0.0f, 0.0f}}};
+    lightingRenderTargets->depthStencil = RenderTargetBinding(depthImageView, ERenderTargetLoadAction::Load, {0.0f, 0.0f, 0.0f, 0.0f});
     _directionalLightPass->Execute(objectsToRender, commandBuffer, frame, lightingRenderTargets);
 
     commandBuffer->End();
