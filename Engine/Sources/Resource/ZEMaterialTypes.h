@@ -17,7 +17,7 @@ enum class EStencilOperation
     DecreaseWrap,
 };
 
-enum class ECompareOperation
+enum class ECompareOperation : uint8_t
 {
     Never,
     Less,
@@ -41,18 +41,6 @@ struct StencilOperationState
     uint32_t readMask, writeMask, ref;
 };
 
-enum class EZTestType: uint8_t
-{
-    Never,
-    Less,
-    LessEqual,
-    Equal,
-    GreaterEqual,
-    Greater,
-    NotEqual,
-    Always,
-};
-
 enum class EZWriteType : uint8_t
 {
     Disable,
@@ -62,14 +50,13 @@ enum class EZWriteType : uint8_t
 struct DepthStencilState
 {
     DepthStencilState() :
-        zTestType(EZTestType::Never), zWriteType(EZWriteType::Disable), depthCompareOperation(ECompareOperation::Never)
+        zTestType(ECompareOperation::Never), zWriteType(EZWriteType::Disable)
     {
     }
 
     StencilOperationState front, back;
-    EZTestType zTestType;
     EZWriteType zWriteType;
-    ECompareOperation depthCompareOperation;
+    ECompareOperation zTestType;
 };
 
 enum class EBlendOperation : uint8_t
