@@ -52,11 +52,11 @@ VulkanBuffer::~VulkanBuffer()
 {
     VkDevice vkDevice = _device->GetRawDevice();
 
-    if (_vkMemory != VK_NULL_HANDLE)
-        vkFreeMemory(vkDevice, _vkMemory, nullptr);
-
     if (_vkBuffer != VK_NULL_HANDLE)
         vkDestroyBuffer(vkDevice, _vkBuffer, nullptr);
+        
+    if (_vkMemory != VK_NULL_HANDLE)
+        vkFreeMemory(vkDevice, _vkMemory, nullptr);
 
     _vkMemory = VK_NULL_HANDLE;
     _vkBuffer = VK_NULL_HANDLE;

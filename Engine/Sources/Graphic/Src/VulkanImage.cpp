@@ -63,11 +63,11 @@ VulkanImage::~VulkanImage()
     {
         VkDevice vkDevice = _device->GetRawDevice();
 
-        if (_vkMemory != VK_NULL_HANDLE)
-            vkFreeMemory(vkDevice, _vkMemory, nullptr);
-
         if (_vkImage != VK_NULL_HANDLE)
             vkDestroyImage(vkDevice, _vkImage, nullptr);
+
+        if (_vkMemory != VK_NULL_HANDLE)
+            vkFreeMemory(vkDevice, _vkMemory, nullptr);
     }
 
     _vkMemory = VK_NULL_HANDLE;
