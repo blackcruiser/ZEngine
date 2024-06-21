@@ -65,7 +65,7 @@ private:
     TPtr<VulkanDescriptorSet> _descriptorSet;
     TPtr<VulkanPipelineLayout> _pipelineLayout;
 
-    VkCullModeFlagBits cullingType;
+    RHIRasterizationState rasterizationState;
     RHIDepthStencilState depthStencilState;
     std::vector<RHIBlendState> blendStates;
     std::vector<RHIShaderState> shaderStates;

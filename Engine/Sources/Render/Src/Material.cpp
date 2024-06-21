@@ -181,9 +181,9 @@ RHIDepthStencilState ConvertDepthStencilStateToVulkan(const DepthStencilState& d
     outDepthStencilState.back = ConvertStencilOperationStateToVulkan(depthStencilState.back);
     outDepthStencilState.stencilTestEnable = depthStencilState.front.compareFunction != ECompareOperation::Never && depthStencilState.back.compareFunction != ECompareOperation::Never;
 
-    outDepthStencilState.depthTestEnable = depthStencilState.zTestType == EZTestType::Never ? 0 : 1;
+    outDepthStencilState.depthTestEnable = depthStencilState.zTestType == ECompareOperation::Never ? 0 : 1;
     outDepthStencilState.depthWriteEnable = depthStencilState.zWriteType == EZWriteType::Enable ? 1 : 0;
-    outDepthStencilState.depthCompareOp = ConvertCompareOperationToVulkan(depthStencilState.depthCompareOperation);
+    outDepthStencilState.depthCompareOp = ConvertCompareOperationToVulkan(depthStencilState.zTestType);
 
     return outDepthStencilState;
 }
@@ -211,7 +211,7 @@ Pass::Pass(TPtr<PassResource> passResource)
     }
 
     depthStencilState = ConvertDepthStencilStateToVulkan(passResource->GetDepthStencilState());
-    cullingType = ConvertCullingTypeToVulkanBit(passResource->GetCullingType());
+    rasterizationState.cullingType = ConvertCullingTypeToVulkanBit(passResource->GetCullingType());
 
     for (auto [shaderStage, shaderResource] : passResource->GetShaderMap())
     {
@@ -406,10 +406,69 @@ TPtr<VulkanPipelineLayout> Pass::GetPipelineLayout()
 
 void Pass::ApplyPipelineState(RHIPipelineState& state)
 {
-    state.cullingType = cullingType;
-    state.depthStencilState = depthStencilState;
-    state.blendStates = blendStates;
-    state.shaderStates = shaderStates;
+    VkPipelineDepthStencilStateCreateInfo& depthStencil = state.depthStencilState;
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable = depthStencilState.depthTestEnable;
+    depthStencil.depthWriteEnable = depthStencilState.depthWriteEnable;
+    depthStencil.depthCompareOp = depthStencilState.depthCompareOp;
+    depthStencil.depthBoundsTestEnable = VK_FALSE;
+    depthStencil.stencilTestEnable = VK_FALSE;
+
+    std::vector<VkPipelineShaderStageCreateInfo>& shaderStages = state.shaderStages;
+    for (const RHIShaderState& shaderState : shaderStates)
+    {
+        VkPipelineShaderStageCreateInfo vkFragmentShaderStageCreateInfo{};
+        vkFragmentShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vkFragmentShaderStageCreateInfo.stage = shaderState.stage;
+        vkFragmentShaderStageCreateInfo.pName = shaderState.name.c_str();
+        vkFragmentShaderStageCreateInfo.module = shaderState.shaderModule;
+
+        shaderStages.push_back(vkFragmentShaderStageCreateInfo);
+    }
+
+    VkPipelineRasterizationStateCreateInfo& rasterizer = state.rasterizeationState;
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.depthClampEnable = VK_FALSE;
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizer.lineWidth = 1.0f;
+    rasterizer.cullMode =  rasterizationState.cullingType;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizer.depthBiasEnable = VK_FALSE;
+    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+    rasterizer.depthBiasClamp = 0.0f;          // Optional
+    rasterizer.depthBiasSlopeFactor = 0.0f;    // Optional
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    colorBlendAttachment.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = VK_FALSE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;             // Optional
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;             // Optional
+    colorBlendAttachment.blendEnable = VK_TRUE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    state.colorBlendAttachments.push_back(colorBlendAttachment);
+
+    VkPipelineColorBlendStateCreateInfo& colorBlending = state.colorBlendState;
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable = VK_FALSE;
+    colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+    colorBlending.attachmentCount = static_cast<uint32_t>(state.colorBlendAttachments.size());
+    colorBlending.pAttachments = state.colorBlendAttachments.data();
+    colorBlending.blendConstants[0] = 0.0f; // Optional
+    colorBlending.blendConstants[1] = 0.0f; // Optional
+    colorBlending.blendConstants[2] = 0.0f; // Optional
+    colorBlending.blendConstants[3] = 0.0f; // Optional
+
     state.layout = _pipelineLayout->GetRawPipelineLayout();
 }
 
