@@ -180,6 +180,8 @@ void ForwardRenderer::RenderFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<
     lightingRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Load};
     _directionalLightPass->Execute(objectsToRender, commandBuffer, frame, lightingRenderTargets);
 
+    frame->GetFrameBuffer()->GetImage()->TransitionLayout(commandBuffer, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
     commandBuffer->End();
 }
 
