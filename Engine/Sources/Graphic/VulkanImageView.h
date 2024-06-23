@@ -16,6 +16,8 @@ public:
     VulkanImageView(TPtr<VulkanImage> image, VkFormat format = VkFormat::VK_FORMAT_UNDEFINED, VkImageAspectFlagBits accessFlags = VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT);
     ~VulkanImageView();
 
+    TPtr<VulkanImage> GetImage();
+
     VkFormat GetFormat();
     VkExtent3D GetExtent();
 

@@ -9,7 +9,7 @@ namespace ZE {
 
 class VulkanImageView;
 
-enum class ERenderTargetLoadAction : uint_8
+enum class ERenderTargetLoadAction : uint8_t
 {
     Load,
     Clear,

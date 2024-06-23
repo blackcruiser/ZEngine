@@ -37,6 +37,11 @@ VulkanImageView::~VulkanImageView()
         vkDestroyImageView(_image->GetDevice()->GetRawDevice(), _vkImageView, nullptr);
 }
 
+TPtr<VulkanImage> VulkanImageView::GetImage()
+{
+    return _image;
+}
+
 VkFormat VulkanImageView::GetFormat()
 {
     return _format == VK_FORMAT_UNDEFINED ? _image->GetFormat() : _format;
