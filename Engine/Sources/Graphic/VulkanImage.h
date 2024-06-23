@@ -22,6 +22,9 @@ public:
     void CopyFromBuffer(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> buffer, VkOffset3D offset, VkExtent3D extent);
     void TransferData(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> stagingBuffer, const void* data, uint32_t size);
 
+    void SetLayout(VkImageLayout layout);
+    VkImageLayout GetLayout();
+
     VkExtent3D GetExtent();
     VkFormat GetFormat();
 
@@ -33,6 +36,7 @@ private:
     bool _hasOwnship;
     VkExtent3D _extent;
     VkFormat _format;
+    VkImageLayout _layout;
 
     VkImage _vkImage;
     VkDeviceMemory _vkMemory;
