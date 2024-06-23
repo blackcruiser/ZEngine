@@ -46,36 +46,39 @@ void RenderPass::Execute(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanComman
 
     for (auto& bindings : renderTargets->colors)
     {
-        TPtr<VulkanImageView> image = bindings.target;
+        TPtr<VulkanImageView> imageView = bindings.target;
 
         VkAttachmentDescription attachment{};
-        attachment.format = image->GetFormat();
+        attachment.format = imageView->GetImage()->GetFormat();
         attachment.samples = VK_SAMPLE_COUNT_1_BIT;
         attachment.loadOp = ConvertRenderTargetLoadActionToVulkan(bindings.loadAction);
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        attachment.initialLayout = imageView->GetImage()->GetLayout();
+        attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         colorAttachmentArr.emplace_back(attachment);
-        framebufferImageArr.emplace_back(image);
+        framebufferImageArr.emplace_back(imageView);
 
         VkClearValue clearValue;
         clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
         clearValues.push_back(clearValue);
+
+        imageView->GetImage()->SetLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     }
 
     if (renderTargets->depthStencil.has_value())
     {
+        RenderTargetBinding& depthBinding = renderTargets->depthStencil.value();
         VkAttachmentDescription depthAttachment{};
-        depthAttachment.format = VkFormat::VK_FORMAT_D32_SFLOAT;
+        depthAttachment.format = depthBinding.target->GetFormat();
         depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depthAttachment.loadOp = ConvertRenderTargetLoadActionToVulkan(depthBinding.loadAction);
         depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depthAttachment.initialLayout = depthBinding.target->GetImage()->GetLayout();
         depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         _renderPass = std::make_shared<VulkanRenderPass>(device, colorAttachmentArr, depthAttachment);
@@ -85,6 +88,8 @@ void RenderPass::Execute(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanComman
         clearValue.depthStencil.depth = 0.0f;
         clearValue.depthStencil.stencil = 0;
         clearValues.push_back(clearValue);
+
+        depthBinding.target->GetImage()->SetLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
     else
     {

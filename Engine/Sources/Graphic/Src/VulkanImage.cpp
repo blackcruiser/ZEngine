@@ -11,7 +11,7 @@
 namespace ZE {
 
 VulkanImage::VulkanImage(TPtr<VulkanDevice> device, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
-    : _hasOwnship(true), _device(device), _extent(extent), _format(format), _vkImage(VK_NULL_HANDLE), _vkMemory(VK_NULL_HANDLE)
+    : _hasOwnship(true), _device(device), _extent(extent), _format(format), _layout(VK_IMAGE_LAYOUT_UNDEFINED), _vkImage(VK_NULL_HANDLE), _vkMemory(VK_NULL_HANDLE)
 {
     VkDeviceSize size = _extent.width * _extent.height * 4;
     VkDevice vkDevice = _device->GetRawDevice();
@@ -53,7 +53,7 @@ VulkanImage::VulkanImage(TPtr<VulkanDevice> device, const VkExtent3D& extent, Vk
 }
 
 VulkanImage::VulkanImage(TPtr<VulkanDevice> device, VkImage vkImage, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
-    : _hasOwnship(false), _device(device), _extent(extent), _format(format), _vkImage(vkImage), _vkMemory(VK_NULL_HANDLE)
+    : _hasOwnship(false), _device(device), _extent(extent), _format(format), _layout(VK_IMAGE_LAYOUT_UNDEFINED), _vkImage(vkImage), _vkMemory(VK_NULL_HANDLE)
 {
 }
 
@@ -108,12 +108,22 @@ void VulkanImage::TransitionLayout(TPtr<VulkanCommandBuffer> commandBuffer, VkIm
         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     }
+    else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+    {
+        barrier.srcAccessMask = VK_ACCESS_NONE;
+        barrier.dstAccessMask = VK_ACCESS_NONE;
+
+        sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    }
     else
     {
         throw std::invalid_argument("unsupported layout transition!");
     }
 
     vkCmdPipelineBarrier(commandBuffer->GetRawCommandBuffer(), sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    _layout = newLayout;
 }
 
 
@@ -144,6 +154,16 @@ void VulkanImage::TransferData(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Vul
     TransitionLayout(commandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     CopyFromBuffer(commandBuffer, stagingBuffer, {0, 0, 0}, _extent);
     TransitionLayout(commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+void VulkanImage::SetLayout(VkImageLayout layout)
+{
+    _layout = layout;
+}
+
+VkImageLayout VulkanImage::GetLayout()
+{
+    return _layout;
 }
 
 VkExtent3D VulkanImage::GetExtent()
