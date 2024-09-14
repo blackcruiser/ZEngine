@@ -19,16 +19,23 @@
 
 namespace ZE {
 
-void DepthPass::Prepare(TPtr<Scene> scene)
+void DepthPass::Setup(TPtr<VulkanImageView>& depth)
 {
+    m_depth = depth;
 }
 
-void DepthPass::Draw(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanCommandBuffer> commandBuffer, TPtr<RenderTargets> renderTargets)
+RenderTargets DepthPass::GetRenderTargets()
+{
+    RenderTargets renderTargets;
+    renderTargets.depthStencil = RenderTargetBinding{m_depth, ERenderTargetLoadAction::Clear};
+    
+    return renderTargets;
+}
+
+void DepthPass::Draw(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanCommandBuffer> commandBuffer)
 {
     TPtr<VulkanDevice> device = commandBuffer->GetDevice();
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
-    VkExtent3D extent3D = renderTargets->depthStencil.value().target->GetExtent();
-    VkExtent2D extent2D{extent3D.width, extent3D.height};
 
     EPassType passType = EPassType::DepthPass;
     for (TPtr<SceneObject>& object : objectsToRender)
