@@ -20,6 +20,8 @@ public:
     Frame(TPtr<VulkanDevice> device, TPtr<VulkanSwapchain> swapchain);
     ~Frame();
 
+    const glm::ivec2 GetViewport();
+
     TPtr<VulkanImageView> GetFrameBuffer();
     VkExtent3D GetExtent();
 
