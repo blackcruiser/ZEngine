@@ -10,8 +10,7 @@
 namespace ZE {
 
 class SceneObject;
-class DirectionalLightPass;
-class DepthPass;
+class RenderPass;
 class VulkanCommandBuffer;
 class VulkanDevice;
 
@@ -25,6 +24,7 @@ public:
     virtual void Init(TPtr<Scene> scene) override;
     TPtrArr<SceneObject> Prepare(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene);
     void Draw(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene);
+    void SetupFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Frame> frame);
     virtual void RenderFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene, TPtr<Frame> frame) override;
 
 private:
@@ -32,6 +32,8 @@ private:
 
     TPtr<DepthPass> _depthPass;
     TPtr<DirectionalLightPass> _directionalLightPass;
+
+    TPtrArr<RenderPass> _passes;
 };
 
 }

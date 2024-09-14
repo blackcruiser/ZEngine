@@ -20,11 +20,22 @@
 
 namespace ZE {
 
-void DirectionalLightPass::Prepare(TPtr<Scene> scene)
+void DirectionalLightPass::Setup(TPtr<VulkanImageView> color, TPtr<VulkanImageView> depth)
 {
+    m_color = color;
+    m_depth = depth;
 }
 
-void DirectionalLightPass::Draw(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanCommandBuffer> commandBuffer, TPtr<RenderTargets> renderTargets)
+RenderTargets DirectionalLightPass::GetRenderTargets()
+{
+    RenderTargets renderTargets;
+    renderTargets.colors = {RenderTargetBinding{m_depth, ERenderTargetLoadAction::Clear}};
+    renderTargets.depthStencil = RenderTargetBinding{m_depth, ERenderTargetLoadAction::Clear};
+    
+    return renderTargets;
+}
+
+void DirectionalLightPass::Draw(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanCommandBuffer> commandBuffer)
 {
     TPtr<VulkanDevice> device = commandBuffer->GetDevice();
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
