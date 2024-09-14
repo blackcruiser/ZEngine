@@ -3,6 +3,7 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 
+#include <glm/vec2.hpp>
 #include <optional>
 
 namespace ZE {
@@ -21,12 +22,14 @@ public:
     RenderPass();
     ~RenderPass();
 
-    virtual void Prepare(TPtr<Scene> scene) = 0;
-    void Execute(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Frame> frame, TPtr<RenderTargets> renderTargets);
-    virtual void Draw(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanCommandBuffer> commandBuffer, TPtr<RenderTargets> renderTargets) = 0;
+    RenderTargets GetRenderTargets();
+
+    virtual void Execute(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanCommandBuffer> commandBuffer, const glm::ivec2& viewport);
+
+    virtual void Draw(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanCommandBuffer> commandBuffer) = 0;
 
 protected:
-    TPtr<VulkanRenderPass> _renderPass;
+ 
 };
 
 }
