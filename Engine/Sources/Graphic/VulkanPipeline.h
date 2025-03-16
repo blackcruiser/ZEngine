@@ -10,13 +10,14 @@ namespace TE {
 class VulkanDevice;
 class VulkanShader;
 class VulkanPipelineLayout;
+class VulkanRenderPass;
 
 class VulkanGraphicPipeline
 {
 public:
     VulkanGraphicPipeline(TPtr<VulkanDevice> device, TPtr<VulkanShader> vertexShader, TPtr<VulkanShader> fragmentShader,
                           const VkExtent2D& extent, VkVertexInputBindingDescription& bindingDescription,
-                          std::vector<VkVertexInputAttributeDescription>& attributeDescriptions, TPtr<VulkanPipelineLayout> pipelineLayout, VkRenderPass renderPass);
+                          std::vector<VkVertexInputAttributeDescription>& attributeDescriptions, TPtr<VulkanPipelineLayout> pipelineLayout, TPtr<VulkanRenderPass> renderPass);
     ~VulkanGraphicPipeline();
 
     VkPipeline GetRawPipeline();

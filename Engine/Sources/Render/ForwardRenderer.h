@@ -15,6 +15,9 @@ class Material;
 class VulkanCommandPool;
 class VulkanCommandBuffer;
 class VulkanDescriptorPool;
+class VulkanRenderPass;
+class VulkanSwapchain;
+class VulkanFramebuffer;
 class VulkanDevice;
 class Surface;
 
@@ -28,25 +31,18 @@ public:
     virtual void Init(TPtr<Scene> scene) override;
     virtual void RenderFrame(TPtr<Scene> scene) override;
 
-    void CreateSwapchain(VkRenderPass renderPass);
-
 private:
     TPtr<VulkanDevice> _device;
     TPtr<Surface> _surface;
-
-    VkSwapchainKHR _vkSwapchain;
-    std::vector<VkFramebuffer> _vkFramebuffers;
-    std::vector<VkImage> _vkImages;
-    std::vector<VkImageView> _vkImageViews;
-
-    VkRenderPass _vkRenderPass;
+    TPtr<VulkanRenderPass> _renderPass;
+    TPtrArr<VulkanFramebuffer> _framebuffers;
+    TPtr<VulkanSwapchain> _swapchain;
+    TPtr<VulkanDescriptorPool> _descriptorPool;
+    TPtr<VulkanCommandPool> _commandPool;
+    TPtr<VulkanCommandBuffer> _commandBuffer;
 
     VkSemaphore _imageAvailableSemaphore, _renderFinishedSemaphore;
     VkFence _inFlightFence;
-
-    TPtr<VulkanDescriptorPool> _descriptorPool;
-    TPtr<VulkanCommandPool> _commandPool;
-    VulkanCommandBuffer* _commandBuffer;
 };
 
 }
