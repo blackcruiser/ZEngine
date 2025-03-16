@@ -22,10 +22,6 @@ public:
     VkCommandBuffer GetRawCommandBuffer();
 
 private:
-    void _CreateRawBuffer();
-    void _AllocateAndBindBufferMemory();
-
-private:
     TPtr<VulkanCommandPool> _commandPool;
 
     VkCommandBuffer _vkCommandBuffer;

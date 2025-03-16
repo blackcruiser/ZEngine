@@ -56,17 +56,17 @@ VulkanBuffer::~VulkanBuffer()
         vkFreeMemory(vkDevice, _vkMemory, nullptr);
 }
 
-void CopyBuffer(TPtr<VulkanDevice> device, TPtr<VulkanCommandPool> commandPool, VkBuffer srcBuffer, VkBuffer dstBuffer,
+void VulkanBuffer::CopyFromBuffer(TPtr<VulkanCommandPool> commandPool, TPtr<VulkanBuffer> otherBuffer,
                 VkDeviceSize size)
 {
-    VulkanCommandBuffer* commandBuffer = commandPool->CreateCommandBuffer(commandPool);
+    TPtr<VulkanCommandBuffer> commandBuffer = std::make_shared<VulkanCommandBuffer>(commandPool);
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
 
     commandBuffer->Begin();
 
     VkBufferCopy copyRegion{};
     copyRegion.size = size;
-    vkCmdCopyBuffer(vkCommandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    vkCmdCopyBuffer(vkCommandBuffer, otherBuffer->GetRawBuffer(), _vkBuffer, 1, &copyRegion);
 
     commandBuffer->End();
 
@@ -75,13 +75,11 @@ void CopyBuffer(TPtr<VulkanDevice> device, TPtr<VulkanCommandPool> commandPool, 
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &vkCommandBuffer;
 
-    vkQueueSubmit(device->GetGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(device->GetGraphicQueue());
-
-    commandPool->DestroyCommandBuffer(commandBuffer);
+    vkQueueSubmit(_device->GetGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(_device->GetGraphicQueue());
 }
 
-void VulkanBuffer::UploadData(TPtr<VulkanCommandPool> commandPool, const void* data, uint32_t size)
+void VulkanBuffer::TransferData(TPtr<VulkanCommandPool> commandPool, const void* data, uint32_t size)
 {
     if (_properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
     {
@@ -92,13 +90,13 @@ void VulkanBuffer::UploadData(TPtr<VulkanCommandPool> commandPool, const void* d
     }
     else if (_properties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
     {
-        VulkanBuffer stagingBuffer(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        TPtr<VulkanBuffer> stagingBuffer = std::make_shared<VulkanBuffer>(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        void* mappedAddress = stagingBuffer.MapMemory(0, size);
+        void* mappedAddress = stagingBuffer->MapMemory(0, size);
         memcpy(mappedAddress, data, size);
-        stagingBuffer.UnmapMemory();
+        stagingBuffer->UnmapMemory();
 
-        CopyBuffer(_device, commandPool, stagingBuffer.GetRawBuffer(), _vkBuffer, size);
+        CopyFromBuffer(commandPool, stagingBuffer, size);
     }
 }
 

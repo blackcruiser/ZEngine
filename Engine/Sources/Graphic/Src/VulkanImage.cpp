@@ -7,21 +7,17 @@
 
 namespace TE {
 
-VulkanImage::VulkanImage(TPtr<VulkanDevice> device, uint32_t width, uint32_t height, VkFormat format)
-    : _width(width), _height(height), _device(device), _vkImage(VK_NULL_HANDLE), _vkMemory(VK_NULL_HANDLE),
-      _vkSampler(VK_NULL_HANDLE)
+VulkanImage::VulkanImage(TPtr<VulkanDevice> device, const VkExtent3D& extent, VkFormat format)
+    : _hasOwnship(true), _device(device), _extent(extent), _format(format), _vkImage(VK_NULL_HANDLE), _vkMemory(VK_NULL_HANDLE)
 {
-
-    VkDeviceSize size = width * height * 4;
+    VkDeviceSize size = _extent.width * _extent.height * 4;
     VkDevice vkDevice = _device->GetRawDevice();
 
     // Image
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = width;
-    imageInfo.extent.height = height;
-    imageInfo.extent.depth = 1;
+    imageInfo.extent = extent;
     imageInfo.mipLevels = 1;
     imageInfo.arrayLayers = 1;
     imageInfo.format = format;
@@ -51,27 +47,30 @@ VulkanImage::VulkanImage(TPtr<VulkanDevice> device, uint32_t width, uint32_t hei
     }
 
     vkBindImageMemory(vkDevice, _vkImage, _vkMemory, 0);
+}
 
-
-    _vkImageView = device->CreateImageView(_vkImage, VK_FORMAT_R8G8B8A8_SRGB);
-    _vkSampler = device->CreateTextureSampler();
+VulkanImage::VulkanImage(TPtr<VulkanDevice> device, VkImage vkImage, const VkExtent3D& extent, VkFormat format)
+    : _hasOwnship(false), _device(device), _extent(extent), _format(format), _vkImage(vkImage), _vkMemory(VK_NULL_HANDLE)
+{
 }
 
 VulkanImage::~VulkanImage()
 {
-    VkDevice vkDevice = _device->GetRawDevice();
+    if (_hasOwnship)
+    {
+        VkDevice vkDevice = _device->GetRawDevice();
 
-    if (_vkImageView != VK_NULL_HANDLE)
-        _device->DestroyImageView(_vkImageView);
+        if (_vkImage != VK_NULL_HANDLE)
+            vkDestroyImage(vkDevice, _vkImage, nullptr);
 
-    if (_vkImage != VK_NULL_HANDLE)
-        vkDestroyImage(vkDevice, _vkImage, nullptr);
-
-    if (_vkSampler != VK_NULL_HANDLE)
-        _device->DestroyTextureSampler(_vkSampler);
-
-    if (_vkMemory != VK_NULL_HANDLE)
-        vkFreeMemory(vkDevice, _vkMemory, nullptr);
+        if (_vkMemory != VK_NULL_HANDLE)
+            vkFreeMemory(vkDevice, _vkMemory, nullptr);
+    }
+    else
+    {
+        _vkMemory = VK_NULL_HANDLE;
+        _vkImage = VK_NULL_HANDLE;
+    }
 }
 
 void VulkanImage::TransitionLayout(TPtr<VulkanCommandPool> commandPool, VkImageLayout oldLayout, VkImageLayout newLayout)
@@ -114,7 +113,7 @@ void VulkanImage::TransitionLayout(TPtr<VulkanCommandPool> commandPool, VkImageL
     }
 
 
-    VulkanCommandBuffer* commandBuffer = commandPool->CreateCommandBuffer(commandPool);
+    TPtr<VulkanCommandBuffer> commandBuffer = std::make_shared<VulkanCommandBuffer>(commandPool);
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
 
     commandBuffer->Begin();
@@ -129,15 +128,12 @@ void VulkanImage::TransitionLayout(TPtr<VulkanCommandPool> commandPool, VkImageL
 
     vkQueueSubmit(_device->GetGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(_device->GetGraphicQueue());
-
-    commandPool->DestroyCommandBuffer(commandBuffer);
 }
 
 
-void VulkanImage::CopyBufferToImage(TPtr<VulkanCommandPool> commandPool, VkBuffer buffer, VkOffset3D offset,
-                                    VkExtent3D extent)
+void VulkanImage::CopyFromBuffer(TPtr<VulkanCommandPool> commandPool, TPtr<VulkanBuffer> buffer, VkOffset3D offset, VkExtent3D extent)
 {
-    VulkanCommandBuffer* commandBuffer = commandPool->CreateCommandBuffer(commandPool);
+    TPtr<VulkanCommandBuffer> commandBuffer = std::make_shared<VulkanCommandBuffer>(commandPool);
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
 
     commandBuffer->Begin();
@@ -153,7 +149,7 @@ void VulkanImage::CopyBufferToImage(TPtr<VulkanCommandPool> commandPool, VkBuffe
     region.imageOffset = offset;
     region.imageExtent = extent;
 
-    vkCmdCopyBufferToImage(vkCommandBuffer, buffer, _vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    vkCmdCopyBufferToImage(vkCommandBuffer, buffer->GetRawBuffer(), _vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     commandBuffer->End();
 
@@ -164,23 +160,26 @@ void VulkanImage::CopyBufferToImage(TPtr<VulkanCommandPool> commandPool, VkBuffe
 
     vkQueueSubmit(_device->GetGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(_device->GetGraphicQueue());
-
-    commandPool->DestroyCommandBuffer(commandBuffer);
 }
 
-void VulkanImage::UploadData(TPtr<VulkanCommandPool> commandPool, const void* data, uint32_t size)
+void VulkanImage::TransferData(TPtr<VulkanCommandPool> commandPool, const void* data, uint32_t size)
 {
     VkDeviceSize imageSize = size;
 
-    VulkanBuffer stagingBuffer(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    TPtr<VulkanBuffer> stagingBuffer = std::make_shared<VulkanBuffer>(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    void* mappedAddress = stagingBuffer.MapMemory(0, size);
+    void* mappedAddress = stagingBuffer->MapMemory(0, size);
     memcpy(mappedAddress, data, size);
-    stagingBuffer.UnmapMemory();
+    stagingBuffer->UnmapMemory();
 
     TransitionLayout(commandPool, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    CopyBufferToImage(commandPool, stagingBuffer.GetRawBuffer(), {0, 0, 0}, {_width, _height, 1});
+    CopyFromBuffer(commandPool, stagingBuffer, {0, 0, 0}, _extent);
     TransitionLayout(commandPool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+VkFormat VulkanImage::GetFormat()
+{
+    return _format;
 }
 
 VkImage VulkanImage::GetRawImage()
@@ -188,13 +187,4 @@ VkImage VulkanImage::GetRawImage()
     return _vkImage;
 }
 
-VkImageView VulkanImage::GetRawImageView()
-{
-    return _vkImageView;
-}
-
-VkSampler VulkanImage::GetRawSampler()
-{
-    return _vkSampler;
-}
 } // namespace TE
