@@ -30,6 +30,9 @@
 
 #include <algorithm>
 
+
+namespace ZE {
+
 VkAttachmentLoadOp ConvertRenderTargetLoadActionToVulkan(ERenderTargetLoadAction loadAction)
 {
     switch (loadAction)
@@ -44,8 +47,6 @@ VkAttachmentLoadOp ConvertRenderTargetLoadActionToVulkan(ERenderTargetLoadAction
 
     return VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 }
-
-namespace ZE {
 
 ForwardRenderer::ForwardRenderer()
 {

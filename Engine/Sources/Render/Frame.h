@@ -3,6 +3,7 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 
+#include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
 namespace ZE {

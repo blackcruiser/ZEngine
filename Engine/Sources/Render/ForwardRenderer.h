@@ -11,6 +11,8 @@ namespace ZE {
 
 class SceneObject;
 class RenderPass;
+class DepthPass;
+class DirectionalLightPass;
 class VulkanCommandBuffer;
 class VulkanDevice;
 class Surface;
