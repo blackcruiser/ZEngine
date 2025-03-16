@@ -7,7 +7,7 @@ namespace ZE {
 class DepthPass : public RenderPass
 {
 public:
-    void Setup(TPtr<VulkanImageView> Depth);
+    void Setup(TPtr<VulkanImageView>& Depth);
 
     virtual RenderTargets GetRenderTargets() override;
 

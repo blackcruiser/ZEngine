@@ -22,7 +22,7 @@ public:
     RenderPass();
     ~RenderPass();
 
-    RenderTargets GetRenderTargets();
+    virtual RenderTargets GetRenderTargets();
 
     virtual void Execute(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanCommandBuffer> commandBuffer, const glm::ivec2& viewport);
 
