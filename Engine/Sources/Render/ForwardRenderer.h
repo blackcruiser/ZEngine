@@ -26,10 +26,9 @@ public:
     virtual void Init(TPtr<Scene> scene) override;
     TPtrArr<SceneObject> Prepare(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene);
     void Draw(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene);
-    virtual void RenderFrame(TPtr<Scene> scene, TPtr<Window> window) override;
+    virtual void RenderFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene, TPtr<Frame> frame) override;
 
 private:
-    VkSemaphore _imageAvailableSemaphore, _renderFinishedSemaphore;
     VkFence _inFlightFence;
 
     TPtr<DepthPass> _depthPass;
