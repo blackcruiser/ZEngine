@@ -1,39 +1,33 @@
-#include "Texture.h"
+#include "TextureResource.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 namespace TE {
 
-Texture::Texture()
+TextureResource::TextureResource(const std::filesystem::path& path) : _sourcePath(path), _data(nullptr)
 {
 }
 
-Texture::Texture(const std::filesystem::path& path)
-    : _sourcePath(path), _data(nullptr)
+TextureResource::~TextureResource()
 {
 }
 
-Texture::~Texture()
-{
-}
-
-bool Texture::IsLoaded()
-{
-    return _data != nullptr;
-}
-
-void Texture::Load()
+void TextureResource::Load()
 {
     int width, height, channels;
     _data = stbi_load(_sourcePath.string().c_str(), &width, &height, &channels, STBI_rgb_alpha);
     _width = static_cast<uint32_t>(width);
     _height = static_cast<uint32_t>(height);
     _channels = static_cast<uint32_t>(channels);
+
+    _isLoaded = true;
 }
 
-void Texture::Unload()
+void TextureResource::Unload()
 {
+    _isLoaded = false;
+
     if (_data != nullptr)
     {
         stbi_image_free(_data);
@@ -41,27 +35,27 @@ void Texture::Unload()
     }
 }
 
-const std::filesystem::path& Texture::GetSourcePath()
+const std::filesystem::path& TextureResource::GetSourcePath()
 {
     return _sourcePath;
 }
 
-uint32_t Texture::GetWidth()
+uint32_t TextureResource::GetWidth()
 {
     return _width;
 }
 
-uint32_t Texture::GetHeight()
+uint32_t TextureResource::GetHeight()
 {
     return _height;
 }
 
-uint32_t Texture::GetChannels()
+uint32_t TextureResource::GetChannels()
 {
     return _channels;
 }
 
-stbi_uc* Texture::GetData()
+const void* TextureResource::GetData()
 {
     return _data;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stb_image.h>
+#include "BaseResource.h"
+
 #include <vulkan/vulkan.h>
 
 #include <filesystem>
@@ -9,29 +10,27 @@
 
 namespace TE {
 
-class Texture
+class TextureResource : public BaseResource
 {
 public:
-    Texture();
-    Texture(const std::filesystem::path& path);
-    virtual ~Texture();
+    TextureResource(const std::filesystem::path& path);
+    virtual ~TextureResource();
 
-    bool IsLoaded();
-    void Load();
-    void Unload();
+    virtual void Load() override;
+    virtual void Unload() override;
 
     const std::filesystem::path& GetSourcePath();
     uint32_t GetWidth();
     uint32_t GetHeight();
     uint32_t GetChannels();
 
-    stbi_uc* GetData();
+    const void* GetData();
 
 private:
     std::filesystem::path _sourcePath;
 
     uint32_t _width, _height, _channels;
-    stbi_uc* _data;
+    void* _data;
 };
 
 } // namespace TE

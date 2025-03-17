@@ -11,7 +11,6 @@ enum class EComponentType : int
     Camera,
     Transform,
     Mesh,
-    Material,
     Script,
 };
 
@@ -29,15 +28,16 @@ public:
     TPtr<SceneObject> GetObject();
 
     // liftCycle
-    virtual void Load() {};
-    
-    virtual void OnAttached() {};
-    virtual void Update(float deltaTime) {};
-    virtual void OnDetached() {};
+    virtual void Load(){};
+    virtual void Unload(){};
+
+    virtual void OnAttached(){};
+    virtual void Update(float deltaTime){};
+    virtual void OnDetached(){};
 
 private:
     EComponentType _type;
     TWeakPtr<SceneObject> _sceneObject;
 };
 
-}
+} // namespace TE

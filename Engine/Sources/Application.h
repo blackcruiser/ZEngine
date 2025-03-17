@@ -9,8 +9,8 @@
 
 namespace TE {
 
-class GPU;
-class Device;
+class VulkanGPU;
+class VulkanDevice;
 class Window;
 class Surface;
 class RendererInterface;
@@ -33,8 +33,8 @@ private:
     void _CleanupVulkan();
 
 private:
-    TPtr<GPU> _GPU;
-    TPtr<Device> _device;
+    TPtr<VulkanGPU> _GPU;
+    TPtr<VulkanDevice> _device;
     TPtr<Window> _window;
     TPtr<Surface> _surface;
     TPtr<RendererInterface> _renderer;
