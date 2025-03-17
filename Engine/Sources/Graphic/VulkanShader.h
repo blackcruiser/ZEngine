@@ -6,18 +6,18 @@
 
 namespace TE {
 
-class Device;
+class VulkanDevice;
 
 class VulkanShader
 {
 public:
-    VulkanShader(TPtr<Device> device, const std::vector<char>& byteCode);
+    VulkanShader(TPtr<VulkanDevice> device, const std::vector<char>& byteCode);
     ~VulkanShader();
 
     VkShaderModule GetRawShader();
 
 private:
-    TPtr<Device> _device;
+    TPtr<VulkanDevice> _device;
 
     VkShaderModule _vkShaderModule;
 };

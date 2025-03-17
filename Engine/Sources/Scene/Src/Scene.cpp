@@ -1,6 +1,6 @@
 #include "Scene.h"
-#include "SceneObject.h"
 #include "CameraComponent.h"
+#include "SceneObject.h"
 #include "ScriptComponent.h"
 
 #include <stdexcept>
@@ -65,4 +65,16 @@ void Scene::Load()
     }
 }
 
+void Scene::Unload()
+{
+    for (TPtr<SceneObject>& object : _objects)
+    {
+        TPtrArr<SceneComponent> components = object->GetComponents<SceneComponent>();
+        for (TPtr<SceneComponent>& component : components)
+        {
+            component->Unload();
+        }
+    }
 }
+
+} // namespace TE

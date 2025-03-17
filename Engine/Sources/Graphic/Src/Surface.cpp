@@ -1,5 +1,5 @@
 #include "Surface.h"
-#include "GPU.h"
+#include "VulkanGPU.h"
 #include "Window.h"
 
 #include <glfw/glfw3.h>
@@ -9,7 +9,7 @@
 
 namespace TE {
 
-Surface::Surface(VkInstance vkInstance, TPtr<GPU> GPU, TPtr<Window> window) : _vkInstance(vkInstance), _GPU(GPU), _window(window)
+Surface::Surface(VkInstance vkInstance, TPtr<VulkanGPU> GPU, TPtr<Window> window) : _vkInstance(vkInstance), _GPU(GPU), _window(window)
 {
     if (glfwCreateWindowSurface(_vkInstance, _window->GetRawWindow(), nullptr, &_vkSurface) != VK_SUCCESS)
     {
@@ -48,7 +48,7 @@ VkExtent2D Surface::GetExtent()
 
 std::vector<VkSurfaceFormatKHR> Surface::GetSupportedSurfaceFormats()
 {
-    VkPhysicalDevice physicalDevice = _GPU->GetRawPhysicalDevice();
+    VkPhysicalDevice physicalDevice = _GPU->GetRawGPU();
 
     uint32_t formatCount;
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, _vkSurface, &formatCount, nullptr);
@@ -65,7 +65,7 @@ std::vector<VkSurfaceFormatKHR> Surface::GetSupportedSurfaceFormats()
 
 std::vector<VkPresentModeKHR> Surface::GetSupportedPresentModes()
 {
-    VkPhysicalDevice physicalDevice = _GPU->GetRawPhysicalDevice();
+    VkPhysicalDevice physicalDevice = _GPU->GetRawGPU();
 
     uint32_t presentModeCount;
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, _vkSurface, &presentModeCount, nullptr);
@@ -82,7 +82,7 @@ std::vector<VkPresentModeKHR> Surface::GetSupportedPresentModes()
 
 VkSurfaceCapabilitiesKHR Surface::GetCpabilities()
 {
-    VkPhysicalDevice physicalDevice = _GPU->GetRawPhysicalDevice();
+    VkPhysicalDevice physicalDevice = _GPU->GetRawGPU();
     VkSurfaceCapabilitiesKHR capabilities{};
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, _vkSurface, &capabilities);
 
