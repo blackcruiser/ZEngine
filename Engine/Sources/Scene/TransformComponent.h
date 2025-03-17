@@ -12,7 +12,7 @@ class TransformComponent : public SceneComponent
 {
 public:
     TransformComponent();
-    ~TransformComponent();
+    virtual ~TransformComponent();
 
     void SetTransform(const glm::mat4x4& transform);
     const glm::mat4x4& GetTransform();

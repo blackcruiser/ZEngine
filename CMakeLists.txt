@@ -56,6 +56,10 @@ add_subdirectory(${ThirdPartiesSourcesDirectory}/glfw)
 ## Tinyobjloader
 add_subdirectory(${ThirdPartiesSourcesDirectory}/tinyobjloader)
 
+## stb_image
+add_library(stb_image INTERFACE)
+target_include_directories(stb_image INTERFACE ${ThirdPartiesSourcesDirectory}/stb)
+
 
 # Engine
 # should not use file(GLOB ...)
@@ -66,7 +70,7 @@ add_library(Engine ${GraphicSources} ${GraphicIncludes} ${InputSources} ${InputI
 target_include_directories(Engine 
                             PUBLIC ${EngineSourcesDirectory}
                             PRIVATE ${GraphicSourceDirectory} ${InputSourceDirectory} ${RenderSourceDirectory} ${SceneSourceDirectory})
-target_link_libraries(Engine PUBLIC glfw glm::glm Vulkan::Vulkan tinyobjloader)
+target_link_libraries(Engine PUBLIC glfw glm::glm Vulkan::Vulkan tinyobjloader stb_image)
 
 
 # Samples

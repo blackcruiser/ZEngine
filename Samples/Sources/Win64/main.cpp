@@ -84,8 +84,11 @@ TE::TPtr<TE::Scene> CreateSampleScene()
     meshObject->AddComponent(meshComponent);
 
     TE::TPtr<TE::MaterialComponent> meshMaterialComponent = std::make_shared<TE::MaterialComponent>();
-    meshMaterialComponent->SetShader(TE::EMaterialShaderType::Vertex, "LocalToClipSpaceVertexShader.glsl");
-    meshMaterialComponent->SetShader(TE::EMaterialShaderType::Fragment, "LambertBlinnPhoneFragmentShader.glsl");
+    meshMaterialComponent->SetShader(TE::EShaderStage::Vertex, "LocalToClipSpaceVertexShader.glsl");
+    meshMaterialComponent->SetShader(TE::EShaderStage::Fragment, "LambertBlinnPhoneFragmentShader.glsl");
+
+    TE::TPtr<TE::Texture> texture = std::make_shared<TE::Texture>("../Samples/Resources/Textures/viking_room.png");
+    meshMaterialComponent->SetTexture(TE::EShaderStage::Fragment, 0, texture);
     meshObject->AddComponent(meshMaterialComponent);
 
     scene->AddObject(meshObject);
@@ -112,9 +115,11 @@ TE::TPtr<TE::Scene> CreateSampleScene()
 
 int main()
 {
-    TE::TPtr<TE::Scene> scene = CreateSampleScene();
+
 
     TE::Application app;
+
+    TE::TPtr<TE::Scene> scene = CreateSampleScene();
     app.Run(scene);
 
     return 0;

@@ -27,7 +27,7 @@ class MeshComponent : public SceneComponent
 {
 public:
     MeshComponent();
-    ~MeshComponent();
+    virtual ~MeshComponent();
 
     void SetVertices(const std::vector<Vertex>& vertices);
     const std::vector<Vertex>& GetVertices();
