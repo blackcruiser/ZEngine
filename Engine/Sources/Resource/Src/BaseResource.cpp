@@ -1,6 +1,6 @@
 #include "BaseResource.h"
 
-namespace TE {
+namespace ZE {
 
 BaseResource::BaseResource() : _isLoaded(false)
 {
@@ -17,4 +17,4 @@ bool BaseResource::IsLoaded()
     return _isLoaded;
 }
 
-} // namespace TE
+} // namespace ZE

@@ -1,10 +1,11 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 
 #include <vulkan/vulkan.h>
 
-namespace TE {
+namespace ZE {
 
 class Surface;
 class VulkanDevice;
@@ -31,4 +32,4 @@ private:
     VkSwapchainKHR _vkSwapchain;
 };
 
-} // namespace TE
+} // namespace ZE

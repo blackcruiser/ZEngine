@@ -1,11 +1,12 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 
 #include <vulkan/vulkan.h>
 
 
-namespace TE {
+namespace ZE {
 
 class VulkanDescriptorPool;
 
@@ -29,4 +30,4 @@ private:
     TPtr<VulkanDescriptorPool> _descriptorPool;
 };
 
-} // namespace TE
+} // namespace ZE

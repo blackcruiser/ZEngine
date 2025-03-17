@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanPipelineLayout::VulkanPipelineLayout(
     TPtr<VulkanDevice> device, TPtr<VulkanDescriptorSet> descriptorSet)
@@ -35,4 +35,4 @@ VkPipelineLayout VulkanPipelineLayout::GetRawPipelineLayout()
     return _vkPipelineLayout;
 }
 
-} // namespace TE
+} // namespace ZE

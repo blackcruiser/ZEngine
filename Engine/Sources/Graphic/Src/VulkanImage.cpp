@@ -8,7 +8,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanImage::VulkanImage(TPtr<VulkanDevice> device, const VkExtent3D& extent, VkFormat format)
     : _hasOwnship(true), _device(device), _extent(extent), _format(format), _vkImage(VK_NULL_HANDLE), _vkMemory(VK_NULL_HANDLE)
@@ -190,4 +190,4 @@ VkImage VulkanImage::GetRawImage()
     return _vkImage;
 }
 
-} // namespace TE
+} // namespace ZE

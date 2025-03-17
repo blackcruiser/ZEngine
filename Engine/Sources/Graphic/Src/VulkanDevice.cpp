@@ -9,7 +9,7 @@
 #include <string>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanDevice::VulkanDevice(TPtr<VulkanGPU> GPU, TPtr<Surface> surface)
     : _GPU(GPU), _surface(surface), _vkDevice(VK_NULL_HANDLE), _vkGraphicQueue(VK_NULL_HANDLE),
@@ -48,7 +48,7 @@ VulkanDevice::VulkanDevice(TPtr<VulkanGPU> GPU, TPtr<Surface> surface)
     }
 
     std::vector<const char*> deviceExtensions = _GPU->GetExtensions();
-#ifdef TOYENGINE_MACOS
+#ifdef ZE_PLATFORM_MACOS
     deviceExtensions.push_back("VK_KHR_portability_subset");
 #endif
 
@@ -175,4 +175,4 @@ uint32_t VulkanDevice::GetPresentQueueFamilyIndex()
 {
     return _presentQueueFamilyIndex;
 }
-} // namespace TE
+} // namespace ZE

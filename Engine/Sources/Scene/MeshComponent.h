@@ -1,9 +1,10 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 #include "SceneComponent.h"
 
-namespace TE {
+namespace ZE {
 
 class MeshResource;
 class MaterialResource;
@@ -28,4 +29,4 @@ private:
     TPtrArr<MaterialResource> _materialArr;
 };
 
-} // namespace TE
+} // namespace ZE

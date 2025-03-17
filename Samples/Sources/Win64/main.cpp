@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Components/CameraControlComponent.h"
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 #include "Resource/MaterialResource.h"
 #include "Resource/MeshResource.h"
 #include "Resource/ShaderResource.h"
@@ -14,49 +15,49 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-TE::TPtr<TE::Scene> CreateSampleScene()
+ZE::TPtr<ZE::Scene> CreateSampleScene()
 {
-    TE::TPtr<TE::Scene> scene = std::make_shared<TE::Scene>();
+    ZE::TPtr<ZE::Scene> scene = std::make_shared<ZE::Scene>();
 
-    TE::TPtr<TE::SceneObject> meshObject = std::make_shared<TE::SceneObject>();
-    TE::TPtr<TE::TransformComponent> meshTransformComponent = std::make_shared<TE::TransformComponent>();
+    ZE::TPtr<ZE::SceneObject> meshObject = std::make_shared<ZE::SceneObject>();
+    ZE::TPtr<ZE::TransformComponent> meshTransformComponent = std::make_shared<ZE::TransformComponent>();
     meshObject->AddComponent(meshTransformComponent);
 
 
-    TE::TPtr<TE::MeshResource> meshResource =
-        std::make_shared<TE::MeshResource>("./Samples/Resources/Meshes/viking_room.obj");
-    TE::TPtr<TE::ShaderResource> vertexShaderResource =
-        std::make_shared<TE::ShaderResource>(TE::EShaderStage::Vertex, "LocalToClipSpaceVertexShader.glsl");
-    TE::TPtr<TE::ShaderResource> fragmentShaderResource =
-        std::make_shared<TE::ShaderResource>(TE::EShaderStage::Fragment, "LambertBlinnPhoneFragmentShader.glsl");
-    TE::TPtr<TE::TextureResource> texture =
-        std::make_shared<TE::TextureResource>("./Samples/Resources/Textures/viking_room.png");
+    ZE::TPtr<ZE::MeshResource> meshResource =
+        std::make_shared<ZE::MeshResource>("./Samples/Resources/Meshes/viking_room.obj");
+    ZE::TPtr<ZE::ShaderResource> vertexShaderResource =
+        std::make_shared<ZE::ShaderResource>(ZE::EShaderStage::Vertex, "LocalToClipSpaceVertexShader.glsl");
+    ZE::TPtr<ZE::ShaderResource> fragmentShaderResource =
+        std::make_shared<ZE::ShaderResource>(ZE::EShaderStage::Fragment, "LambertBlinnPhoneFragmentShader.glsl");
+    ZE::TPtr<ZE::TextureResource> texture =
+        std::make_shared<ZE::TextureResource>("./Samples/Resources/Textures/viking_room.png");
 
-    TE::TPtr<TE::MaterialResource> materialResource = std::make_shared<TE::MaterialResource>();
-    materialResource->SetShader(TE::EShaderStage::Vertex, vertexShaderResource);
-    materialResource->SetShader(TE::EShaderStage::Fragment, fragmentShaderResource);
-    materialResource->SetTexture(TE::EShaderStage::Fragment, 0, texture);
+    ZE::TPtr<ZE::MaterialResource> materialResource = std::make_shared<ZE::MaterialResource>();
+    materialResource->SetShader(ZE::EShaderStage::Vertex, vertexShaderResource);
+    materialResource->SetShader(ZE::EShaderStage::Fragment, fragmentShaderResource);
+    materialResource->SetTexture(ZE::EShaderStage::Fragment, 0, texture);
 
-    TE::TPtr<TE::MeshComponent> meshComponent = std::make_shared<TE::MeshComponent>();
+    ZE::TPtr<ZE::MeshComponent> meshComponent = std::make_shared<ZE::MeshComponent>();
     meshComponent->SetMesh(meshResource);
     meshComponent->SetMaterial(0, materialResource);
     meshObject->AddComponent(meshComponent);
 
     scene->AddObject(meshObject);
 
-    TE::TPtr<TE::SceneObject> cameraObject = std::make_shared<TE::SceneObject>();
+    ZE::TPtr<ZE::SceneObject> cameraObject = std::make_shared<ZE::SceneObject>();
 
-    TE::TPtr<TE::TransformComponent> cameraTransformComponent = std::make_shared<TE::TransformComponent>();
+    ZE::TPtr<ZE::TransformComponent> cameraTransformComponent = std::make_shared<ZE::TransformComponent>();
     glm::mat4x4 cameraTransform = glm::translate(glm::identity<glm::mat4x4>(), glm::vec3(0.0f, 0.0f, 10.0f));
     cameraTransformComponent->SetTransform(cameraTransform);
     cameraObject->AddComponent(cameraTransformComponent);
 
-    TE::TPtr<TE::CameraComponent> cameraComponent = std::make_shared<TE::CameraComponent>();
+    ZE::TPtr<ZE::CameraComponent> cameraComponent = std::make_shared<ZE::CameraComponent>();
     glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
     cameraComponent->SetProjectMatrix(projectionMatrix);
     cameraObject->AddComponent(cameraComponent);
 
-    TE::TPtr<CameraControlComponent> cameraControlComponent = std::make_shared<CameraControlComponent>();
+    ZE::TPtr<CameraControlComponent> cameraControlComponent = std::make_shared<CameraControlComponent>();
     cameraObject->AddComponent(cameraControlComponent);
 
     scene->SetCamera(cameraComponent);
@@ -66,9 +67,9 @@ TE::TPtr<TE::Scene> CreateSampleScene()
 
 int main()
 {
-    TE::Application app;
+    ZE::Application app;
 
-    TE::TPtr<TE::Scene> scene = CreateSampleScene();
+    ZE::TPtr<ZE::Scene> scene = CreateSampleScene();
     app.Run(scene);
 
     return 0;

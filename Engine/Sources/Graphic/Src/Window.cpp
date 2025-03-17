@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 Window::Window(const std::string& appName, int width, int height) : _glfwWindow(nullptr), _width(width), _height(height)
 {

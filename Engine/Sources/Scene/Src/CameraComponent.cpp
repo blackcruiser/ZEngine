@@ -5,7 +5,7 @@
 #include <glm/ext.hpp>
 
 
-namespace TE {
+namespace ZE {
 
 CameraComponent::CameraComponent() : SceneComponent(EComponentType::Camera), _projectMatrix(glm::identity<glm::mat4x4>())
 {

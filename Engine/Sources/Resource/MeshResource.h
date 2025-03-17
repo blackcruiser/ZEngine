@@ -2,12 +2,13 @@
 
 #include "BaseResource.h"
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 
 #include <glm/glm.hpp>
 
 #include <filesystem>
 
-namespace TE {
+namespace ZE {
 
 class Mesh;
 
@@ -44,4 +45,4 @@ private:
 };
 
 
-} // namespace TE
+} // namespace ZE

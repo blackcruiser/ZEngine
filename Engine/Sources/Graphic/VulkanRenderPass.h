@@ -1,10 +1,11 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 
 #include <vulkan/vulkan.h>
 
-namespace TE {
+namespace ZE {
 
 class VulkanDevice;
 
@@ -22,4 +23,4 @@ private:
     VkRenderPass _vkRenderPass;
 };
 
-} // namespace TE
+} // namespace ZE

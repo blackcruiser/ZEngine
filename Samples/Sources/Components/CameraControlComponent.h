@@ -6,7 +6,7 @@
 #include <set>
 
 
-class CameraControlComponent : public TE::ScriptComponent
+class CameraControlComponent : public ZE::ScriptComponent
 {
 public:
     CameraControlComponent();

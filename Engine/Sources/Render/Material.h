@@ -1,4 +1,5 @@
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 #include "Graphic/VulkanDevice.h"
 
 #include <glm/glm.hpp>
@@ -7,7 +8,7 @@
 #include <list>
 #include <optional>
 
-namespace TE {
+namespace ZE {
 
 class VulkanImage;
 class VulkanSampler;
@@ -66,4 +67,4 @@ private:
     TWeakPtr<MaterialResource> _owner;
 };
 
-} // namespace TE
+} // namespace ZE

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -8,7 +9,7 @@
 #include <functional>
 
 
-namespace TE {
+namespace ZE {
 
 typedef std::function<void(const glm::vec2&)> MouseAction;
 typedef std::function<void(int key, int action)> KeyboardAction;

@@ -3,7 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-namespace TE {
+namespace ZE {
 
 TextureResource::TextureResource(const std::filesystem::path& path) : _sourcePath(path), _data(nullptr)
 {
@@ -60,4 +60,4 @@ const void* TextureResource::GetData()
     return _data;
 }
 
-} // namespace TE
+} // namespace ZE

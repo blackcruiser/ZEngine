@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanCommandPool::VulkanCommandPool(TPtr<VulkanDevice> device)
     : _device(device), _vkCommandPool(VK_NULL_HANDLE)
@@ -42,4 +42,4 @@ TPtr<VulkanDevice> VulkanCommandPool::GetDevice()
     return _device;
 }
 
-} // namespace TE
+} // namespace ZE

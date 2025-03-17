@@ -7,7 +7,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanBuffer::VulkanBuffer(TPtr<VulkanDevice> device, uint32_t size, VkBufferUsageFlags usage,
                            VkMemoryPropertyFlags properties)
@@ -121,4 +121,4 @@ VkBuffer VulkanBuffer::GetRawBuffer()
     return _vkBuffer;
 }
 
-} // namespace TE
+} // namespace ZE
