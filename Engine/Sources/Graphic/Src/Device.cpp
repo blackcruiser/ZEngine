@@ -2,23 +2,26 @@
 #include "GPU.h"
 #include "Surface.h"
 
-#include <limits>
-#include <stdexcept>
-#include <string>
-#include <set>
 #include <array>
 #include <glm/glm.hpp>
+#include <limits>
+#include <set>
+#include <stdexcept>
+#include <string>
 
 namespace TE {
 
-Device::Device(TPtr<GPU> GPU, TPtr<Surface> surface) : _GPU(GPU), _surface(surface),
-_vkDevice(VK_NULL_HANDLE), _vkGraphicQueue(VK_NULL_HANDLE), _vkPresentQueue(VK_NULL_HANDLE), _graphicQueueFamilyIndex(std::numeric_limits<uint32_t>::max()), _presentQueueFamilyIndex(std::numeric_limits<uint32_t>::max())
+Device::Device(TPtr<GPU> GPU, TPtr<Surface> surface)
+    : _GPU(GPU), _surface(surface), _vkDevice(VK_NULL_HANDLE), _vkGraphicQueue(VK_NULL_HANDLE),
+      _vkPresentQueue(VK_NULL_HANDLE), _graphicQueueFamilyIndex(std::numeric_limits<uint32_t>::max()),
+      _presentQueueFamilyIndex(std::numeric_limits<uint32_t>::max())
 {
     // Queue
     std::vector<VkQueueFamilyProperties> queueFamilyProperties = _GPU->GetQueueFamilyProperties();
     for (size_t i = 0; i < queueFamilyProperties.size(); i++)
     {
-        if (_graphicQueueFamilyIndex == std::numeric_limits<uint32_t>::max() && queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        if (_graphicQueueFamilyIndex == std::numeric_limits<uint32_t>::max() &&
+            queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
             _graphicQueueFamilyIndex = i;
 
         if (_presentQueueFamilyIndex == std::numeric_limits<uint32_t>::max() && _GPU->isSurfaceSupported(i, _surface))
@@ -31,7 +34,7 @@ _vkDevice(VK_NULL_HANDLE), _vkGraphicQueue(VK_NULL_HANDLE), _vkPresentQueue(VK_N
     }
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = { _graphicQueueFamilyIndex, _presentQueueFamilyIndex };
+    std::set<uint32_t> uniqueQueueFamilies = {_graphicQueueFamilyIndex, _presentQueueFamilyIndex};
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -46,6 +49,7 @@ _vkDevice(VK_NULL_HANDLE), _vkGraphicQueue(VK_NULL_HANDLE), _vkPresentQueue(VK_N
 
     const std::vector<const char*> deviceExtensions = _GPU->GetExtensions();
     VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo vkDeviceCreateInfo{};
     vkDeviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -117,7 +121,7 @@ VkDeviceMemory Device::AllocateAndBindBufferMemory(VkBuffer buffer, VkMemoryProp
     return vkDeviceMemory;
 }
 
-void Device::FreeMemmory(VkDeviceMemory deviceMemory)
+void Device::FreeMemory(VkDeviceMemory deviceMemory)
 {
     vkFreeMemory(_vkDevice, deviceMemory, nullptr);
 }
@@ -183,6 +187,93 @@ void Device::DestroyShaderModule(VkShaderModule shaderModule)
     vkDestroyShaderModule(_vkDevice, shaderModule, nullptr);
 }
 
+VkImage Device::CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+                            VkImageUsageFlags usage)
+{
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = width;
+    imageInfo.extent.height = height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = format;
+    imageInfo.tiling = tiling;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = usage;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkImage image;
+    if (vkCreateImage(_vkDevice, &imageInfo, nullptr, &image) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create image!");
+    }
+
+    return image;
+}
+
+void Device::DestroyImage(VkImage image)
+{
+    vkDestroyImage(_vkDevice, image, nullptr);
+}
+
+VkDeviceMemory Device::AllocateAndBindImageMemory(VkImage image, VkMemoryPropertyFlags properties)
+{
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(_vkDevice, image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = _GPU->FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+    VkDeviceMemory imageMemory;
+    if (vkAllocateMemory(_vkDevice, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate image memory!");
+    }
+
+    vkBindImageMemory(_vkDevice, image, imageMemory, 0);
+
+    return imageMemory;
+}
+
+
+VkSampler Device::CreateTextureSampler()
+{
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(_GPU->GetRawPhysicalDevice(), &properties);
+
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+    VkSampler sampler;
+    if (vkCreateSampler(_vkDevice, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create texture sampler!");
+    }
+    return sampler;
+}
+
+void Device::DestroyTextureSampler(VkSampler sampler)
+{
+    vkDestroySampler(_vkDevice, sampler, nullptr);
+}
+
 VkImageView Device::CreateImageView(VkImage image, VkFormat format)
 {
     VkImageViewCreateInfo imageViewCreateInfo{};
@@ -214,7 +305,8 @@ void Device::DestroyImageView(VkImageView imageView)
     vkDestroyImageView(_vkDevice, imageView, nullptr);
 }
 
-VkFramebuffer Device::CreateFramebuffer(VkRenderPass renderPass, const std::vector<VkImageView> imageViewArr, uint32_t width, uint32_t height)
+VkFramebuffer Device::CreateFramebuffer(VkRenderPass renderPass, const std::vector<VkImageView> imageViewArr,
+                                        uint32_t width, uint32_t height)
 {
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -238,7 +330,9 @@ void Device::DestroyFramebuffer(VkFramebuffer framebuffer)
     vkDestroyFramebuffer(_vkDevice, framebuffer, nullptr);
 }
 
-VkSwapchainKHR Device::CreateSwapchain(uint32_t imageCount, VkFormat imageFormat, VkColorSpaceKHR colorSpace, VkExtent2D extent, VkSurfaceTransformFlagBitsKHR preTransform, VkPresentModeKHR presentMode)
+VkSwapchainKHR Device::CreateSwapchain(uint32_t imageCount, VkFormat imageFormat, VkColorSpaceKHR colorSpace,
+                                       VkExtent2D extent, VkSurfaceTransformFlagBitsKHR preTransform,
+                                       VkPresentModeKHR presentMode)
 {
     VkSwapchainCreateInfoKHR vkSwapchainCreateInfo{};
     vkSwapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -252,7 +346,7 @@ VkSwapchainKHR Device::CreateSwapchain(uint32_t imageCount, VkFormat imageFormat
 
     if (_graphicQueueFamilyIndex != _presentQueueFamilyIndex)
     {
-        uint32_t queueFamilyIndexs[] = { _graphicQueueFamilyIndex, _presentQueueFamilyIndex };
+        uint32_t queueFamilyIndexs[] = {_graphicQueueFamilyIndex, _presentQueueFamilyIndex};
         vkSwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         vkSwapchainCreateInfo.queueFamilyIndexCount = 2;
         vkSwapchainCreateInfo.pQueueFamilyIndices = queueFamilyIndexs;
@@ -305,7 +399,10 @@ void Device::DestroyPipelineLayout(VkPipelineLayout pipelineLayout)
     vkDestroyPipelineLayout(_vkDevice, pipelineLayout, nullptr);
 }
 
-VkPipeline Device::CreateGraphicPipeline(VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule, VkExtent2D extent, const VkVertexInputBindingDescription& bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions, VkPipelineLayout pipelineLayout, VkRenderPass renderPass)
+VkPipeline Device::CreateGraphicPipeline(VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule,
+                                         VkExtent2D extent, const VkVertexInputBindingDescription& bindingDescription,
+                                         std::vector<VkVertexInputAttributeDescription> attributeDescriptions,
+                                         VkPipelineLayout pipelineLayout, VkRenderPass renderPass)
 {
     VkPipelineShaderStageCreateInfo vkVertexShaderStageCreateInfo{};
     vkVertexShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -319,7 +416,7 @@ VkPipeline Device::CreateGraphicPipeline(VkShaderModule vertexShaderModule, VkSh
     vkFragmentShaderStageCreateInfo.pName = "main";
     vkFragmentShaderStageCreateInfo.module = fragmentShaderModule;
 
-    VkPipelineShaderStageCreateInfo shaderStages[] = { vkVertexShaderStageCreateInfo, vkFragmentShaderStageCreateInfo };
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vkVertexShaderStageCreateInfo, vkFragmentShaderStageCreateInfo};
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -342,7 +439,7 @@ VkPipeline Device::CreateGraphicPipeline(VkShaderModule vertexShaderModule, VkSh
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
+    scissor.offset = {0, 0};
     scissor.extent = extent;
 
     VkPipelineViewportStateCreateInfo viewportState{};
@@ -375,7 +472,8 @@ VkPipeline Device::CreateGraphicPipeline(VkShaderModule vertexShaderModule, VkSh
     multisampling.alphaToOneEnable = VK_FALSE;      // Optional
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colorBlendAttachment.blendEnable = VK_FALSE;
     colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
     colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
@@ -486,18 +584,12 @@ void Device::DestroyRenderPass(VkRenderPass renderPass)
     vkDestroyRenderPass(_vkDevice, renderPass, nullptr);
 }
 
-VkDescriptorSetLayout Device::CreateDescriptorSetLayout(VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags stageFlags)
+VkDescriptorSetLayout Device::CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings)
 {
-    VkDescriptorSetLayoutBinding layoutBinding{};
-    layoutBinding.binding = 0;
-    layoutBinding.descriptorType = type;
-    layoutBinding.descriptorCount = descriptorCount;
-    layoutBinding.stageFlags = stageFlags;
-
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = 1;
-    layoutInfo.pBindings = &layoutBinding;
+    layoutInfo.bindingCount = layoutBindings.size();
+    layoutInfo.pBindings = layoutBindings.data();
 
     VkDescriptorSetLayout descriptorSetLayout;
     if (vkCreateDescriptorSetLayout(_vkDevice, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
@@ -513,17 +605,13 @@ void Device::DestroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayou
     vkDestroyDescriptorSetLayout(_vkDevice, descriptorSetLayout, nullptr);
 }
 
-VkDescriptorPool Device::CreateDescriptorPool(VkDescriptorType type, uint32_t descriptorCount)
+VkDescriptorPool Device::CreateDescriptorPool(const std::vector<VkDescriptorPoolSize>& descriptorPoolSizeArr)
 {
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = type;
-    poolSize.descriptorCount = descriptorCount;
-
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.maxSets = descriptorCount;
-    poolInfo.poolSizeCount = 1;
-    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = 2;
+    poolInfo.poolSizeCount = descriptorPoolSizeArr.size();
+    poolInfo.pPoolSizes = descriptorPoolSizeArr.data();
 
     VkDescriptorPool descriptorPool;
     if (vkCreateDescriptorPool(_vkDevice, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
@@ -539,7 +627,8 @@ void Device::DestroyDescriptorPool(VkDescriptorPool descriptorPool)
     vkDestroyDescriptorPool(_vkDevice, descriptorPool, nullptr);
 }
 
-VkDescriptorSet Device::AllocateDescriptorSet(VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSetLayout* pSetLayouts)
+VkDescriptorSet Device::AllocateDescriptorSet(VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+                                              const VkDescriptorSetLayout* pSetLayouts)
 {
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -555,25 +644,16 @@ VkDescriptorSet Device::AllocateDescriptorSet(VkDescriptorPool descriptorPool, u
     return descriptorSet;
 }
 
-void Device::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkDescriptorType descriptorType, VkBuffer buffer, VkDeviceSize size)
+void Device::UpdateDescriptorSet(const std::vector<VkWriteDescriptorSet>& descriptorWrites)
 {
-    VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = buffer;
-    bufferInfo.offset = 0;
-    bufferInfo.range = size;
+    vkUpdateDescriptorSets(_vkDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
+                           nullptr);
+}
 
-    VkWriteDescriptorSet descriptorWrite{};
-    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrite.dstSet = descriptorSet;
-    descriptorWrite.dstBinding = 0;
-    descriptorWrite.dstArrayElement = 0;
-    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorWrite.descriptorCount = 1;
-    descriptorWrite.pBufferInfo = &bufferInfo;
-    descriptorWrite.pImageInfo = nullptr;       // Optional
-    descriptorWrite.pTexelBufferView = nullptr; // Optional
-
-    vkUpdateDescriptorSets(_vkDevice, 1, &descriptorWrite, 0, nullptr);
+void Device::FreeDescriptorSet(VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+                               const VkDescriptorSet* pSetLayouts)
+{
+    vkFreeDescriptorSets(_vkDevice, descriptorPool, descriptorSetCount, pSetLayouts);
 }
 
 void Device::WaitIdle()
@@ -605,5 +685,4 @@ uint32_t Device::GetPresentQueueFamilyIndex()
 {
     return _presentQueueFamilyIndex;
 }
-
-}
+} // namespace TE

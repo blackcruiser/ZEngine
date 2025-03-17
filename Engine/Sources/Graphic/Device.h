@@ -21,7 +21,7 @@ public:
     void DestroyBuffer(VkBuffer buffer);
 
     VkDeviceMemory AllocateAndBindBufferMemory(VkBuffer buffer, VkMemoryPropertyFlags properties);
-    void FreeMemmory(VkDeviceMemory deviceMemory);
+    void FreeMemory(VkDeviceMemory deviceMemory);
 
     VkSemaphore CreateGraphicSemaphore();
     void DestroyGraphicSemaphore(VkSemaphore semaphore);
@@ -32,33 +32,50 @@ public:
     VkShaderModule CreateShaderModule(const std::vector<char>& code);
     void DestroyShaderModule(VkShaderModule shaderModule);
 
+    VkImage CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiliing,
+                        VkImageUsageFlags usage);
+    void DestroyImage(VkImage image);
+
+    VkDeviceMemory AllocateAndBindImageMemory(VkImage image, VkMemoryPropertyFlags properties);
+
     VkImageView CreateImageView(VkImage image, VkFormat format);
     void DestroyImageView(VkImageView imageView);
 
-    VkFramebuffer CreateFramebuffer(VkRenderPass renderPass, const std::vector<VkImageView> imageViewArr, uint32_t width, uint32_t height);
+    VkSampler CreateTextureSampler();
+    void DestroyTextureSampler(VkSampler sampler);
+
+    VkFramebuffer CreateFramebuffer(VkRenderPass renderPass, const std::vector<VkImageView> imageViewArr,
+                                    uint32_t width, uint32_t height);
     void DestroyFramebuffer(VkFramebuffer framebuffer);
 
-    VkSwapchainKHR CreateSwapchain(uint32_t imageCount, VkFormat imageFormat, VkColorSpaceKHR colorSpace, VkExtent2D extent, VkSurfaceTransformFlagBitsKHR preTransform, VkPresentModeKHR presentMode);
+    VkSwapchainKHR CreateSwapchain(uint32_t imageCount, VkFormat imageFormat, VkColorSpaceKHR colorSpace,
+                                   VkExtent2D extent, VkSurfaceTransformFlagBitsKHR preTransform,
+                                   VkPresentModeKHR presentMode);
     void DestroySwapchain(VkSwapchainKHR swapchain);
 
     VkPipelineLayout CreatePipelineLayout(VkDescriptorSetLayout descriptorSetLayout);
     void DestroyPipelineLayout(VkPipelineLayout pipelineLayout);
 
-    VkPipeline CreateGraphicPipeline(VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule, VkExtent2D extent, const VkVertexInputBindingDescription& bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescriptions, VkPipelineLayout pipelineLayout, VkRenderPass renderPass);
+    VkPipeline CreateGraphicPipeline(VkShaderModule vertexShaderModule, VkShaderModule fragmentShaderModule,
+                                     VkExtent2D extent, const VkVertexInputBindingDescription& bindingDescription,
+                                     std::vector<VkVertexInputAttributeDescription> attributeDescriptions,
+                                     VkPipelineLayout pipelineLayout, VkRenderPass renderPass);
     void DestroyPipeline(VkPipeline pipeline);
 
     VkRenderPass CreateRenderPass(VkFormat format);
     void DestroyRenderPass(VkRenderPass renderPass);
 
-    VkDescriptorSetLayout CreateDescriptorSetLayout(VkDescriptorType type, uint32_t descriptorCount, VkShaderStageFlags stageFlags);
+    VkDescriptorSetLayout CreateDescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings);
     void DestroyDescriptorSetLayout(VkDescriptorSetLayout descriptorSetLayout);
 
-    VkDescriptorPool CreateDescriptorPool(VkDescriptorType type, uint32_t descriptorCount);
+    VkDescriptorPool CreateDescriptorPool(const std::vector<VkDescriptorPoolSize>& descriptorPoolSizeArr);
     void DestroyDescriptorPool(VkDescriptorPool descriptorPool);
 
-    VkDescriptorSet AllocateDescriptorSet(VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSetLayout* pSetLayouts);
-
-    void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkDescriptorType descriptorType, VkBuffer buffer, VkDeviceSize size);
+    VkDescriptorSet AllocateDescriptorSet(VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+                                          const VkDescriptorSetLayout* pSetLayouts);
+    void FreeDescriptorSet(VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+                           const VkDescriptorSet* pSetLayouts);
+    void UpdateDescriptorSet(const std::vector<VkWriteDescriptorSet>& descriptorWrites);
 
     void WaitIdle();
 
@@ -79,4 +96,4 @@ private:
     TPtr<Surface> _surface;
 };
 
-}
+} // namespace TE
