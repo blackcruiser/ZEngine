@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanDescriptorSet::VulkanDescriptorSet(TPtr<VulkanDescriptorPool> descriptorPool, const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings)
     : _descriptorPool(descriptorPool), _vkDescriptorSetLayout(VK_NULL_HANDLE), _vkDescriptorSet(VK_NULL_HANDLE)
@@ -90,4 +90,4 @@ const VkDescriptorSetLayout& VulkanDescriptorSet::GetRawDescriptorSetLayout()
 {
     return _vkDescriptorSetLayout;
 }
-} // namespace TE
+} // namespace ZE

@@ -22,22 +22,22 @@ CameraControlComponent::~CameraControlComponent()
 
 void CameraControlComponent::OnAttached()
 {
-    TE::MouseAction mouseAction = std::bind(&CameraControlComponent::OnMouseInput, this, std::placeholders::_1);
-    _mouseActionKey = TE::InputSystem::GetInstance().RegisterMouseAction(mouseAction);
+    ZE::MouseAction mouseAction = std::bind(&CameraControlComponent::OnMouseInput, this, std::placeholders::_1);
+    _mouseActionKey = ZE::InputSystem::GetInstance().RegisterMouseAction(mouseAction);
 
-    TE::KeyboardAction keyboardAction = std::bind(&CameraControlComponent::OnKeyboardInput, this, std::placeholders::_1, std::placeholders::_2);
-    _keyboardActionKey = TE::InputSystem::GetInstance().RegisterKeyboardAction(keyboardAction);
+    ZE::KeyboardAction keyboardAction = std::bind(&CameraControlComponent::OnKeyboardInput, this, std::placeholders::_1, std::placeholders::_2);
+    _keyboardActionKey = ZE::InputSystem::GetInstance().RegisterKeyboardAction(keyboardAction);
 }
 
 void CameraControlComponent::OnDetached()
 {
-    TE::InputSystem::GetInstance().UnregisterMouseAction(_mouseActionKey);
-    TE::InputSystem::GetInstance().UnregisterKeyboardAction(_keyboardActionKey);
+    ZE::InputSystem::GetInstance().UnregisterMouseAction(_mouseActionKey);
+    ZE::InputSystem::GetInstance().UnregisterKeyboardAction(_keyboardActionKey);
 }
 
 void CameraControlComponent::OnMouseInput(const glm::vec2& position)
 {
-    TE::TPtr<TE::TransformComponent> transformComponent = GetObject()->GetComponent<TE::TransformComponent>();
+    ZE::TPtr<ZE::TransformComponent> transformComponent = GetObject()->GetComponent<ZE::TransformComponent>();
     if (transformComponent == nullptr)
         return;
 
@@ -59,7 +59,7 @@ void CameraControlComponent::OnMouseInput(const glm::vec2& position)
 
 void CameraControlComponent::OnKeyboardInput(int key, int action)
 {
-    TE::TPtr<TE::TransformComponent> transformComponent = GetObject()->GetComponent<TE::TransformComponent>();
+    ZE::TPtr<ZE::TransformComponent> transformComponent = GetObject()->GetComponent<ZE::TransformComponent>();
     if (transformComponent == nullptr)
         return;
 

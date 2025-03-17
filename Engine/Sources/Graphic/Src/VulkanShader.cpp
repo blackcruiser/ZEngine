@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanShader::VulkanShader(TPtr<VulkanDevice> device, const std::vector<char>& byteCode)
     : _device(device), _vkShaderModule(VK_NULL_HANDLE)
@@ -32,4 +32,4 @@ VkShaderModule VulkanShader::GetRawShader()
     return _vkShaderModule;
 }
 
-} // namespace TE
+} // namespace ZE

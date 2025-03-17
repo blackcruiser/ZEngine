@@ -7,7 +7,7 @@
 #include <string>
 
 
-namespace TE {
+namespace ZE {
 
 VulkanGPU::VulkanGPU(const VkInstance& vkInstance) : _vkInstance(vkInstance),
 _GPU(VK_NULL_HANDLE), _deviceExtensions({ VK_KHR_SWAPCHAIN_EXTENSION_NAME })

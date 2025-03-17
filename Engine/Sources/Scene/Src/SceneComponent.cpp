@@ -1,7 +1,7 @@
 #include "SceneComponent.h"
 
 
-namespace TE {
+namespace ZE {
 
 SceneComponent::SceneComponent(const EComponentType type) : _type(type)
 {

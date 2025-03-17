@@ -1,9 +1,10 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 
 
-namespace TE {
+namespace ZE {
 
 class SceneObject;
 class CameraComponent;

@@ -1,12 +1,13 @@
 #pragma once
 
 #include "CoreDefines.h"
+#include "CoreTypes.h"
 
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
 
-namespace TE {
+namespace ZE {
 
 class VulkanGPU;
 class Surface;
@@ -47,4 +48,4 @@ private:
     TPtr<Surface> _surface;
 };
 
-} // namespace TE
+} // namespace ZE

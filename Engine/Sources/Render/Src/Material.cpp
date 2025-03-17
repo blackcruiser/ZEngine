@@ -14,7 +14,7 @@
 #include "Resource/TextureResource.h"
 
 
-namespace TE {
+namespace ZE {
 
 Material::Material(TPtr<VulkanDevice> device, TPtr<MaterialResource> materialResource)
     : _device(device), _owner(materialResource), _descriptorSet(nullptr), _pipelineLayout(nullptr), _pipeline(nullptr)
@@ -213,4 +213,4 @@ void Material::UpdateDescriptorSet()
     _descriptorSet->Update(bufferInfoArr, imageInfoArr);
 }
 
-} // namespace TE
+} // namespace ZE
