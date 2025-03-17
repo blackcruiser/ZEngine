@@ -41,7 +41,7 @@ static std::vector<char> readFile(const std::string& filename)
 
 void ShaderResource::Load()
 {
-    const std::filesystem::path shaderDirectoryPath = "../Engine/Shaders";
+    const std::filesystem::path shaderDirectoryPath = "Engine/Shaders";
  
     std::filesystem::path shaderPath = shaderDirectoryPath / _sourcePath;
     std::filesystem::path absoluteShaderPath = std::filesystem::absolute(shaderPath);

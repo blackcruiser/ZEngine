@@ -7,14 +7,15 @@
 namespace ZE {
 
 class Scene;
-class Window;
+class Frame;
+class VulkanCommandBuffer;
 
 
 class RendererInterface
 {
 public:
     virtual void Init(TPtr<Scene> scene) = 0;
-    virtual void RenderFrame(TPtr<Scene> scene, TPtr<Window> window) = 0;
+    virtual void RenderFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene, TPtr<Frame> frame) = 0;
 };
 
 } // namespace ZE
