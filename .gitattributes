@@ -1,0 +1,6 @@
+* text=auto eol=lf charset=utf-8
+
+*.bat text eol=crlf
+
+*.png binary
+
