@@ -8,11 +8,7 @@ namespace ZE {
 
 class VulkanGPU;
 class VulkanDevice;
-class VulkanQueue;
-class VulkanDescriptorPool;
-class VulkanCommandBufferManager;
-class VulkanBufferManager;
-class VulkanGraphicPipeline;
+class RenderingContextInterface;
 
 class RenderSystem
 {
@@ -32,11 +28,8 @@ public:
     void Tick();
 
     TPtr<VulkanDevice> GetDevice();
-    TPtr<VulkanQueue> GetQueue(VulkanQueue::EType type);
-    TPtr<VulkanDescriptorPool> GetDescriptorPool();
-    TPtr<VulkanCommandBufferManager> GetCommandBufferManager();
-    TPtr<VulkanBufferManager> GetBufferManager();
-    TPtrSet<VulkanGraphicPipeline>& GetPipelineCache();
+
+    TPtr<RenderingContextInterface> CreateRenderingContext();
 
 private:
     static RenderSystem* _instance;
@@ -44,11 +37,6 @@ private:
 
     TPtr<VulkanGPU> _GPU;
     TPtr<VulkanDevice> _device;
-    TPtrArr<VulkanQueue> _queueArr;
-    TPtr<VulkanDescriptorPool> _descriptorPool;
-    TPtr<VulkanCommandBufferManager> _commandBufferManager;
-    TPtr<VulkanBufferManager> _bufferManager;
-    TPtrSet<VulkanGraphicPipeline> _pipelineCache;
 };
 
 } // namespace ZE

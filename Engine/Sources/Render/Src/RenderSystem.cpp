@@ -6,6 +6,7 @@
 #include "Graphic/VulkanCommandBufferManager.h"
 #include "Graphic/VulkanCommandPool.h"
 #include "Graphic/VulkanBufferManager.h"
+#include "Graphic/VulkanRenderingContext.h"
 
 #include <vulkan/vulkan.h>
 
@@ -54,29 +55,13 @@ RenderSystem::RenderSystem()
     _GPU = std::make_shared<VulkanGPU>(_vkInstance);
     _device = std::make_shared<VulkanDevice>(_GPU);
 
-    TPtr<VulkanQueue> graphicQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Graphic, _device->GetGraphicQueueFamilyIndex());
-    TPtr<VulkanQueue> computeQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Compute, _device->GetComputeQueueFamilyIndex());
-    TPtr<VulkanQueue> transferQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Transfer, _device->GetTransferQueueFamilyIndex());
 
-    _queueArr = {graphicQueue, computeQueue, transferQueue};
-
-    std::vector<VkDescriptorPoolSize> poolSizeArr = {{VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10}, {VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}};
-    _descriptorPool = std::make_shared<VulkanDescriptorPool>(_device, poolSizeArr);
-
-    _commandBufferManager = std::make_shared<VulkanCommandBufferManager>(_device, _queueArr);
-
-    _bufferManager = std::make_shared<VulkanBufferManager>(_device);
 }
 
 RenderSystem::~RenderSystem()
 {
     _device->WaitIdle();
 
-    _pipelineCache.clear();
-    _bufferManager.reset();
-    _commandBufferManager.reset();
-    _descriptorPool.reset();
-    _queueArr.clear();
     _device.reset();
     _GPU.reset();
 
@@ -140,7 +125,14 @@ void RenderSystem::_DestroyVulkanInstance()
 
 void RenderSystem::Tick()
 {
-    _bufferManager->Tick();
+}
+
+TPtr<RenderingContextInterface> RenderSystem::CreateRenderingContext()
+{
+    TPtr<RenderingContextInterface> result =  std::make_shared<VulkanRenderingContext>();
+    result->Initialize();
+
+    return result;
 }
 
 
@@ -148,34 +140,5 @@ TPtr<VulkanDevice> RenderSystem::GetDevice()
 {
     return _device;
 }
-
-TPtr<VulkanQueue> RenderSystem::GetQueue(VulkanQueue::EType type)
-{
-    size_t index = static_cast<size_t>(type) - 1;
-    if (index >= _queueArr.size())
-        return nullptr;
-    else
-        return _queueArr[index];
-}
-
-TPtr<VulkanDescriptorPool> RenderSystem::GetDescriptorPool()
-{
-    return _descriptorPool;
-}
-
-TPtr<VulkanCommandBufferManager> RenderSystem::GetCommandBufferManager()
-{
-    return _commandBufferManager;
-}
-
- TPtr<VulkanBufferManager> RenderSystem::GetBufferManager()
- {
-    return _bufferManager;
- }
-
-TPtrSet<VulkanGraphicPipeline>& RenderSystem::GetPipelineCache()
- {
-    return _pipelineCache;
- }
 
 } // namespace ZE
