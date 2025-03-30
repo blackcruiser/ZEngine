@@ -9,20 +9,17 @@
 #include <list>
 #include <optional>
 
+
 namespace ZE {
 
-class VulkanImage;
 class VulkanSampler;
 class VulkanImageView;
 class VulkanShader;
 class VulkanBuffer;
-class VulkanDescriptorPool;
 class VulkanDescriptorSet;
 class VulkanDescriptorSetLayout;
 class VulkanPipelineLayout;
-class VulkanGraphicPipeline;
-class VulkanCommandBuffer;
-class Mesh;
+class RenderGraph;
 
 struct VulkanImageBindingInfo
 {
@@ -37,15 +34,15 @@ public:
     Pass(TPtr<PassResource> passResource);
     ~Pass();
 
-    void BuildRenderResource(TPtr<VulkanCommandBuffer> commandBuffer);
+    void BuildRenderResource(TPtr<RenderGraph> renderGraph);
 
 private:
-    void CreateGraphicTextures(TPtr<VulkanCommandBuffer> commandBuffer);
-    void CreateGraphicBuffers(TPtr<VulkanCommandBuffer> commandBuffer);
+    void CreateGraphicTextures(TPtr<RenderGraph> renderGraph);
+    void CreateGraphicBuffers(TPtr<RenderGraph> renderGraph);
     void CreateGraphicShaders();
 
     void CreateDescriptorSetLayout();
-    void CreateDescriptorSet();
+    void CreateDescriptorSet(TPtr<RenderGraph> renderGraph);
     void LinkDescriptorSet();
     void CreatePipelineLayout();
 
@@ -55,7 +52,7 @@ public:
     TPtr<VulkanPipelineLayout> GetPipelineLayout();
     void ApplyPipelineState(RHIPipelineState& state);
 
-    void UpdateUniformBuffer(TPtr<VulkanCommandBuffer> commandBuffer, const glm::mat4x4& mvp);
+    void UpdateUniformBuffer(TPtr<RenderGraph> renderGraph, const glm::mat4x4& mvp);
 
 private:
     TPtrUnorderedMap<VkShaderStageFlagBits, VulkanShader> _shaders;

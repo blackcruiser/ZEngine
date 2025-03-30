@@ -5,6 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
+
 namespace ZE {
 
 class VulkanDevice;
@@ -16,14 +17,11 @@ public:
     VulkanBuffer(TPtr<VulkanDevice> device, uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
     ~VulkanBuffer();
 
-
-    void CopyFromBuffer(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> otherBuffer, VkDeviceSize size);
-    void TransferData(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> stagingBuffer, const void* data, uint32_t size);
-
     void* MapMemory(VkDeviceSize offset, VkDeviceSize size);
     void UnmapMemory();
 
     uint32_t GetSize();
+    VkMemoryPropertyFlags GetProperties();
 
     VkBuffer GetRawBuffer();
     VkDeviceMemory GetRawMemory();

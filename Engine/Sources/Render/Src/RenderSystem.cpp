@@ -1,16 +1,16 @@
 #include "RenderSystem.h"
 #include "Graphic/VulkanGPU.h"
 #include "Graphic/VulkanDevice.h"
-#include "Graphic/VulkanQueue.h"
-#include "Graphic/VulkanDescriptorPool.h"
-#include "Graphic/VulkanCommandBufferManager.h"
-#include "Graphic/VulkanCommandPool.h"
+#include "Graphic/VulkanBuffer.h"
 #include "Graphic/VulkanBufferManager.h"
+#include "Graphic/VulkanCommandBufferManager.h"
+#include "Graphic/VulkanDescriptorPool.h"
+#include "Render/RenderSystem.h"
 
 #include <vulkan/vulkan.h>
 
 #include <stdexcept>
-#include <assert.h>
+#include <cassert>
 
 
 namespace ZE {
@@ -49,14 +49,14 @@ RenderSystem& RenderSystem::Get()
 RenderSystem::RenderSystem()
     : _GPU(nullptr), _device(nullptr)
 {
-    _CreateVulkanInstance();
+    CreateVulkanInstance();
 
     _GPU = std::make_shared<VulkanGPU>(_vkInstance);
     _device = std::make_shared<VulkanDevice>(_GPU);
 
     TPtr<VulkanQueue> graphicQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Graphic, _device->GetGraphicQueueFamilyIndex());
     TPtr<VulkanQueue> computeQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Compute, _device->GetComputeQueueFamilyIndex());
-    TPtr<VulkanQueue> transferQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Transfer, _device->GetTransferQueueFamilyIndex());
+    TPtr<VulkanQueue> transferQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Transfer, _device->GetTransferQueueFamilyIndex()); 
 
     _queueArr = {graphicQueue, computeQueue, transferQueue};
 
@@ -72,18 +72,18 @@ RenderSystem::~RenderSystem()
 {
     _device->WaitIdle();
 
-    _pipelineCache.clear();
     _bufferManager.reset();
     _commandBufferManager.reset();
     _descriptorPool.reset();
     _queueArr.clear();
+
     _device.reset();
     _GPU.reset();
 
-    _DestroyVulkanInstance();
+    DestroyVulkanInstance();
 }
 
-void RenderSystem::_CreateVulkanInstance()
+void RenderSystem::CreateVulkanInstance()
 {
     const std::string appName{"ZEngine"};
 
@@ -132,7 +132,7 @@ void RenderSystem::_CreateVulkanInstance()
     }
 }
 
-void RenderSystem::_DestroyVulkanInstance()
+void RenderSystem::DestroyVulkanInstance()
 {
     if (_vkInstance != VK_NULL_HANDLE)
         vkDestroyInstance(_vkInstance, nullptr);
@@ -140,13 +140,16 @@ void RenderSystem::_DestroyVulkanInstance()
 
 void RenderSystem::Tick()
 {
-    _bufferManager->Tick();
 }
-
 
 TPtr<VulkanDevice> RenderSystem::GetDevice()
 {
     return _device;
+}
+
+TPtr<VulkanBuffer> RenderSystem::AcquireBuffer(uint32_t size, VkBufferUsageFlags bits, VkMemoryPropertyFlags properties)
+{
+    return std::make_shared<VulkanBuffer>(_device, size, bits, properties);
 }
 
 TPtr<VulkanQueue> RenderSystem::GetQueue(VulkanQueue::EType type)
@@ -168,14 +171,14 @@ TPtr<VulkanCommandBufferManager> RenderSystem::GetCommandBufferManager()
     return _commandBufferManager;
 }
 
- TPtr<VulkanBufferManager> RenderSystem::GetBufferManager()
- {
+TPtr<VulkanBufferManager> RenderSystem::GetBufferManager()
+{
     return _bufferManager;
- }
+}
 
 TPtrSet<VulkanGraphicPipeline>& RenderSystem::GetPipelineCache()
- {
+{
     return _pipelineCache;
- }
+}
 
 } // namespace ZE

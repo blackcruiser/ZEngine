@@ -1,21 +1,10 @@
 #include "ForwardRenderer.h"
-#include "Graphic/VulkanDevice.h"
-#include "Graphic/VulkanSurface.h"
-#include "Graphic/VulkanBuffer.h"
+#include "RenderSystem.h"
+#include "RenderGraph.h"
+#include "RenderTargets.h"
+#include "Viewport.h"
 #include "Graphic/VulkanImage.h"
 #include "Graphic/VulkanImageView.h"
-#include "Graphic/VulkanShader.h"
-#include "Graphic/VulkanCommandBuffer.h"
-#include "Graphic/VulkanCommandBufferManager.h"
-#include "Graphic/VulkanDescriptorPool.h"
-#include "Graphic/VulkanDescriptorSet.h"
-#include "Graphic/VulkanPipelineLayout.h"
-#include "Graphic/VulkanPipeline.h"
-#include "Graphic/VulkanSwapchain.h"
-#include "Graphic/VulkanQueue.h"
-#include "Frame.h"
-#include "RenderSystem.h"
-#include "RenderTargets.h"
 #include "Material.h"
 #include "Mesh.h"
 #include "DirectionalLightPass.h"
@@ -35,23 +24,16 @@ namespace ZE {
 
 ForwardRenderer::ForwardRenderer()
 {
-    _inFlightFence = RenderSystem::Get().GetDevice()->CreateFence(true);
-
     _depthPass = std::make_shared<DepthPass>();
     _directionalLightPass = std::make_shared<DirectionalLightPass>();
 }
 
 ForwardRenderer::~ForwardRenderer()
 {
-    RenderSystem::Get().GetDevice()->DestroyFence(_inFlightFence);
 }
 
-void ForwardRenderer::Init(TPtr<Scene> scene)
+void ForwardRenderer::Init(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene)
 {
-    TPtr<VulkanCommandBuffer> commandBuffer = RenderSystem::Get().GetCommandBufferManager()->GetCommandBuffer(VulkanQueue::EType::Graphic);
-
-    commandBuffer->Begin();
-
     const TPtrArr<SceneObject>& objects = scene->GetObjects();
 
     for (TPtr<SceneObject> object : objects)
@@ -64,8 +46,8 @@ void ForwardRenderer::Init(TPtr<Scene> scene)
         if (meshResource != nullptr)
         {
             TPtr<Mesh> mesh = std::make_shared<Mesh>(meshResource);
-            mesh->CreateVertexBuffer(commandBuffer);
-            mesh->CreateIndexBuffer(commandBuffer);
+            mesh->CreateVertexBuffer(renderGraph);
+            mesh->CreateIndexBuffer(renderGraph);
             meshResource->SetMesh(mesh);
         }
 
@@ -84,22 +66,16 @@ void ForwardRenderer::Init(TPtr<Scene> scene)
                 {
                     TPtr<Pass> pass = std::make_shared<Pass>(passResource);
                     material->SetPass(passType, pass);
-                    pass->BuildRenderResource(commandBuffer);
+                    pass->BuildRenderResource(renderGraph);
                 }
             }
         }
     }
 
-    commandBuffer->End();
-
-    TPtr<VulkanQueue> transferQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
-    VkFence fence = RenderSystem::Get().GetDevice()->CreateFence(false);
-    transferQueue->Submit(commandBuffer, {}, {}, {}, fence);
-    vkWaitForFences(RenderSystem::Get().GetDevice()->GetRawDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
-    RenderSystem::Get().GetDevice()->DestroyFence(fence);
+    renderGraph->Execute({}, {}, {});
 }
 
-TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene)
+TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene)
 {
     //Filter Objects
     const TPtrArr<SceneObject>& allObjects = scene->GetObjects();
@@ -149,7 +125,7 @@ TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<VulkanCommandBuffer> commandB
                 if (pass)
                 {
                     // Update Global DescriptorSet
-                    pass->UpdateUniformBuffer(commandBuffer, MVP);
+                    pass->UpdateUniformBuffer(renderGraph, MVP);
                 }
             }
         }
@@ -158,32 +134,29 @@ TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<VulkanCommandBuffer> commandB
     return objectsToRender;
 }
 
-void ForwardRenderer::RenderFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene, TPtr<Frame> frame)
+void ForwardRenderer::RenderFrame(TPtr<RenderGraph> renderGraph, TPtr<Viewport> viewport, TPtr<Scene> scene)
 {
-    TPtr<VulkanDevice> device = commandBuffer->GetDevice();
+    TPtrArr<SceneObject> objectsToRender = Prepare(renderGraph, scene);
 
-    commandBuffer->Begin();
-
-    TPtrArr<SceneObject> objectsToRender = Prepare(commandBuffer, scene);
-
+    glm::ivec2 size = viewport->GetSize();
+    VkExtent3D extent { size.r, size.g, 1.0f };
     //Depth Pass
-    TPtr<VulkanImage> depthImage = std::make_shared<VulkanImage>(device, frame->GetExtent(), VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    TPtr<VulkanImage> depthImage = std::make_shared<VulkanImage>(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     TPtr<VulkanImageView> depthImageView = std::make_shared<VulkanImageView>(depthImage, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
 
     TPtr<RenderTargets> depthRenderTargets = std::make_shared<RenderTargets>();
     depthRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Clear};
-    _depthPass->Execute(objectsToRender, commandBuffer, frame, depthRenderTargets);
+    renderGraph->SetRenderTargets(depthRenderTargets);
+    _depthPass->Execute(renderGraph, objectsToRender);
 
     //Light Pass
+    TPtr<VulkanImage> backBuffer = viewport->GetCurrentImage();
+    TPtr<VulkanImageView> backBufferView = std::make_shared<VulkanImageView>(backBuffer);
     TPtr<RenderTargets> lightingRenderTargets = std::make_shared<RenderTargets>();
-    lightingRenderTargets->colors = {RenderTargetBinding{frame->GetFrameBuffer(), ERenderTargetLoadAction::Clear}};
+    lightingRenderTargets->colors = {RenderTargetBinding{backBufferView, ERenderTargetLoadAction::Clear}};
     lightingRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Load};
-    _directionalLightPass->Execute(objectsToRender, commandBuffer, frame, lightingRenderTargets);
-
-    frame->GetFrameBuffer()->GetImage()->TransitionLayout(commandBuffer, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-    commandBuffer->End();
+    renderGraph->SetRenderTargets(lightingRenderTargets);
+    _directionalLightPass->Execute(renderGraph, objectsToRender);
 }
-
 
 } // namespace ZE

@@ -6,13 +6,14 @@
 
 namespace ZE {
 
-class FRenderTargetBindings;
+
+class RenderGraph;
 
 class DirectionalLightPass : public RenderPass
 {
 public:
     virtual void Prepare(TPtr<Scene> scene) override;
-    virtual void Draw(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanCommandBuffer> commandBuffer, TPtr<RenderTargets> renderTargets) override;
+    virtual void Draw(TPtr<RenderGraph>& commandBuffer, const TPtrArr<SceneObject>& objectsToRender) override;
 };
 
 }

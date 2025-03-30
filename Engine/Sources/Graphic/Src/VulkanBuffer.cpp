@@ -62,34 +62,6 @@ VulkanBuffer::~VulkanBuffer()
     _vkBuffer = VK_NULL_HANDLE;
 }
 
-void VulkanBuffer::CopyFromBuffer(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> otherBuffer, VkDeviceSize size)
-{
-    VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
-
-    VkBufferCopy copyRegion{};
-    copyRegion.size = size;
-    vkCmdCopyBuffer(vkCommandBuffer, otherBuffer->GetRawBuffer(), _vkBuffer, 1, &copyRegion);
-}
-
-void VulkanBuffer::TransferData(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<VulkanBuffer> stagingBuffer, const void* data, uint32_t size)
-{
-    if (_properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-    {
-        void* mappedAddress = nullptr;
-        vkMapMemory(_device->GetRawDevice(), _vkMemory, 0, size, 0, &mappedAddress);
-        memcpy(mappedAddress, data, size);
-        vkUnmapMemory(_device->GetRawDevice(), _vkMemory);
-    }
-    else if (_properties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-    {
-        void* mappedAddress = stagingBuffer->MapMemory(0, size);
-        memcpy(mappedAddress, data, size);
-        stagingBuffer->UnmapMemory();
-
-        CopyFromBuffer(commandBuffer, stagingBuffer, size);
-    }
-}
-
 void* VulkanBuffer::MapMemory(VkDeviceSize offset, VkDeviceSize size)
 {
     void* address = nullptr;
@@ -106,6 +78,11 @@ void VulkanBuffer::UnmapMemory()
 uint32_t VulkanBuffer::GetSize()
 {
     return _size;
+}
+
+VkMemoryPropertyFlags VulkanBuffer::GetProperties()
+{
+    return _properties;
 }
 
 VkBuffer VulkanBuffer::GetRawBuffer()

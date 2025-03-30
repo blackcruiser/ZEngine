@@ -1,7 +1,10 @@
 #include "VulkanSwapchain.h"
+#include "VulkanGPU.h"
 #include "VulkanDevice.h"
 #include "VulkanSurface.h"
 #include "VulkanImage.h"
+
+#include <glm/vec2.hpp>
 
 #include <stdexcept>
 #include <assert.h>
@@ -9,9 +12,24 @@
 
 namespace ZE {
 
-VulkanSwapchain::VulkanSwapchain(TPtr<VulkanDevice> device, TPtr<VulkanSurface> surface, uint32_t imageCount)
-    : _device(device), _surface(surface), _vkSwapchain(VK_NULL_HANDLE), _acquiredIndex(-1)
+TPtr<VulkanSurface> CreateSurface(TPtr<VulkanDevice> device, void* windowHandle, const glm::ivec2& size)
 {
+    TPtr<VulkanGPU> GPU = device->GetGPU();
+    TPtr<VulkanSurface> surface = std::make_shared<VulkanSurface>(GPU->GetVkInstance(), windowHandle);
+
+    VkExtent2D extent{size.x, size.y};
+    surface->InitializeExtent(GPU, extent);
+    VkSurfaceFormatKHR surfaceFormat{ VkFormat::VK_FORMAT_B8G8R8A8_UNORM, VkColorSpaceKHR::VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+    surface->InitializeFormat(GPU, surfaceFormat);
+    surface->InitializePresentMode(GPU, VkPresentModeKHR::VK_PRESENT_MODE_MAILBOX_KHR);
+
+    return surface;
+}
+
+VulkanSwapchain::VulkanSwapchain(TPtr<VulkanDevice> device, void* windowHandle, const glm::ivec2& size, uint32_t imageCount)
+    : _device(device), _vkSwapchain(VK_NULL_HANDLE), _imageCount(imageCount), _acquiredIndex(-1)
+{
+    _surface = CreateSurface(device, windowHandle, size);
     VkSurfaceFormatKHR surfaceFormat = _surface->GetSurfaceFormat();
     VkPresentModeKHR vkPresentMode = _surface->GetPresentMode();
     VkSurfaceCapabilitiesKHR vkCapabilities = _surface->GetCpabilities(_device->GetGPU());
@@ -43,7 +61,6 @@ VulkanSwapchain::VulkanSwapchain(TPtr<VulkanDevice> device, TPtr<VulkanSurface> 
         throw std::runtime_error("failed to create swap chain!");
     }
 
-
     // Get Images
     uint32_t count = 0;
     vkGetSwapchainImagesKHR(_device->GetRawDevice(), _vkSwapchain, &count, nullptr);
@@ -67,27 +84,40 @@ VulkanSwapchain::~VulkanSwapchain()
         vkDestroySwapchainKHR(_device->GetRawDevice(), _vkSwapchain, nullptr);
 }
 
-uint32_t VulkanSwapchain::GetCurrentAcquiredIndex()
+uint32_t VulkanSwapchain::GetImageCount()
 {
-    assert (_acquiredIndex >= 0);
-    
+    return _imageCount;
+}
+
+uint32_t VulkanSwapchain::GetCurrentIndex()
+{
     return _acquiredIndex;
 }
 
-TPtr<VulkanImage> VulkanSwapchain::AcquireNextImage(uint64_t timeout, VkSemaphore semaphore, VkFence fence)
+TPtr<VulkanImage> VulkanSwapchain::GetCurrentImage()
+{
+    assert (_acquiredIndex >= 0);
+    
+    return _imagerArr[_acquiredIndex];
+}
+
+bool VulkanSwapchain::AcquireNextImage(uint64_t timeout, VkSemaphore semaphore, VkFence fence)
 {
     VkResult result = vkAcquireNextImageKHR(_device->GetRawDevice(), _vkSwapchain, timeout, semaphore, fence, &_acquiredIndex);
 
     if (result == VkResult::VK_SUCCESS)
-        return _imagerArr[_acquiredIndex];
-    else
-        return nullptr;
+        return true;
+    return false;
+}
+
+TPtr<VulkanDevice> VulkanSwapchain::GetDevice()
+{
+    return _device;
 }
 
 VkSwapchainKHR VulkanSwapchain::GetRawSwapchain()
 {
     return _vkSwapchain;
 }
-
 
 } // namespace ZE

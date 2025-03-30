@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Renderer.h"
-#include "Graphic/Window.h"
+#include "Window.h"
 
 #include <glm/glm.hpp>
-#include <vulkan/vulkan.h>
 
 
 namespace ZE {
@@ -12,9 +11,8 @@ namespace ZE {
 class SceneObject;
 class DirectionalLightPass;
 class DepthPass;
-class VulkanCommandBuffer;
-class VulkanDevice;
-class Surface;
+class RenderGraph;
+class Viewport;
 
 
 class ForwardRenderer : public RendererInterface
@@ -23,14 +21,12 @@ public:
     ForwardRenderer();
     virtual ~ForwardRenderer();
 
-    virtual void Init(TPtr<Scene> scene) override;
-    TPtrArr<SceneObject> Prepare(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene);
-    void Draw(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene);
-    virtual void RenderFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene, TPtr<Frame> frame) override;
+    virtual void Init(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene) override;
+    TPtrArr<SceneObject> Prepare(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene);
+    void Draw(TPtr<RenderGraph> commandBuffer, TPtr<Scene> scene);
+    virtual void RenderFrame(TPtr<RenderGraph> commandBuffer, TPtr<Viewport> viewport, TPtr<Scene> scene) override;
 
 private:
-    VkFence _inFlightFence;
-
     TPtr<DepthPass> _depthPass;
     TPtr<DirectionalLightPass> _directionalLightPass;
 };

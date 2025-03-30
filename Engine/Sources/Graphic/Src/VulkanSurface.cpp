@@ -9,10 +9,10 @@
 
 namespace ZE {
 
-VulkanSurface::VulkanSurface(VkInstance vkInstance, GLFWwindow* window)
+VulkanSurface::VulkanSurface(VkInstance vkInstance, void* window)
     : _vkInstance(vkInstance), _vkSurface(VK_NULL_HANDLE)
 {
-    if (glfwCreateWindowSurface(_vkInstance, window, nullptr, &_vkSurface) != VK_SUCCESS)
+    if (glfwCreateWindowSurface(_vkInstance, (GLFWwindow*)window, nullptr, &_vkSurface) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create window surface!");
     }

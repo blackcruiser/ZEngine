@@ -2,12 +2,7 @@
 #include "Input/InputSystem.h"
 #include "Graphic/VulkanGPU.h"
 #include "Graphic/VulkanDevice.h"
-#include "Graphic/VulkanSurface.h"
-#include "Graphic/VulkanSwapchain.h"
-#include "Graphic/VulkanSurface.h"
-#include "Graphic/VulkanSurface.h"
-#include "Graphic/VulkanDevice.h"
-#include "Graphic/VulkanDevice.h"
+#include "Viewport.h"
 
 #include <glfw/glfw3.h>
 #include <vulkan/vulkan.h>
@@ -36,26 +31,8 @@ Window::Window(const std::string& title, const glm::ivec2& size)
 
 Window::~Window()
 {
-    _swapchain.reset();
-    _surface.reset();
-
     glfwDestroyWindow(_glfwWindow);
     glfwTerminate();
-}
-
-void Window::CreateSurfaceAndSwapchain(TPtr<VulkanDevice> device)
-{
-    TPtr<VulkanGPU> GPU = device->GetGPU();
-
-    _surface = std::make_shared<VulkanSurface>(GPU->GetVkInstance(), _glfwWindow);
-
-    VkExtent2D extent{_size.x, _size.y};
-    _surface->InitializeExtent(GPU, extent);
-    VkSurfaceFormatKHR surfaceFormat{ VkFormat::VK_FORMAT_B8G8R8A8_UNORM, VkColorSpaceKHR::VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-    _surface->InitializeFormat(GPU, surfaceFormat);
-    _surface->InitializePresentMode(GPU, VkPresentModeKHR::VK_PRESENT_MODE_MAILBOX_KHR);
-
-    _swapchain = std::make_shared<VulkanSwapchain>(device, _surface, 3);
 }
 
 bool Window::ShouldClose()
@@ -63,28 +40,22 @@ bool Window::ShouldClose()
     return glfwWindowShouldClose(_glfwWindow);
 }
 
-glm::ivec2 Window::GetFramebufferSize()
+void Window::CreateViewport(TPtr<VulkanDevice> device)
+{
+    _viewport = std::make_shared<Viewport>(device, _glfwWindow, _size);
+}
+
+TPtr<Viewport> Window::GetViewport()
+{
+    return _viewport;
+}
+
+glm::ivec2 Window::GetSize()
 {
     glm::ivec2 size;
     glfwGetFramebufferSize(_glfwWindow, &size.x, &size.y);
 
     return size;
-}
-
-TPtr<VulkanSurface> Window::GetSurface()
-{
-    return _surface;
-}
-
-TPtr<VulkanSwapchain> Window::GetSwapchain()
-{
-    return _swapchain;
-}
-
-
-GLFWwindow* Window::GetRawWindow()
-{
-    return _glfwWindow;
 }
 
 void MouseButtonFunc(GLFWwindow* window, int button, int action, int mods)
@@ -102,7 +73,6 @@ void MouseButtonFunc(GLFWwindow* window, int button, int action, int mods)
 
 void Window::RegisterInput(const InputSystem& inputSystem)
 {
-
     glfwSetCursorPosCallback(_glfwWindow, InputSystem::cursor_position_callback);
     //glfwSetKeyCallback(_glfwWindow, InputSystem::key_callback);
     glfwSetMouseButtonCallback(_glfwWindow, &MouseButtonFunc);

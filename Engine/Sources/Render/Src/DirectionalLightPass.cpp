@@ -1,21 +1,14 @@
 #include "DirectionalLightPass.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "Graphic/PipelineState.h"
 #include "RenderSystem.h"
+#include "Render/RenderGraph.h"
 #include "RenderTargets.h"
 #include "Scene/SceneObject.h"
 #include "Scene/MeshComponent.h"
 #include "Resource/MaterialResource.h"
 #include "Resource/MeshResource.h"
-#include "Graphic/VulkanCommandBuffer.h"
-#include "Graphic/VulkanDevice.h"
-#include "Graphic/VulkanPipeline.h"
-#include "Graphic/VulkanPipelineLayout.h"
-#include "Graphic/VulkanRenderPass.h"
-#include "Graphic/VulkanDescriptorSet.h"
-#include "Graphic/VulkanImage.h"
-#include "Graphic/VulkanImageView.h"
-#include "Graphic/VulkanBuffer.h"
 
 
 namespace ZE {
@@ -24,15 +17,10 @@ void DirectionalLightPass::Prepare(TPtr<Scene> scene)
 {
 }
 
-void DirectionalLightPass::Draw(TPtrArr<SceneObject> objectsToRender, TPtr<VulkanCommandBuffer> commandBuffer, TPtr<RenderTargets> renderTargets)
+void DirectionalLightPass::Draw(TPtr<RenderGraph>& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
 {
-    TPtr<VulkanDevice> device = commandBuffer->GetDevice();
-    VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
-    VkExtent3D extent3D = renderTargets->colors[0].target->GetExtent();
-    VkExtent2D extent2D{extent3D.width, extent3D.height};
-
     EPassType passType = EPassType::BasePass;
-    for (TPtr<SceneObject>& object : objectsToRender)
+    for (const TPtr<SceneObject>& object : objectsToRender)
     {
         TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
 
@@ -46,20 +34,12 @@ void DirectionalLightPass::Draw(TPtrArr<SceneObject> objectsToRender, TPtr<Vulka
         RHIPipelineState pipelineState;
         mesh->ApplyPipelineState(pipelineState);
         pass->ApplyPipelineState(pipelineState);
-        TPtr<VulkanGraphicPipeline> pipeline = std::make_shared<VulkanGraphicPipeline>(device, pipelineState, _renderPass);
-        RenderSystem::Get().GetPipelineCache().insert(pipeline);
+        renderGraph->SetPipelineState(pipelineState, pass->GetDescriptorSet());
 
-        vkCmdBindPipeline(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetRawPipeline());
-
-        // Vertex Input
-        VkBuffer vertexBuffers[] = {mesh->GetVertexBuffer()->GetRawBuffer()};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(vkCommandBuffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(vkCommandBuffer, mesh->GetIndexBuffer()->GetRawBuffer(), 0, VK_INDEX_TYPE_UINT32);
+        renderGraph->BindVertexBuffer(mesh->GetVertexBuffer(), mesh->GetIndexBuffer());
 
         // Draw
-        vkCmdBindDescriptorSets(vkCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pass->GetPipelineLayout()->GetRawPipelineLayout(), 0, 1, &pass->GetDescriptorSet()->GetRawDescriptorSet(), 0, nullptr);
-        vkCmdDrawIndexed(vkCommandBuffer, mesh->GetVerticesCount(), 1, 0, 0, 0);
+        renderGraph->DrawIndexed(mesh->GetVerticesCount(), 0);
     }
 }
 

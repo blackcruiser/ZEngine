@@ -18,7 +18,7 @@ VulkanQueue::~VulkanQueue()
 {
 }
 
-void VulkanQueue::Submit(TPtr<VulkanCommandBuffer> commandBuffer, const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std ::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence)
+void VulkanQueue::Submit(TPtr<VulkanCommandBuffer> commandBuffer, const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence)
 {
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
@@ -42,7 +42,7 @@ void VulkanQueue::Submit(TPtr<VulkanCommandBuffer> commandBuffer, const std::vec
 void VulkanQueue::Present(TPtr<VulkanSwapchain> swapchain, const std::vector<VkSemaphore>& waitSemaphoreArr)
 {
     VkSwapchainKHR swapchains[] = {swapchain->GetRawSwapchain()};
-    uint32_t imageIndex = swapchain->GetCurrentAcquiredIndex();
+    uint32_t imageIndex = swapchain->GetCurrentIndex();
 
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

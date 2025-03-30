@@ -1,8 +1,7 @@
 #include "Mesh.h"
 #include "RenderSystem.h"
 #include "Graphic/VulkanBuffer.h"
-#include "Graphic/VulkanBufferManager.h"
-#include "Graphic/VulkanCommandBuffer.h"
+#include "Render/RenderGraph.h"
 #include "Resource/MeshResource.h"
 
 
@@ -22,21 +21,19 @@ uint32_t Mesh::GetVerticesCount()
     return _verticesCount;
 }
 
-void Mesh::CreateVertexBuffer(TPtr<VulkanCommandBuffer> commandBuffer)
+void Mesh::CreateVertexBuffer(TPtr<RenderGraph> renderGraph)
 {
     assert(_owner.expired() == false);
 
     TPtr<MeshResource> MeshResource = _owner.lock();
 
     const std::vector<VertexData>& vertices = MeshResource->GetVertices(0);
-    uint32_t byteSize = vertices.size() * sizeof(VertexData);
+    uint32_t byteSize = static_cast<uint32_t>(vertices.size()) * sizeof(VertexData);
 
-    TPtr<VulkanBuffer> stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(byteSize);
-    _vertexBuffer = std::make_shared<VulkanBuffer>(commandBuffer->GetDevice(), byteSize,
-                                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    _vertexBuffer->TransferData(commandBuffer, stagingBuffer, vertices.data(), byteSize);
-    RenderSystem::Get().GetBufferManager()->ReleaseStagingBuffer(stagingBuffer, commandBuffer);
+    _vertexBuffer = RenderSystem::Get().AcquireBuffer(byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    renderGraph->CopyBuffer(reinterpret_cast<const uint8_t*>(vertices.data()), byteSize, _vertexBuffer);
 }
 
 TPtr<VulkanBuffer> Mesh::GetVertexBuffer()
@@ -44,23 +41,19 @@ TPtr<VulkanBuffer> Mesh::GetVertexBuffer()
     return _vertexBuffer;
 }
 
-void Mesh::CreateIndexBuffer(TPtr<VulkanCommandBuffer> commandBuffer)
+void Mesh::CreateIndexBuffer(TPtr<RenderGraph> renderGraph)
 {
     assert(_owner.expired() == false);
 
     TPtr<MeshResource> MeshResource = _owner.lock();
 
     const std::vector<uint32_t>& indexes = MeshResource->GetIndexes(0);
-    uint32_t byteSize = indexes.size() * sizeof(uint32_t);
+    uint32_t byteSize = static_cast<uint32_t>(indexes.size()) * sizeof(uint32_t);
 
-    TPtr<VulkanBuffer> stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(byteSize);
-    _indexBuffer = std::make_shared<VulkanBuffer>(commandBuffer->GetDevice(), byteSize,
-                                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    _indexBuffer->TransferData(commandBuffer, stagingBuffer, indexes.data(), byteSize);
-    RenderSystem::Get().GetBufferManager()->ReleaseStagingBuffer(stagingBuffer, commandBuffer);
-
-    _verticesCount = indexes.size();
+    _indexBuffer = RenderSystem::Get().AcquireBuffer(byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    renderGraph->CopyBuffer(reinterpret_cast<const uint8_t*>(indexes.data()), byteSize, _indexBuffer);
+    _verticesCount = static_cast<uint32_t>(indexes.size());
 }
 
 TPtr<VulkanBuffer> Mesh::GetIndexBuffer()
