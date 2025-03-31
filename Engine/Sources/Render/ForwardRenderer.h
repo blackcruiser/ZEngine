@@ -4,7 +4,6 @@
 #include "Graphic/Window.h"
 
 #include <glm/glm.hpp>
-#include <vulkan/vulkan.h>
 
 
 namespace ZE {
@@ -12,8 +11,8 @@ namespace ZE {
 class SceneObject;
 class DirectionalLightPass;
 class DepthPass;
-class VulkanCommandBuffer;
-class VulkanDevice;
+class RenderingCommandBuffer;
+class RenderingContext;
 class Surface;
 
 
@@ -24,9 +23,9 @@ public:
     virtual ~ForwardRenderer();
 
     virtual void Init(TPtr<Scene> scene) override;
-    TPtrArr<SceneObject> Prepare(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene);
-    void Draw(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene);
-    virtual void RenderFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene, TPtr<Frame> frame) override;
+    TPtrArr<SceneObject> Prepare(TPtr<RenderingCommandBuffer> commandBuffer, TPtr<Scene> scene);
+    void Draw(TPtr<RenderingCommandBuffer> commandBuffer, TPtr<Scene> scene);
+    virtual void RenderFrame(TPtr<RenderingContext> renderingContext, TPtr<RenderingCommandBuffer> commandBuffer, TPtr<Scene> scene) override;
 
 private:
     VkFence _inFlightFence;

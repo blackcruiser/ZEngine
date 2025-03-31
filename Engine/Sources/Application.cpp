@@ -1,10 +1,8 @@
 #include "Application.h"
-#include "Graphic/VulkanDevice.h"
 #include "Graphic/Window.h"
-#include "Graphic/VulkanBufferManager.h"
-#include "Graphic/VulkanCommandBufferManager.h"
 #include "Input/InputSystem.h"
 #include "Render/RenderingContext.h"
+#include "Render/RenderingCommandBuffer.h"
 #include "Render/RenderSystem.h"
 #include "Render/ForwardRenderer.h"
 #include "Render/Frame.h"
@@ -52,7 +50,7 @@ void Application::Run(TPtr<Scene> scene)
 
     _renderer->Init(scene);
 
-    TPtr<RenderingContextInterface> renderingContext = RenderSystem::Get().CreateRenderingContext();
+    TPtr<RenderingContext> renderingContext = RenderSystem::Get().CreateRenderingContext();
 
     TPtr<Frame> LastFrame;
     while (!_window->ShouldClose())
@@ -60,8 +58,9 @@ void Application::Run(TPtr<Scene> scene)
         glfwPollEvents();
 
         renderingContext->BeginRendering();
+        TPtr<RenderingCommandBuffer> commandBuffer = renderingContext->GetCommandBuffer();
 
-        _renderer->RenderFrame(renderingContext, commandBuffer, scene, frame);
+        _renderer->RenderFrame(renderingContext, commandBuffer, scene);
 
         renderingContext->EndRendering();
     }

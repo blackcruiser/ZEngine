@@ -1,20 +1,7 @@
 #include "ForwardRenderer.h"
-#include "Graphic/VulkanDevice.h"
-#include "Graphic/VulkanSurface.h"
-#include "Graphic/VulkanBuffer.h"
-#include "Graphic/VulkanImage.h"
-#include "Graphic/VulkanImageView.h"
-#include "Graphic/VulkanShader.h"
-#include "Graphic/VulkanCommandBuffer.h"
-#include "Graphic/VulkanCommandBufferManager.h"
-#include "Graphic/VulkanDescriptorPool.h"
-#include "Graphic/VulkanDescriptorSet.h"
-#include "Graphic/VulkanPipelineLayout.h"
-#include "Graphic/VulkanPipeline.h"
-#include "Graphic/VulkanSwapchain.h"
-#include "Graphic/VulkanQueue.h"
-#include "Frame.h"
 #include "RenderSystem.h"
+#include "RenderingContext.h"
+#include "RenderingCommandBuffer.h"
 #include "RenderTargets.h"
 #include "Material.h"
 #include "Mesh.h"
@@ -158,31 +145,29 @@ TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<VulkanCommandBuffer> commandB
     return objectsToRender;
 }
 
-void ForwardRenderer::RenderFrame(TPtr<VulkanCommandBuffer> commandBuffer, TPtr<Scene> scene, TPtr<Frame> frame)
+void ForwardRenderer::RenderFrame(TPtr<RenderingContext> renderingContext, TPtr<RenderingCommandBuffer> commandBuffer, TPtr<Scene> scene)
 {
-    TPtr<VulkanDevice> device = commandBuffer->GetDevice();
-
-    commandBuffer->Begin();
-
     TPtrArr<SceneObject> objectsToRender = Prepare(commandBuffer, scene);
 
     //Depth Pass
-    TPtr<VulkanImage> depthImage = std::make_shared<VulkanImage>(device, frame->GetExtent(), VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    TPtr<VulkanImage> depthImage = commandBuffer->CreateImage(renderingContext->GetExtent(), VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     TPtr<VulkanImageView> depthImageView = std::make_shared<VulkanImageView>(depthImage, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
 
     TPtr<RenderTargets> depthRenderTargets = std::make_shared<RenderTargets>();
     depthRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Clear};
-    _depthPass->Execute(objectsToRender, commandBuffer, frame, depthRenderTargets);
+    commandBuffer->SetRenderTargets(depthRenderTargets);
+    _depthPass->Execute(renderingContext, commandBuffer, objectsToRender);
 
     //Light Pass
     TPtr<RenderTargets> lightingRenderTargets = std::make_shared<RenderTargets>();
     lightingRenderTargets->colors = {RenderTargetBinding{frame->GetFrameBuffer(), ERenderTargetLoadAction::Clear}};
     lightingRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Load};
-    _directionalLightPass->Execute(objectsToRender, commandBuffer, frame, lightingRenderTargets);
+    commandBuffer->SetRenderTargets(lightingRenderTargets);
+    _directionalLightPass->Execute(renderingContext, commandBuffer, objectsToRender);
 
     frame->GetFrameBuffer()->GetImage()->TransitionLayout(commandBuffer, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-    commandBuffer->End();
+    
 }
 
 
