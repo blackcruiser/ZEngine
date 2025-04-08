@@ -22,6 +22,8 @@ class VulkanDescriptorSetLayout;
 class VulkanPipelineLayout;
 class VulkanGraphicPipeline;
 class VulkanCommandBuffer;
+class RenderingContext;
+class RenderGraph;
 class Mesh;
 
 struct VulkanImageBindingInfo
@@ -37,15 +39,15 @@ public:
     Pass(TPtr<PassResource> passResource);
     ~Pass();
 
-    void BuildRenderResource(TPtr<VulkanCommandBuffer> commandBuffer);
+    void BuildRenderResource(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph);
 
 private:
-    void CreateGraphicTextures(TPtr<VulkanCommandBuffer> commandBuffer);
-    void CreateGraphicBuffers(TPtr<VulkanCommandBuffer> commandBuffer);
+    void CreateGraphicTextures(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph);
+    void CreateGraphicBuffers(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph);
     void CreateGraphicShaders();
 
     void CreateDescriptorSetLayout();
-    void CreateDescriptorSet();
+    void CreateDescriptorSet(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph);
     void LinkDescriptorSet();
     void CreatePipelineLayout();
 
@@ -55,7 +57,7 @@ public:
     TPtr<VulkanPipelineLayout> GetPipelineLayout();
     void ApplyPipelineState(RHIPipelineState& state);
 
-    void UpdateUniformBuffer(TPtr<VulkanCommandBuffer> commandBuffer, const glm::mat4x4& mvp);
+    void UpdateUniformBuffer(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph, const glm::mat4x4& mvp);
 
 private:
     TPtrUnorderedMap<VkShaderStageFlagBits, VulkanShader> _shaders;

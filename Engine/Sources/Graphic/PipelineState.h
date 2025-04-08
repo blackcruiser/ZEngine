@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan_core.h>
 
+namespace ZE {
 
 struct RHIDepthStencilState
 {
@@ -49,3 +50,5 @@ struct RHIPipelineState
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     VkPipelineLayout layout;
 };
+
+}

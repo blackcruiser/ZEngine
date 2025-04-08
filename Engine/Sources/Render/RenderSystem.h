@@ -8,7 +8,7 @@ namespace ZE {
 
 class VulkanGPU;
 class VulkanDevice;
-class RenderingContextInterface;
+class RenderingContext;
 
 class RenderSystem
 {
@@ -29,7 +29,7 @@ public:
 
     TPtr<VulkanDevice> GetDevice();
 
-    TPtr<RenderingContextInterface> CreateRenderingContext();
+    TPtr<RenderingContext> CreateRenderingContext();
 
 private:
     static RenderSystem* _instance;

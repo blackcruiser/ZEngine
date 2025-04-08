@@ -18,7 +18,7 @@ VulkanQueue::~VulkanQueue()
 {
 }
 
-void VulkanQueue::Submit(TPtr<VulkanCommandBuffer> commandBuffer, const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std ::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence)
+void VulkanQueue::Submit(TPtr<VulkanCommandBuffer> commandBuffer, const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence)
 {
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();

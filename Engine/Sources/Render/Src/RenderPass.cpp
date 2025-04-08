@@ -12,7 +12,7 @@ RenderPass::~RenderPass()
 {
 }
 
-void RenderPass::Execute(TPtr<RenderingContext>& renderingContext, TPtr<RenderingCommandBuffer>& commandBuffer, const TPtrArr<SceneObject>& objectsToRender)
+void RenderPass::Execute(TPtr<RenderingContext>& renderingContext, TPtr<RenderGraph>& commandBuffer, const TPtrArr<SceneObject>& objectsToRender)
 {
 }
 

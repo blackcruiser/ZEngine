@@ -6,12 +6,13 @@
 
 namespace ZE {
 
+class VulkanBuffer;
 class VulkanDescriptorPool;
 class VulkanCommandBufferManager;
 class VulkanBufferManager;
 class VulkanGraphicPipeline;
 class VulkanRenderPass;
-class RenderingCommandBuffer;
+class RenderGraph;
 
 class RenderingContext
 {
@@ -19,10 +20,14 @@ public:
     RenderingContext(TPtr<VulkanDevice> device);
     ~RenderingContext();
 
-    void BeginRendering();
-    void EndRendering();
+    void Initialize();
 
-    TPtr<RenderingCommandBuffer> GetCommandBuffer();
+    void BeginRendering();
+    void EndRendering(TPtr<RenderGraph> renderGraph);
+
+    TPtr<RenderGraph> GetRenderGraph();
+    TPtr<VulkanBuffer> AcquireStagingBuffer(uint32_t size);
+    TPtr<VulkanBuffer> AcquireBuffer(uint32_t size, VkBufferUsageFlags bits, VkMemoryPropertyFlags properties);
 
     VkExtent3D GetExtent();
     

@@ -9,14 +9,15 @@ namespace ZE {
 class Scene;
 class Frame;
 class RenderingContext;
-class RenderingCommandBuffer;
+class RenderGraph;
+class Viewport;
 
 
 class RendererInterface
 {
 public:
-    virtual void Init(TPtr<Scene> scene) = 0;
-    virtual void RenderFrame(TPtr<RenderingContext> renderingContext, TPtr<RenderingCommandBuffer> commandBuffer, TPtr<Scene> scene) = 0;
+    virtual void Init(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph, TPtr<Scene> scene) = 0;
+    virtual void RenderFrame(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph, TPtr<Viewport> viewport, TPtr<Scene> scene) = 0;
 };
 
 } // namespace ZE

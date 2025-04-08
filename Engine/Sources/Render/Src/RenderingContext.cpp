@@ -1,9 +1,16 @@
 #include "RenderingContext.h"
+#include "RenderGraph.h"
 #include "VulkanDevice.h"
+#include "VulkanCommandBuffer.h"
+#include "VulkanCommandBufferManager.h"
+#include "VulkanBuffer.h"
+#include "VulkanBufferManager.h"
+#include "VulkanDescriptorPool.h"
+
 
 namespace ZE {
 
-RenderingContext(TPtr<VulkanDevice> device) :
+RenderingContext::RenderingContext(TPtr<VulkanDevice> device) :
     _device(device)
 {
 
@@ -18,7 +25,7 @@ void RenderingContext::Initialize()
 {
     TPtr<VulkanQueue> graphicQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Graphic, _device->GetGraphicQueueFamilyIndex());
     TPtr<VulkanQueue> computeQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Compute, _device->GetComputeQueueFamilyIndex());
-    TPtr<VulkanQueue> transferQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Transfer, _device->GetTransferQueueFamilyIndex());
+    TPtr<VulkanQueue> transferQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Transfer, _device->GetTransferQueueFamilyIndex()); 
 
     _queueArr = {graphicQueue, computeQueue, transferQueue};
 
@@ -32,31 +39,32 @@ void RenderingContext::Initialize()
 
 void RenderingContext::BeginRendering()
 {
-    TPtr<VulkanSwapchain> swapchain = _window->GetSwapchain();
-    TPtr<Frame> frame = make_shared<Frame>(RenderSystem::Get().GetDevice(), swapchain);
-    TPtr<VulkanCommandBuffer> commandBuffer = frame->GetCachedCommandBuffer();
 }
 
-void RenderingContext::EndRendering()
+void RenderingContext::EndRendering(TPtr<RenderGraph> renderGraph)
 {
-    std::vector<VkSemaphore> waitSemaphores{frame->GetAvailableSemaphore()};
-    std::vector<VkPipelineStageFlags> waitStages{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    TPtr<VulkanQueue> graphicQueue = GetQueue(VulkanQueue::EType::Graphic);
+    graphicQueue->Submit(renderGraph->GetCommandBuffer(), {}, {}, {submitSemaphore}, renderGraph->GetFence());
+}
 
-    VkSemaphore submitSemaphore = RenderSystem::Get().GetDevice()->CreateGraphicSemaphore();
-    frame->PutSemaphore(submitSemaphore);
+TPtr<RenderGraph> RenderingContext::GetRenderGraph()
+{
+    return std::make_shared<RenderGraph>(_device);
+}
 
-    TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
-    graphicQueue->Submit(commandBuffer, waitSemaphores, waitStages, {submitSemaphore}, frame->GetFence());
-    graphicQueue->Present(swapchain, {submitSemaphore});
+TPtr<VulkanBuffer> RenderingContext::AcquireStagingBuffer(uint32_t size)
+{
+    return _bufferManager->AcquireStagingBuffer(size);
+}
 
-    if (frame)
-    {
-        VkFence fence = frame->GetFence();
-        vkWaitForFences(RenderSystem::Get().GetDevice()->GetRawDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
-    }
-    LastFrame = frame;
+TPtr<VulkanBuffer> RenderingContext::AcquireBuffer(uint32_t size, VkBufferUsageFlags bits, VkMemoryPropertyFlags properties)
+{
+    return std::make_shared<VulkanBuffer>(_device, size, bits, properties);
+}
 
-    RenderSystem::Get().GetBufferManager()->Tick();
+VkExtent3D RenderingContext::GetExtent()
+{
+
 }
 
 TPtr<VulkanQueue> RenderingContext::GetQueue(VulkanQueue::EType type)

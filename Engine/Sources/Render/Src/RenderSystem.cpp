@@ -1,17 +1,12 @@
 #include "RenderSystem.h"
 #include "Graphic/VulkanGPU.h"
 #include "Graphic/VulkanDevice.h"
-#include "Graphic/VulkanQueue.h"
-#include "Graphic/VulkanDescriptorPool.h"
-#include "Graphic/VulkanCommandBufferManager.h"
-#include "Graphic/VulkanCommandPool.h"
-#include "Graphic/VulkanBufferManager.h"
-#include "Graphic/VulkanRenderingContext.h"
+#include "Render/RenderingContext.h"
 
 #include <vulkan/vulkan.h>
 
 #include <stdexcept>
-#include <assert.h>
+#include <cassert>
 
 
 namespace ZE {
@@ -127,9 +122,9 @@ void RenderSystem::Tick()
 {
 }
 
-TPtr<RenderingContextInterface> RenderSystem::CreateRenderingContext()
+TPtr<RenderingContext> RenderSystem::CreateRenderingContext()
 {
-    TPtr<RenderingContextInterface> result =  std::make_shared<VulkanRenderingContext>();
+    TPtr<RenderingContext> result = std::make_shared<RenderingContext>(_device);
     result->Initialize();
 
     return result;

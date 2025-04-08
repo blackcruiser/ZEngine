@@ -13,8 +13,8 @@ namespace ZE {
 class MeshResource;
 
 class VulkanBuffer;
-class VulkanCommandBuffer;
-class VulkanDevice;
+class RenderingContext;
+class RenderGraph;
 
 
 class Mesh
@@ -25,10 +25,10 @@ public:
 
     uint32_t GetVerticesCount();
 
-    void CreateVertexBuffer(TPtr<VulkanCommandBuffer> commandBuffer);
+    void CreateVertexBuffer(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph);
     TPtr<VulkanBuffer> GetVertexBuffer();
 
-    void CreateIndexBuffer(TPtr<VulkanCommandBuffer> commandBuffer);
+    void CreateIndexBuffer(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph);
     TPtr<VulkanBuffer> GetIndexBuffer();
 
     void ApplyPipelineState(RHIPipelineState& state);

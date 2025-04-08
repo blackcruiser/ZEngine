@@ -1,11 +1,12 @@
 #include "Application.h"
 #include "Graphic/Window.h"
+#include "Graphic/VulkanDevice.h"
 #include "Input/InputSystem.h"
 #include "Render/RenderingContext.h"
-#include "Render/RenderingCommandBuffer.h"
+#include "Render/RenderGraph.h"
 #include "Render/RenderSystem.h"
+#include "Render/Viewport.h"
 #include "Render/ForwardRenderer.h"
-#include "Render/Frame.h"
 #include "Scene/Scene.h"
 
 #include <stdexcept>
@@ -48,21 +49,27 @@ void Application::Run(TPtr<Scene> scene)
 {
     scene->Load();
 
-    _renderer->Init(scene);
-
     TPtr<RenderingContext> renderingContext = RenderSystem::Get().CreateRenderingContext();
 
-    TPtr<Frame> LastFrame;
+    {
+        TPtr<RenderGraph> renderGraph = renderingContext->GetRenderGraph();
+        _renderer->Init(renderingContext, renderGraph, scene);
+        renderGraph->Execute();
+    }
+
+    TPtr<Viewport> viewport = std::make_shared<Viewport>();
+
     while (!_window->ShouldClose())
     {
         glfwPollEvents();
 
         renderingContext->BeginRendering();
-        TPtr<RenderingCommandBuffer> commandBuffer = renderingContext->GetCommandBuffer();
+        TPtr<RenderGraph> renderGraph = renderingContext->GetRenderGraph();
 
-        _renderer->RenderFrame(renderingContext, commandBuffer, scene);
+        
+        _renderer->RenderFrame(renderingContext, renderGraph, viewport, scene);
 
-        renderingContext->EndRendering();
+        renderingContext->EndRendering(renderGraph);
     }
 
     RenderSystem::Get().GetDevice()->WaitIdle();
