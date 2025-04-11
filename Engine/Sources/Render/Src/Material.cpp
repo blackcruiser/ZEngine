@@ -253,7 +253,7 @@ TPtr<VulkanImageView> CreateGraphicImage(TPtr<RenderingContext> renderingContext
     uint32_t imageSize = texture->GetWidth() * texture->GetHeight() * 4;
     VkExtent3D extent{texture->GetWidth(), texture->GetHeight(), 1};
 
-    TPtr<VulkanImage> vulkanImage = renderGraph->CreateImage(extent, VkFormat::VK_FORMAT_R8G8B8A8_SRGB);
+    TPtr<VulkanImage> vulkanImage = std::make_shared<VulkanImage>(renderingContext->GetDevice(), extent, VkFormat::VK_FORMAT_R8G8B8A8_SRGB);
     renderGraph->CopyImage(static_cast<const uint8_t*>(texture->GetData()), imageSize, vulkanImage);
 
     TPtr<VulkanImageView> vulkanImageView = std::make_shared<VulkanImageView>(vulkanImage);

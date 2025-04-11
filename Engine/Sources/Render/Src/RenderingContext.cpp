@@ -43,13 +43,11 @@ void RenderingContext::BeginRendering()
 
 void RenderingContext::EndRendering(TPtr<RenderGraph> renderGraph)
 {
-    TPtr<VulkanQueue> graphicQueue = GetQueue(VulkanQueue::EType::Graphic);
-    graphicQueue->Submit(renderGraph->GetCommandBuffer(), {}, {}, {submitSemaphore}, renderGraph->GetFence());
 }
 
 TPtr<RenderGraph> RenderingContext::GetRenderGraph()
 {
-    return std::make_shared<RenderGraph>(_device);
+    return std::make_shared<RenderGraph>(_device, _commandBufferManager);
 }
 
 TPtr<VulkanBuffer> RenderingContext::AcquireStagingBuffer(uint32_t size)
@@ -62,9 +60,9 @@ TPtr<VulkanBuffer> RenderingContext::AcquireBuffer(uint32_t size, VkBufferUsageF
     return std::make_shared<VulkanBuffer>(_device, size, bits, properties);
 }
 
-VkExtent3D RenderingContext::GetExtent()
+TPtr<VulkanDevice> RenderingContext::GetDevice()
 {
-
+    return _device;
 }
 
 TPtr<VulkanQueue> RenderingContext::GetQueue(VulkanQueue::EType type)

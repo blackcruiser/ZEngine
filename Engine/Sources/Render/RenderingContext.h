@@ -28,9 +28,8 @@ public:
     TPtr<RenderGraph> GetRenderGraph();
     TPtr<VulkanBuffer> AcquireStagingBuffer(uint32_t size);
     TPtr<VulkanBuffer> AcquireBuffer(uint32_t size, VkBufferUsageFlags bits, VkMemoryPropertyFlags properties);
-
-    VkExtent3D GetExtent();
     
+    TPtr<VulkanDevice> GetDevice();
     TPtr<VulkanQueue> GetQueue(VulkanQueue::EType type);
     TPtr<VulkanDescriptorPool> GetDescriptorPool();
     TPtr<VulkanCommandBufferManager> GetCommandBufferManager();

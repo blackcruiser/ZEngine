@@ -50,6 +50,7 @@ void Application::Run(TPtr<Scene> scene)
     scene->Load();
 
     TPtr<RenderingContext> renderingContext = RenderSystem::Get().CreateRenderingContext();
+    renderingContext->Initialize();
 
     {
         TPtr<RenderGraph> renderGraph = renderingContext->GetRenderGraph();
@@ -57,7 +58,7 @@ void Application::Run(TPtr<Scene> scene)
         renderGraph->Execute();
     }
 
-    TPtr<Viewport> viewport = std::make_shared<Viewport>();
+    TPtr<Viewport> viewport = std::make_shared<Viewport>(_window->GetFramebufferSize(), _window->GetSwapchain());
 
     while (!_window->ShouldClose())
     {

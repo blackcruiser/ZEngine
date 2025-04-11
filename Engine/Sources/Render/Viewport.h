@@ -12,15 +12,19 @@ namespace ZE {
 
 class VulkanImage;
 class VulkanSwapchain;
+class RenderingContext;
+class RenderGraph;
 
 class Viewport
 {
 public:
-    Viewport(const glm::ivec2& size);
+    Viewport(const glm::ivec2& size, TPtr<VulkanSwapchain> swapchain);
 
     glm::ivec2 GetSize();
     
     TPtr<VulkanImage> GetRenderTarget();
+
+    void Present(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph);
 
 private:
     TPtr<VulkanSwapchain> _swapchain;

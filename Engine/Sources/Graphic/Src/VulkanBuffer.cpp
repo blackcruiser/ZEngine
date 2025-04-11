@@ -80,6 +80,11 @@ uint32_t VulkanBuffer::GetSize()
     return _size;
 }
 
+VkMemoryPropertyFlags VulkanBuffer::GetProperties()
+{
+    return _properties;
+}
+
 VkBuffer VulkanBuffer::GetRawBuffer()
 {
     return _vkBuffer;

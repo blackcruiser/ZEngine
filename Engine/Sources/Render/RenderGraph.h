@@ -13,6 +13,7 @@ class VulkanBuffer;
 class VulkanImage;
 class VulkanImageView;
 class VulkanCommandBuffer;
+class VulkanCommandBufferManager;
 class VulkanRenderPass;
 class VulkanDescriptorSet;
 struct RenderTargets;
@@ -22,7 +23,7 @@ class RenderingContext;
 class RenderGraph
 {
 public:
-    RenderGraph(TPtr<VulkanDevice> device);
+    RenderGraph(TPtr<RenderingContext> renderingContext);
     virtual ~RenderGraph();
 
     void BeginRendering();
@@ -44,13 +45,11 @@ public:
 
     void DrawIndexed(uint32_t verticesCount, uint32_t firstIndex);
 
-    TPtr<VulkanImage> CreateImage(const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-
     TPtr<VulkanCommandBuffer> GetCommandBuffer();
-    VkFence GetFence();
 
 private:
     TPtr<VulkanDevice> _device;
+    TPtr<VulkanCommandBufferManager> _commandBufferManager;
     TPtr<VulkanCommandBuffer> _commandBuffer;
     TPtr<VulkanRenderPass> _currentRenderPass;
     TPtrArr<VulkanRenderPass> _renderPassArr;

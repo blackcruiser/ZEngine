@@ -1,11 +1,16 @@
 #include "Viewport.h"
+#include "Graphic/VulkanDevice.h"
 #include "Graphic/VulkanSwapchain.h"
 #include "Graphic/VulkanQueue.h"
+#include "Render/RenderSystem.h"
+#include "Render/RenderingContext.h"
+#include "Render/RenderGraph.h"
 
 
 namespace ZE {
 
-Viewport::Viewport(const glm::ivec2& size, TPtr<VulkanSwapchain> swapchain)
+Viewport::Viewport(const glm::ivec2& size, TPtr<VulkanSwapchain> swapchain) :
+    _size(size), _swapchain(swapchain)
 {
 
 }
@@ -22,14 +27,18 @@ TPtr<VulkanImage> Viewport::GetRenderTarget()
 
 void Viewport::Present(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph)
 {
-    VkSemaphore submitSemaphore = _device->CreateGraphicSemaphore();
+    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+    VkSemaphore submitSemaphore = device->CreateGraphicSemaphore();
+    VkFence fence = device->CreateFence(false);
 
-    TPtr<VulkanQueue> graphicQueue = GetQueue(VulkanQueue::EType::Graphic);
-    graphicQueue->Submit(renderGraph->GetCommandBuffer(), {}, {}, {submitSemaphore}, renderGraph->GetFence());
+    TPtr<VulkanQueue> graphicQueue = renderingContext->GetQueue(VulkanQueue::EType::Graphic);
+    graphicQueue->Submit(renderGraph->GetCommandBuffer(), {}, {}, {submitSemaphore}, fence);
     graphicQueue->Present(_swapchain, {submitSemaphore});
 
-    VkFence fence = renderGraph->GetFence();
-    vkWaitForFences(_device->GetRawDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vkWaitForFences(device->GetRawDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+
+    device->DestroyFence(fence);
+    device->DestroyGraphicSemaphore(submitSemaphore);
 }
 
 }

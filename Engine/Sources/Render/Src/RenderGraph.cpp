@@ -1,6 +1,7 @@
 #include "RenderGraph.h"
 #include "Graphic/VulkanDevice.h"
 #include "Graphic/VulkanCommandBuffer.h"
+#include "Graphic/VulkanCommandBufferManager.h"
 #include "Graphic/VulkanBuffer.h"
 #include "Graphic/VulkanImage.h"
 #include "Graphic/VulkanImageView.h"
@@ -16,9 +17,11 @@
 
 namespace ZE {
 
-RenderGraph::RenderGraph(TPtr<VulkanDevice> device) :
-    _device(device)
+RenderGraph::RenderGraph(TPtr<RenderingContext> renderingContext) :
+    _renderingContext(renderingContext),
 {
+    _device = renderingContext->GetDevice();
+    _commandBuffer = renderingContext->GetCommandBufferManager()->GetCommandBuffer(VulkanQueue::EType::Graphic);
 }
 
 RenderGraph::~RenderGraph()
@@ -248,6 +251,11 @@ void RenderGraph::BindVertexBuffer(TPtr<VulkanBuffer> vertexBuffer, TPtr<VulkanB
 void RenderGraph::DrawIndexed(uint32_t verticesCount, uint32_t firstIndex)
 {
     vkCmdDrawIndexed(_commandBuffer->GetRawCommandBuffer(), verticesCount, firstIndex, 0, 0, 0);
+}
+
+TPtr<VulkanCommandBuffer> RenderGraph::GetCommandBuffer()
+{
+    return _commandBuffer;
 }
 
 }
