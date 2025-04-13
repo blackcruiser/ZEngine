@@ -15,6 +15,7 @@ class VulkanImageView;
 class VulkanCommandBuffer;
 class VulkanCommandBufferManager;
 class VulkanRenderPass;
+class VulkanFramebuffer;
 class VulkanDescriptorSet;
 struct RenderTargets;
 struct RHIPipelineState;
@@ -26,10 +27,10 @@ public:
     RenderGraph(TPtr<RenderingContext> renderingContext);
     virtual ~RenderGraph();
 
-    void BeginRendering();
-    void EndRendering();
+    void BeginRenderPass();
+    void EndRenderPass();
 
-    void Execute();
+    void Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence);
 
     void CopyBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination);
     void CopyImage(const uint8_t* data, uint32_t size, TPtr<VulkanImage> destination);
@@ -49,10 +50,10 @@ public:
 
 private:
     TPtr<VulkanDevice> _device;
-    TPtr<VulkanCommandBufferManager> _commandBufferManager;
+
     TPtr<VulkanCommandBuffer> _commandBuffer;
-    TPtr<VulkanRenderPass> _currentRenderPass;
-    TPtrArr<VulkanRenderPass> _renderPassArr;
+    TPtr<RenderTargets> _pendingRenderTargets;
+    TPtr<VulkanRenderPass> _pendingRenderPass;
 
     TPtr<RenderingContext> _renderingContext;
 };

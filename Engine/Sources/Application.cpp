@@ -53,9 +53,9 @@ void Application::Run(TPtr<Scene> scene)
     renderingContext->Initialize();
 
     {
-        TPtr<RenderGraph> renderGraph = renderingContext->GetRenderGraph();
+        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>(renderingContext);
         _renderer->Init(renderingContext, renderGraph, scene);
-        renderGraph->Execute();
+        RenderSystem::Get().GetDevice()->WaitIdle();
     }
 
     TPtr<Viewport> viewport = std::make_shared<Viewport>(_window->GetFramebufferSize(), _window->GetSwapchain());
@@ -64,13 +64,9 @@ void Application::Run(TPtr<Scene> scene)
     {
         glfwPollEvents();
 
-        renderingContext->BeginRendering();
-        TPtr<RenderGraph> renderGraph = renderingContext->GetRenderGraph();
-
-        
+        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>(renderingContext);
         _renderer->RenderFrame(renderingContext, renderGraph, viewport, scene);
-
-        renderingContext->EndRendering(renderGraph);
+        viewport->Present(renderingContext, renderGraph);
     }
 
     RenderSystem::Get().GetDevice()->WaitIdle();

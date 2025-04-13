@@ -64,6 +64,15 @@ void VulkanCommandBuffer::End()
     _status = EStatus::Executable;
 }
 
+void VulkanCommandBuffer::Reset()
+{
+    VkDevice vkDevice = _commandPool->GetDevice()->GetRawDevice();
+    vkResetFences(vkDevice, 1, &_vkFence);
+    _cachedRenderPasses.clear();
+    _cachedFramebuffers.clear();
+    _cachedPipelines.clear();
+}
+
 void VulkanCommandBuffer::BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPtr<VulkanFramebuffer> framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors)
 {
     VkRenderPassBeginInfo renderPassInfo{};
@@ -76,6 +85,9 @@ void VulkanCommandBuffer::BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPt
     renderPassInfo.pClearValues = clearColors.data();
 
     vkCmdBeginRenderPass(_vkCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    _cachedRenderPasses.push_back(renderPass);
+    _cachedFramebuffers.push_back(framebuffer);
 }
 
 void VulkanCommandBuffer::EndRenderPass()
@@ -96,6 +108,11 @@ VkFence VulkanCommandBuffer::GetFence()
 VkCommandBuffer VulkanCommandBuffer::GetRawCommandBuffer()
 {
     return _vkCommandBuffer;
+}
+
+TPtr<VulkanCommandPool> VulkanCommandBuffer::GetCommandPool()
+{
+    return _commandPool;
 }
 
 TPtr<VulkanDevice> VulkanCommandBuffer::GetDevice()

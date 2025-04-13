@@ -23,6 +23,7 @@ public:
 
     VkFence CreateFence(bool isSignaled);
     void DestroyFence(VkFence fence);
+    bool IsSignaled(VkFence fence);
 
     void WaitIdle();
 

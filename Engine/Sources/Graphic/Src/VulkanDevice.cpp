@@ -136,6 +136,20 @@ void VulkanDevice::DestroyFence(VkFence fence)
     vkDestroyFence(_vkDevice, fence, nullptr);
 }
 
+bool VulkanDevice::IsSignaled(VkFence fence)
+{
+    VkResult result = vkGetFenceStatus(_vkDevice, fence);
+    if (result == VK_NOT_READY)
+        return false;
+    else if (result == VK_SUCCESS)
+        return true;
+    else
+    {
+        throw std::runtime_error("error result");
+        return false;
+    }
+}
+
 void VulkanDevice::WaitIdle()
 {
     vkDeviceWaitIdle(_vkDevice);

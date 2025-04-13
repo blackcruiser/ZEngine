@@ -73,7 +73,7 @@ void ForwardRenderer::Init(TPtr<RenderingContext> renderingContext, TPtr<RenderG
         }
     }
 
-    renderGraph->Execute();
+    renderGraph->Execute({}, {}, {}, VK_NULL_HANDLE);
 }
 
 TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph, TPtr<Scene> scene)
@@ -140,7 +140,7 @@ void ForwardRenderer::RenderFrame(TPtr<RenderingContext> renderingContext, TPtr<
     TPtrArr<SceneObject> objectsToRender = Prepare(renderingContext, renderGraph, scene);
 
     glm::ivec2 size = viewport->GetSize();
-    VkExtent3D extent { size.r, size.g, 0.0f };
+    VkExtent3D extent { size.r, size.g, 1.0f };
     //Depth Pass
     TPtr<VulkanImage> depthImage = std::make_shared<VulkanImage>(renderingContext->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     TPtr<VulkanImageView> depthImageView = std::make_shared<VulkanImageView>(depthImage, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -158,9 +158,6 @@ void ForwardRenderer::RenderFrame(TPtr<RenderingContext> renderingContext, TPtr<
     lightingRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Load};
     renderGraph->SetRenderTargets(lightingRenderTargets);
     _directionalLightPass->Execute(renderingContext, renderGraph, objectsToRender);
-
-    renderGraph->Execute();
 }
-
 
 } // namespace ZE

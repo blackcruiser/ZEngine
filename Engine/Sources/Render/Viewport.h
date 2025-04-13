@@ -19,6 +19,7 @@ class Viewport
 {
 public:
     Viewport(const glm::ivec2& size, TPtr<VulkanSwapchain> swapchain);
+    ~Viewport();
 
     glm::ivec2 GetSize();
     
@@ -28,8 +29,8 @@ public:
 
 private:
     TPtr<VulkanSwapchain> _swapchain;
-    VkSemaphore _semaphore;
-    VkFence _fence;
+    VkSemaphore _submitSemaphore, _presentSemaphore;
+    TPtr<VulkanImage> _currentImage;
     glm::ivec2 _size;
 };
 

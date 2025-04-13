@@ -42,6 +42,7 @@ void DepthPass::Draw(TPtr<RenderingContext>& renderingContext, TPtr<RenderGraph>
         // Draw
         renderGraph->DrawIndexed(mesh->GetVerticesCount(), 0);
     }
+
 }
 
 }

@@ -22,10 +22,6 @@ public:
 
     void Initialize();
 
-    void BeginRendering();
-    void EndRendering(TPtr<RenderGraph> renderGraph);
-
-    TPtr<RenderGraph> GetRenderGraph();
     TPtr<VulkanBuffer> AcquireStagingBuffer(uint32_t size);
     TPtr<VulkanBuffer> AcquireBuffer(uint32_t size, VkBufferUsageFlags bits, VkMemoryPropertyFlags properties);
     

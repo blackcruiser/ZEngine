@@ -280,6 +280,7 @@ void Pass::CreateGraphicTextures(TPtr<RenderingContext> renderingContext, TPtr<R
         std::list<VulkanImageBindingInfo> vulkanBindingInfoList;
         for (const TextureBindingInfo& bindingInfo : textureList)
         {
+
             VulkanImageBindingInfo vulkanBindingInfo;
 
             vulkanBindingInfo.bindingPoint = bindingInfo.bindingPoint;

@@ -37,19 +37,6 @@ void RenderingContext::Initialize()
     _bufferManager = std::make_shared<VulkanBufferManager>(_device);
 }
 
-void RenderingContext::BeginRendering()
-{
-}
-
-void RenderingContext::EndRendering(TPtr<RenderGraph> renderGraph)
-{
-}
-
-TPtr<RenderGraph> RenderingContext::GetRenderGraph()
-{
-    return std::make_shared<RenderGraph>(_device, _commandBufferManager);
-}
-
 TPtr<VulkanBuffer> RenderingContext::AcquireStagingBuffer(uint32_t size)
 {
     return _bufferManager->AcquireStagingBuffer(size);

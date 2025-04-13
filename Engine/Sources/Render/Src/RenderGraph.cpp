@@ -18,28 +18,33 @@
 namespace ZE {
 
 RenderGraph::RenderGraph(TPtr<RenderingContext> renderingContext) :
-    _renderingContext(renderingContext),
+    _renderingContext(renderingContext)
 {
     _device = renderingContext->GetDevice();
-    _commandBuffer = renderingContext->GetCommandBufferManager()->GetCommandBuffer(VulkanQueue::EType::Graphic);
+    _commandBuffer = renderingContext->GetCommandBufferManager()->Acquire(VulkanQueue::EType::Graphic);
+    _commandBuffer->Begin();
 }
 
 RenderGraph::~RenderGraph()
 {
+    _commandBuffer->End();
+    _renderingContext->GetCommandBufferManager()->Release(_commandBuffer);
 }
 
-void RenderGraph::BeginRendering()
-{
-    _commandBuffer->Begin();
-}
-
-void RenderGraph::EndRendering()
+void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence)
 {
     _commandBuffer->End();
-}
 
-void RenderGraph::Execute()
-{
+    TPtr<VulkanQueue> graphicQueue = _renderingContext->GetQueue(VulkanQueue::EType::Graphic);
+
+    VkFence tfence = _commandBuffer->GetFence();
+    graphicQueue->Submit(_commandBuffer, waitSemaphoreArr, waitStageArr, signalSemaphoreArr, tfence);
+    //vkWaitForFences(_device->GetRawDevice(), 1, &tfence, VK_TRUE, UINT32_MAX);
+
+
+    _renderingContext->GetCommandBufferManager()->Release(_commandBuffer);
+    _commandBuffer = _renderingContext->GetCommandBufferManager()->Acquire(VulkanQueue::EType::Graphic);
+    _commandBuffer->Begin();
 }
 
 void RenderGraph::CopyBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination)
@@ -160,14 +165,30 @@ VkAttachmentLoadOp ConvertRenderTargetLoadActionToVulkan(ERenderTargetLoadAction
 
 void RenderGraph::SetRenderTargets(TPtr<RenderTargets> renderTargets)
 {
-    VkExtent3D extent3D = renderTargets->colors.empty() ? renderTargets->depthStencil.value().target->GetExtent() : renderTargets->colors[0].target->GetExtent();
+    _pendingRenderTargets = renderTargets;
+}
+
+void RenderGraph::SetPipelineState(const RHIPipelineState& pipelineState, TPtr<VulkanDescriptorSet> descriptorSet)
+{
+    TPtr<VulkanGraphicPipeline> pipeline = std::make_shared<VulkanGraphicPipeline>(_device, pipelineState, _pendingRenderPass);
+
+    vkCmdBindPipeline(_commandBuffer->GetRawCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetRawPipeline());
+
+    vkCmdBindDescriptorSets(_commandBuffer->GetRawCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineState.layout, 0, 1, &descriptorSet->GetRawDescriptorSet(), 0, nullptr);
+
+    _commandBuffer->_cachedPipelines.push_back(pipeline);
+}
+
+void RenderGraph::BeginRenderPass()
+{
+    VkExtent3D extent3D = _pendingRenderTargets->colors.empty() ? _pendingRenderTargets->depthStencil.value().target->GetExtent() : _pendingRenderTargets->colors[0].target->GetExtent();
     VkExtent2D extent2D{extent3D.width, extent3D.height};
 
     TPtrArr<VulkanImageView> framebufferImageArr;
     std::vector<VkAttachmentDescription> colorAttachmentArr;
     std::vector<VkClearValue> clearValues;
 
-    for (auto& bindings : renderTargets->colors)
+    for (auto& bindings : _pendingRenderTargets->colors)
     {
         TPtr<VulkanImageView> imageView = bindings.target;
 
@@ -192,9 +213,9 @@ void RenderGraph::SetRenderTargets(TPtr<RenderTargets> renderTargets)
     }
 
     TPtr<VulkanRenderPass> renderPass;
-    if (renderTargets->depthStencil.has_value())
+    if (_pendingRenderTargets->depthStencil.has_value())
     {
-        RenderTargetBinding& depthBinding = renderTargets->depthStencil.value();
+        RenderTargetBinding& depthBinding = _pendingRenderTargets->depthStencil.value();
         VkAttachmentDescription depthAttachment{};
         depthAttachment.format = depthBinding.target->GetFormat();
         depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -206,7 +227,7 @@ void RenderGraph::SetRenderTargets(TPtr<RenderTargets> renderTargets)
         depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         renderPass = std::make_shared<VulkanRenderPass>(_device, colorAttachmentArr, depthAttachment);
-        framebufferImageArr.emplace_back(renderTargets->depthStencil.value().target);
+        framebufferImageArr.emplace_back(_pendingRenderTargets->depthStencil.value().target);
 
         VkClearValue clearValue;
         clearValue.depthStencil.depth = 0.0f;
@@ -228,15 +249,14 @@ void RenderGraph::SetRenderTargets(TPtr<RenderTargets> renderTargets)
 
     VkRect2D scissor{0, 0, static_cast<int32_t>(extent2D.width), static_cast<int32_t>(extent2D.height)};
     vkCmdSetScissor(_commandBuffer->GetRawCommandBuffer(), 0, 1, &scissor);
+
+    _pendingRenderTargets.reset();
+    _pendingRenderPass = renderPass;
 }
 
-void RenderGraph::SetPipelineState(const RHIPipelineState& pipelineState, TPtr<VulkanDescriptorSet> descriptorSet)
+void RenderGraph::EndRenderPass()
 {
-    TPtr<VulkanGraphicPipeline> pipeline = std::make_shared<VulkanGraphicPipeline>(_device, pipelineState, _currentRenderPass);
-
-    vkCmdBindPipeline(_commandBuffer->GetRawCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetRawPipeline());
-
-    vkCmdBindDescriptorSets(_commandBuffer->GetRawCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineState.layout, 0, 1, &descriptorSet->GetRawDescriptorSet(), 0, nullptr);
+    _commandBuffer->EndRenderPass();
 }
 
 void RenderGraph::BindVertexBuffer(TPtr<VulkanBuffer> vertexBuffer, TPtr<VulkanBuffer> indexBuffer)
@@ -250,7 +270,7 @@ void RenderGraph::BindVertexBuffer(TPtr<VulkanBuffer> vertexBuffer, TPtr<VulkanB
 
 void RenderGraph::DrawIndexed(uint32_t verticesCount, uint32_t firstIndex)
 {
-    vkCmdDrawIndexed(_commandBuffer->GetRawCommandBuffer(), verticesCount, firstIndex, 0, 0, 0);
+    vkCmdDrawIndexed(_commandBuffer->GetRawCommandBuffer(), verticesCount, 1, firstIndex, 0, 0);
 }
 
 TPtr<VulkanCommandBuffer> RenderGraph::GetCommandBuffer()

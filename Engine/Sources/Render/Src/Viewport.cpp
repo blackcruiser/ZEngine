@@ -12,7 +12,16 @@ namespace ZE {
 Viewport::Viewport(const glm::ivec2& size, TPtr<VulkanSwapchain> swapchain) :
     _size(size), _swapchain(swapchain)
 {
+    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+    _submitSemaphore = device->CreateGraphicSemaphore();
+    _presentSemaphore = device->CreateGraphicSemaphore();
+}
 
+Viewport::~Viewport()
+{
+    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+    device->DestroyGraphicSemaphore(_submitSemaphore);
+    device->DestroyGraphicSemaphore(_presentSemaphore);
 }
 
 glm::ivec2 Viewport::GetSize()
@@ -22,23 +31,24 @@ glm::ivec2 Viewport::GetSize()
 
 TPtr<VulkanImage> Viewport::GetRenderTarget()
 {
-    return _swapchain->AcquireNextImage(UINT64_MAX, _semaphore, _fence);
+    _currentImage =  _swapchain->AcquireNextImage(UINT64_MAX, _submitSemaphore, VK_NULL_HANDLE);
+    return _currentImage;
 }
 
 void Viewport::Present(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph)
 {
     TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
-    VkSemaphore submitSemaphore = device->CreateGraphicSemaphore();
     VkFence fence = device->CreateFence(false);
 
-    TPtr<VulkanQueue> graphicQueue = renderingContext->GetQueue(VulkanQueue::EType::Graphic);
-    graphicQueue->Submit(renderGraph->GetCommandBuffer(), {}, {}, {submitSemaphore}, fence);
-    graphicQueue->Present(_swapchain, {submitSemaphore});
+    renderGraph->TransitionLayout(_currentImage, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    renderGraph->Execute({_submitSemaphore}, {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}, {_presentSemaphore}, fence);
 
-    vkWaitForFences(device->GetRawDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+    TPtr<VulkanQueue> graphicQueue = renderingContext->GetQueue(VulkanQueue::EType::Graphic);
+    graphicQueue->Present(_swapchain, {_presentSemaphore});
+
+    //vkWaitForFences(device->GetRawDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
 
     device->DestroyFence(fence);
-    device->DestroyGraphicSemaphore(submitSemaphore);
 }
 
 }

@@ -12,10 +12,13 @@ class VulkanDevice;
 class VulkanCommandPool;
 class VulkanRenderPass;
 class VulkanFramebuffer;
+class VulkanGraphicPipeline;
 
 
 class VulkanCommandBuffer
 {
+friend class RenderGraph;
+
 public:
     enum class EStatus : int
     {
@@ -33,6 +36,8 @@ public:
     void Begin();
     void End();
 
+    void Reset();
+
     void BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPtr<VulkanFramebuffer> framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors);
     void EndRenderPass();
 
@@ -41,6 +46,7 @@ public:
     VkFence GetFence();
     VkCommandBuffer GetRawCommandBuffer();
 
+    TPtr<VulkanCommandPool> GetCommandPool();
     TPtr<VulkanDevice> GetDevice();
 
 private:
@@ -50,6 +56,9 @@ private:
     uint32_t _executeCount;
 
     TPtr<VulkanCommandPool> _commandPool;
+    TPtrArr<VulkanRenderPass> _cachedRenderPasses;
+    TPtrArr<VulkanFramebuffer> _cachedFramebuffers;
+    TPtrArr<VulkanGraphicPipeline> _cachedPipelines;
 };
 
 } // namespace ZE
