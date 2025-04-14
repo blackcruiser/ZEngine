@@ -23,14 +23,17 @@ public:
 
     glm::ivec2 GetSize();
     
-    TPtr<VulkanImage> GetRenderTarget();
+    TPtr<VulkanImage> GetCurrentImage();
+
+    void Advance();
 
     void Present(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph);
 
 private:
     TPtr<VulkanSwapchain> _swapchain;
-    VkSemaphore _submitSemaphore, _presentSemaphore;
-    TPtr<VulkanImage> _currentImage;
+    std::vector<VkSemaphore> _submitSemaphores, _presentSemaphores;
+    std::vector<VkFence> _presentFences;
+    uint32_t _currentIndex;
     glm::ivec2 _size;
 };
 

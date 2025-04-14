@@ -31,16 +31,11 @@ RenderGraph::~RenderGraph()
     _renderingContext->GetCommandBufferManager()->Release(_commandBuffer);
 }
 
-void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence)
+void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr)
 {
     _commandBuffer->End();
-
     TPtr<VulkanQueue> graphicQueue = _renderingContext->GetQueue(VulkanQueue::EType::Graphic);
-
-    VkFence tfence = _commandBuffer->GetFence();
-    graphicQueue->Submit(_commandBuffer, waitSemaphoreArr, waitStageArr, signalSemaphoreArr, tfence);
-    //vkWaitForFences(_device->GetRawDevice(), 1, &tfence, VK_TRUE, UINT32_MAX);
-
+    graphicQueue->Submit(_commandBuffer, waitSemaphoreArr, waitStageArr, signalSemaphoreArr, _commandBuffer->GetFence());
 
     _renderingContext->GetCommandBufferManager()->Release(_commandBuffer);
     _commandBuffer = _renderingContext->GetCommandBufferManager()->Acquire(VulkanQueue::EType::Graphic);

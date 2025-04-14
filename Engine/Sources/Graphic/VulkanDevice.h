@@ -21,7 +21,7 @@ public:
     VkSemaphore CreateGraphicSemaphore();
     void DestroyGraphicSemaphore(VkSemaphore semaphore);
 
-    VkFence CreateFence(bool isSignaled);
+    VkFence CreateFence(bool isSignaled = false);
     void DestroyFence(VkFence fence);
     bool IsSignaled(VkFence fence);
 

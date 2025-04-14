@@ -10,7 +10,7 @@
 namespace ZE {
 
 VulkanCommandBuffer::VulkanCommandBuffer(TPtr<VulkanCommandPool> commandPool)
-    : _commandPool(commandPool), _vkCommandBuffer(VK_NULL_HANDLE), _vkFence(VK_NULL_HANDLE), _status(EStatus::Initial), _executeCount(0)
+    : _commandPool(commandPool), _vkCommandBuffer(VK_NULL_HANDLE), _fence(VK_NULL_HANDLE), _status(EStatus::Initial), _executeCount(0)
 {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -25,21 +25,15 @@ VulkanCommandBuffer::VulkanCommandBuffer(TPtr<VulkanCommandPool> commandPool)
         throw std::runtime_error("failed to allocate command buffers!");
     }
 
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = 0;
-    if (vkCreateFence(vkDevice, &fenceInfo, nullptr, &_vkFence) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to allocate fence!");
-    }
+    _fence = _commandPool->GetDevice()->CreateFence(false);
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
 {
+    _commandPool->GetDevice()->DestroyFence(_fence);
+
     VkDevice vkDevice = _commandPool->GetDevice()->GetRawDevice();
     VkCommandPool vkCommandPool = _commandPool->GetRawCommandPool();
-
-    vkDestroyFence(vkDevice, _vkFence, nullptr);
 
     vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &_vkCommandBuffer);
 }
@@ -67,10 +61,10 @@ void VulkanCommandBuffer::End()
 void VulkanCommandBuffer::Reset()
 {
     VkDevice vkDevice = _commandPool->GetDevice()->GetRawDevice();
-    vkResetFences(vkDevice, 1, &_vkFence);
     _cachedRenderPasses.clear();
     _cachedFramebuffers.clear();
     _cachedPipelines.clear();
+    vkResetFences(vkDevice, 1, &_fence);
 }
 
 void VulkanCommandBuffer::BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPtr<VulkanFramebuffer> framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors)
@@ -95,14 +89,14 @@ void VulkanCommandBuffer::EndRenderPass()
     vkCmdEndRenderPass(_vkCommandBuffer);
 }
 
+VkFence VulkanCommandBuffer::GetFence()
+{
+    return _fence;
+}
+
 uint32_t VulkanCommandBuffer::GetExecuteCount()
 {
     return _executeCount;
-}
-
-VkFence VulkanCommandBuffer::GetFence()
-{
-    return _vkFence;
 }
 
 VkCommandBuffer VulkanCommandBuffer::GetRawCommandBuffer()

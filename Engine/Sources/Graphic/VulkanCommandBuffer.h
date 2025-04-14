@@ -44,6 +44,7 @@ public:
     uint32_t GetExecuteCount();
 
     VkFence GetFence();
+
     VkCommandBuffer GetRawCommandBuffer();
 
     TPtr<VulkanCommandPool> GetCommandPool();
@@ -51,7 +52,7 @@ public:
 
 private:
     VkCommandBuffer _vkCommandBuffer;
-    VkFence _vkFence;
+    VkFence _fence;
     EStatus _status;
     uint32_t _executeCount;
 

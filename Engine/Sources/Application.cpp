@@ -64,6 +64,7 @@ void Application::Run(TPtr<Scene> scene)
     {
         glfwPollEvents();
 
+        viewport->Advance();
         TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>(renderingContext);
         _renderer->RenderFrame(renderingContext, renderGraph, viewport, scene);
         viewport->Present(renderingContext, renderGraph);

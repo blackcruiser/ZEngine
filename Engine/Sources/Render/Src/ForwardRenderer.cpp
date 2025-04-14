@@ -73,7 +73,7 @@ void ForwardRenderer::Init(TPtr<RenderingContext> renderingContext, TPtr<RenderG
         }
     }
 
-    renderGraph->Execute({}, {}, {}, VK_NULL_HANDLE);
+    renderGraph->Execute({}, {}, {});
 }
 
 TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph, TPtr<Scene> scene)
@@ -151,7 +151,7 @@ void ForwardRenderer::RenderFrame(TPtr<RenderingContext> renderingContext, TPtr<
     _depthPass->Execute(renderingContext, renderGraph, objectsToRender);
 
     //Light Pass
-    TPtr<VulkanImage> backBuffer = viewport->GetRenderTarget();
+    TPtr<VulkanImage> backBuffer = viewport->GetCurrentImage();
     TPtr<VulkanImageView> backBufferView = std::make_shared<VulkanImageView>(backBuffer);
     TPtr<RenderTargets> lightingRenderTargets = std::make_shared<RenderTargets>();
     lightingRenderTargets->colors = {RenderTargetBinding{backBufferView, ERenderTargetLoadAction::Clear}};

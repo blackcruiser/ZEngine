@@ -10,7 +10,7 @@
 namespace ZE {
 
 VulkanSwapchain::VulkanSwapchain(TPtr<VulkanDevice> device, TPtr<VulkanSurface> surface, uint32_t imageCount)
-    : _device(device), _surface(surface), _vkSwapchain(VK_NULL_HANDLE), _acquiredIndex(-1)
+    : _device(device), _surface(surface), _vkSwapchain(VK_NULL_HANDLE), _imageCount(imageCount), _acquiredIndex(-1)
 {
     VkSurfaceFormatKHR surfaceFormat = _surface->GetSurfaceFormat();
     VkPresentModeKHR vkPresentMode = _surface->GetPresentMode();
@@ -67,21 +67,35 @@ VulkanSwapchain::~VulkanSwapchain()
         vkDestroySwapchainKHR(_device->GetRawDevice(), _vkSwapchain, nullptr);
 }
 
-uint32_t VulkanSwapchain::GetCurrentAcquiredIndex()
+uint32_t VulkanSwapchain::GetImageCount()
 {
-    assert (_acquiredIndex >= 0);
-    
+    return _imageCount;
+}
+
+uint32_t VulkanSwapchain::GetCurrentIndex()
+{
     return _acquiredIndex;
 }
 
-TPtr<VulkanImage> VulkanSwapchain::AcquireNextImage(uint64_t timeout, VkSemaphore semaphore, VkFence fence)
+TPtr<VulkanImage> VulkanSwapchain::GetCurrentImage()
+{
+    assert (_acquiredIndex >= 0);
+    
+    return _imagerArr[_acquiredIndex];
+}
+
+bool VulkanSwapchain::AcquireNextImage(uint64_t timeout, VkSemaphore semaphore, VkFence fence)
 {
     VkResult result = vkAcquireNextImageKHR(_device->GetRawDevice(), _vkSwapchain, timeout, semaphore, fence, &_acquiredIndex);
 
     if (result == VkResult::VK_SUCCESS)
-        return _imagerArr[_acquiredIndex];
-    else
-        return nullptr;
+        return true;
+    return false;
+}
+
+TPtr<VulkanDevice> VulkanSwapchain::GetDevice()
+{
+    return _device;
 }
 
 VkSwapchainKHR VulkanSwapchain::GetRawSwapchain()

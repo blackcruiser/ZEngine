@@ -42,7 +42,7 @@ void VulkanQueue::Submit(TPtr<VulkanCommandBuffer> commandBuffer, const std::vec
 void VulkanQueue::Present(TPtr<VulkanSwapchain> swapchain, const std::vector<VkSemaphore>& waitSemaphoreArr)
 {
     VkSwapchainKHR swapchains[] = {swapchain->GetRawSwapchain()};
-    uint32_t imageIndex = swapchain->GetCurrentAcquiredIndex();
+    uint32_t imageIndex = swapchain->GetCurrentIndex();
 
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
