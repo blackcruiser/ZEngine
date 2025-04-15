@@ -17,7 +17,6 @@ VulkanCommandBufferManager::VulkanCommandBufferManager(TPtr<VulkanDevice> device
 
 VulkanCommandBufferManager::~VulkanCommandBufferManager()
 {
-
 }
 
 TPtr<VulkanCommandBuffer> VulkanCommandBufferManager::Acquire(VulkanQueue::EType type)
@@ -40,18 +39,18 @@ TPtr<VulkanCommandBuffer> VulkanCommandBufferManager::Acquire(VulkanQueue::EType
         }
     }
 
-    //if (_freeCommandBuffers.empty() || _freeCommandBuffers[_commandPools[type].get()].empty())
+    if (_freeCommandBuffers.empty() || _freeCommandBuffers[_commandPools[type].get()].empty())
     {
         TPtr<VulkanCommandPool> commandPool = _commandPools[type];
         return std::make_shared<VulkanCommandBuffer>(commandPool);
     }
-    // else
-    // {
-    //     auto iterator = _freeCommandBuffers[_commandPools[type].get()].begin();
-    //     TPtr<VulkanCommandBuffer> commandBuffer = *iterator;
-    //     _freeCommandBuffers[_commandPools[type].get()].erase(iterator);
-    //     return commandBuffer;
-    // }
+    else
+    {
+        auto iterator = _freeCommandBuffers[_commandPools[type].get()].begin();
+        TPtr<VulkanCommandBuffer> commandBuffer = *iterator;
+        _freeCommandBuffers[_commandPools[type].get()].erase(iterator);
+        return commandBuffer;
+    }
 }
 
 void VulkanCommandBufferManager::Release(TPtr<VulkanCommandBuffer> commandBuffer)

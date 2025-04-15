@@ -1,5 +1,5 @@
 #include "InputSystem.h"
-#include "Graphic/Window.h"
+#include "Render/Window.h"
 
 #include <iostream>
 #include <format>

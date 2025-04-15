@@ -2,6 +2,7 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "Viewport.h"
 
 #include <glm/glm.hpp>
 
@@ -14,8 +15,7 @@ namespace ZE {
 
 class InputSystem;
 class VulkanDevice;
-class VulkanSurface;
-class VulkanSwapchain;
+class Viewport;
 
 class Window
 {
@@ -23,16 +23,12 @@ public:
     Window(const std::string& title, const glm::ivec2& size);
     ~Window();
 
-    void CreateSurfaceAndSwapchain(TPtr<VulkanDevice> device);
-
     bool ShouldClose();
 
-    glm::ivec2 GetFramebufferSize();
+    void CreateViewport(TPtr<VulkanDevice> device);
+    TPtr<Viewport> GetViewport();
 
-    TPtr<VulkanSurface> GetSurface();
-    TPtr<VulkanSwapchain> GetSwapchain();
-
-    GLFWwindow* GetRawWindow();
+    glm::ivec2 GetSize();
 
     // input
     void RegisterInput(const InputSystem& inputSystem);
@@ -41,9 +37,7 @@ public:
 private:
     GLFWwindow* _glfwWindow;
     glm::ivec2 _size;
-
-    TPtr<VulkanSurface> _surface;
-    TPtr<VulkanSwapchain> _swapchain;
+    TPtr<Viewport> _viewport;
 };
 
 } // namespace ZE

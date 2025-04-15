@@ -94,6 +94,11 @@ void MeshResource::SetMesh(TPtr<Mesh> mesh)
     _mesh = mesh;
 }
 
+void MeshResource::ClearMesh()
+{
+    _mesh.reset();
+}
+
 TPtr<Mesh> MeshResource::GetMesh()
 {
     return _mesh;

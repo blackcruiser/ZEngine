@@ -7,16 +7,16 @@
 #include "Render/RenderGraph.h"
 
 
+const uint32_t kImageCount = 3;
+
 namespace ZE {
 
-Viewport::Viewport(const glm::ivec2& size, TPtr<VulkanSwapchain> swapchain) :
-    _size(size), _currentIndex(0), _swapchain(swapchain)
+Viewport::Viewport(TPtr<VulkanDevice> device, void* windowHandle, const glm::ivec2& size) :
+    _size(size), _currentIndex(0)
 {
-    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+    _swapchain = std::make_shared<VulkanSwapchain>(device, windowHandle, size, kImageCount);
 
-    uint32_t imageCount = swapchain->GetImageCount();
-
-    for (uint32_t i = 0; i < imageCount; i++)
+    for (uint32_t i = 0; i < kImageCount; i++)
     {
         _submitSemaphores.emplace_back(device->CreateGraphicSemaphore());
         _presentSemaphores.emplace_back(device->CreateGraphicSemaphore());

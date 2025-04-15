@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Renderer.h"
-#include "Graphic/Window.h"
+#include "Window.h"
 
 #include <glm/glm.hpp>
 

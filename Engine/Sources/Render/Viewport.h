@@ -10,6 +10,7 @@
 
 namespace ZE {
 
+class VulkanDevice;
 class VulkanImage;
 class VulkanSwapchain;
 class RenderingContext;
@@ -18,7 +19,7 @@ class RenderGraph;
 class Viewport
 {
 public:
-    Viewport(const glm::ivec2& size, TPtr<VulkanSwapchain> swapchain);
+    Viewport(TPtr<VulkanDevice> device, void* windowHandle, const glm::ivec2& size);
     ~Viewport();
 
     glm::ivec2 GetSize();

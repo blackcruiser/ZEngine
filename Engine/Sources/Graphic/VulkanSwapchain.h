@@ -4,6 +4,7 @@
 #include "CoreTypes.h"
 
 #include <vulkan/vulkan.h>
+#include <glm/vec2.hpp>
 
 
 namespace ZE {
@@ -15,7 +16,7 @@ class VulkanImage;
 class VulkanSwapchain
 {
 public:
-    VulkanSwapchain(TPtr<VulkanDevice> device, TPtr<VulkanSurface> surface, uint32_t imageCount);
+    VulkanSwapchain(TPtr<VulkanDevice> device, void* windowHandle, const glm::ivec2& size, uint32_t imageCount);
     ~VulkanSwapchain();
 
     uint32_t GetImageCount();

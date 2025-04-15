@@ -5,7 +5,6 @@
 
 #include <vulkan/vulkan.h>
 
-struct GLFWwindow;
 
 namespace ZE {
 
@@ -14,7 +13,7 @@ class VulkanGPU;
 class VulkanSurface
 {
 public:
-    VulkanSurface(VkInstance vkInstance, GLFWwindow* window);
+    VulkanSurface(VkInstance vkInstance, void* window);
     ~VulkanSurface();
 
     void InitializeFormat(TPtr<VulkanGPU> GPU, VkSurfaceFormatKHR formatHint = {VkFormat::VK_FORMAT_B8G8R8A8_SRGB, VkColorSpaceKHR::VK_COLOR_SPACE_SRGB_NONLINEAR_KHR});

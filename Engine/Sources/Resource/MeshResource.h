@@ -33,6 +33,7 @@ public:
     const std::vector<uint32_t>& GetIndexes(uint32_t meshIndex);
 
     void SetMesh(TPtr<Mesh> mesh);
+    void ClearMesh();
     TPtr<Mesh> GetMesh();
 
 private:

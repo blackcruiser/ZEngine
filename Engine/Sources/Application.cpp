@@ -1,7 +1,7 @@
 #include "Application.h"
-#include "Graphic/Window.h"
 #include "Graphic/VulkanDevice.h"
 #include "Input/InputSystem.h"
+#include "Render/Window.h"
 #include "Render/RenderingContext.h"
 #include "Render/RenderGraph.h"
 #include "Render/RenderSystem.h"
@@ -25,7 +25,6 @@ Application::Application()
     InputSystem::Initialize();
 
     _window = std::make_shared<Window>(AppName, size);
-    _window->CreateSurfaceAndSwapchain(RenderSystem::Get().GetDevice());
 
     InputSystem::Get().AttachTo(_window);
 
@@ -50,7 +49,6 @@ void Application::Run(TPtr<Scene> scene)
     scene->Load();
 
     TPtr<RenderingContext> renderingContext = RenderSystem::Get().CreateRenderingContext();
-    renderingContext->Initialize();
 
     {
         TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>(renderingContext);
@@ -58,7 +56,8 @@ void Application::Run(TPtr<Scene> scene)
         RenderSystem::Get().GetDevice()->WaitIdle();
     }
 
-    TPtr<Viewport> viewport = std::make_shared<Viewport>(_window->GetFramebufferSize(), _window->GetSwapchain());
+    _window->CreateViewport(RenderSystem::Get().GetDevice());
+    TPtr<Viewport> viewport = _window->GetViewport();
 
     while (!_window->ShouldClose())
     {
