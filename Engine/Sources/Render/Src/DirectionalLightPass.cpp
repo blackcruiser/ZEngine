@@ -3,7 +3,6 @@
 #include "Material.h"
 #include "Graphic/PipelineState.h"
 #include "RenderSystem.h"
-#include "Render/RenderingContext.h"
 #include "Render/RenderGraph.h"
 #include "RenderTargets.h"
 #include "Scene/SceneObject.h"
@@ -18,7 +17,7 @@ void DirectionalLightPass::Prepare(TPtr<Scene> scene)
 {
 }
 
-void DirectionalLightPass::Draw(TPtr<RenderingContext>& renderingContext, TPtr<RenderGraph>& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
+void DirectionalLightPass::Draw(TPtr<RenderGraph>& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
 {
     EPassType passType = EPassType::BasePass;
     for (const TPtr<SceneObject>& object : objectsToRender)

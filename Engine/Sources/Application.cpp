@@ -2,7 +2,6 @@
 #include "Graphic/VulkanDevice.h"
 #include "Input/InputSystem.h"
 #include "Render/Window.h"
-#include "Render/RenderingContext.h"
 #include "Render/RenderGraph.h"
 #include "Render/RenderSystem.h"
 #include "Render/Viewport.h"
@@ -48,11 +47,9 @@ void Application::Run(TPtr<Scene> scene)
 {
     scene->Load();
 
-    TPtr<RenderingContext> renderingContext = RenderSystem::Get().CreateRenderingContext();
-
     {
-        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>(renderingContext);
-        _renderer->Init(renderingContext, renderGraph, scene);
+        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
+        _renderer->Init(renderGraph, scene);
         RenderSystem::Get().GetDevice()->WaitIdle();
     }
 
@@ -64,9 +61,9 @@ void Application::Run(TPtr<Scene> scene)
         glfwPollEvents();
 
         viewport->Advance();
-        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>(renderingContext);
-        _renderer->RenderFrame(renderingContext, renderGraph, viewport, scene);
-        viewport->Present(renderingContext, renderGraph);
+        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
+        _renderer->RenderFrame(renderGraph, viewport, scene);
+        viewport->Present(renderGraph);
     }
 
     RenderSystem::Get().GetDevice()->WaitIdle();

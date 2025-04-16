@@ -1,7 +1,6 @@
 #include "Mesh.h"
 #include "RenderSystem.h"
 #include "Graphic/VulkanBuffer.h"
-#include "Render/RenderingContext.h"
 #include "Render/RenderGraph.h"
 #include "Resource/MeshResource.h"
 
@@ -22,7 +21,7 @@ uint32_t Mesh::GetVerticesCount()
     return _verticesCount;
 }
 
-void Mesh::CreateVertexBuffer(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph)
+void Mesh::CreateVertexBuffer(TPtr<RenderGraph> renderGraph)
 {
     assert(_owner.expired() == false);
 
@@ -31,7 +30,7 @@ void Mesh::CreateVertexBuffer(TPtr<RenderingContext> renderingContext, TPtr<Rend
     const std::vector<VertexData>& vertices = MeshResource->GetVertices(0);
     uint32_t byteSize = static_cast<uint32_t>(vertices.size()) * sizeof(VertexData);
 
-    _vertexBuffer = renderingContext->AcquireBuffer(byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+    _vertexBuffer = RenderSystem::Get().AcquireBuffer(byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     renderGraph->CopyBuffer(reinterpret_cast<const uint8_t*>(vertices.data()), byteSize, _vertexBuffer);
@@ -42,7 +41,7 @@ TPtr<VulkanBuffer> Mesh::GetVertexBuffer()
     return _vertexBuffer;
 }
 
-void Mesh::CreateIndexBuffer(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph)
+void Mesh::CreateIndexBuffer(TPtr<RenderGraph> renderGraph)
 {
     assert(_owner.expired() == false);
 
@@ -51,7 +50,7 @@ void Mesh::CreateIndexBuffer(TPtr<RenderingContext> renderingContext, TPtr<Rende
     const std::vector<uint32_t>& indexes = MeshResource->GetIndexes(0);
     uint32_t byteSize = static_cast<uint32_t>(indexes.size()) * sizeof(uint32_t);
 
-    _indexBuffer = renderingContext->AcquireBuffer(byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+    _indexBuffer = RenderSystem::Get().AcquireBuffer(byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     renderGraph->CopyBuffer(reinterpret_cast<const uint8_t*>(indexes.data()), byteSize, _indexBuffer);
     _verticesCount = static_cast<uint32_t>(indexes.size());

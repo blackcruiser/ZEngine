@@ -3,7 +3,6 @@
 #include "Graphic/VulkanSwapchain.h"
 #include "Graphic/VulkanQueue.h"
 #include "Render/RenderSystem.h"
-#include "Render/RenderingContext.h"
 #include "Render/RenderGraph.h"
 
 
@@ -58,13 +57,13 @@ void Viewport::Advance()
      _swapchain->AcquireNextImage(UINT64_MAX, _submitSemaphores[_currentIndex], _presentFences[_currentIndex]);
 }
 
-void Viewport::Present(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph)
+void Viewport::Present(TPtr<RenderGraph> renderGraph)
 {
     TPtr<VulkanImage> currentImage = GetCurrentImage();
     renderGraph->TransitionLayout(currentImage, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     renderGraph->Execute({_submitSemaphores[_currentIndex]}, {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}, {_presentSemaphores[_currentIndex]});
 
-    TPtr<VulkanQueue> graphicQueue = renderingContext->GetQueue(VulkanQueue::EType::Graphic);
+    TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
     graphicQueue->Present(_swapchain, {_presentSemaphores[_currentIndex]});
 }
 

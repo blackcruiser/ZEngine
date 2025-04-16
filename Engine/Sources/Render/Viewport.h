@@ -28,7 +28,7 @@ public:
 
     void Advance();
 
-    void Present(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph);
+    void Present(TPtr<RenderGraph> renderGraph);
 
 private:
     TPtr<VulkanSwapchain> _swapchain;

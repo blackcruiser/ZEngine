@@ -9,7 +9,7 @@
 #include "Graphic/VulkanDescriptorSet.h"
 #include "Graphic/VulkanFramebuffer.h"
 #include "Graphic/VulkanRenderPass.h"
-#include "Render/RenderingContext.h"
+#include "Render/RenderSystem.h"
 #include "Render/RenderTargets.h"
 
 #include <stdexcept>
@@ -17,34 +17,33 @@
 
 namespace ZE {
 
-RenderGraph::RenderGraph(TPtr<RenderingContext> renderingContext) :
-    _renderingContext(renderingContext)
+RenderGraph::RenderGraph()
 {
-    _device = renderingContext->GetDevice();
-    _commandBuffer = renderingContext->GetCommandBufferManager()->Acquire(VulkanQueue::EType::Graphic);
+    _device = RenderSystem::Get().GetDevice();
+    _commandBuffer = RenderSystem::Get().GetCommandBufferManager()->Acquire(VulkanQueue::EType::Graphic);
     _commandBuffer->Begin();
 }
 
 RenderGraph::~RenderGraph()
 {
     _commandBuffer->End();
-    _renderingContext->GetCommandBufferManager()->Release(_commandBuffer);
+    RenderSystem::Get().GetCommandBufferManager()->Release(_commandBuffer);
 }
 
 void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr)
 {
     _commandBuffer->End();
-    TPtr<VulkanQueue> graphicQueue = _renderingContext->GetQueue(VulkanQueue::EType::Graphic);
+    TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
     graphicQueue->Submit(_commandBuffer, waitSemaphoreArr, waitStageArr, signalSemaphoreArr, _commandBuffer->GetFence());
 
-    _renderingContext->GetCommandBufferManager()->Release(_commandBuffer);
-    _commandBuffer = _renderingContext->GetCommandBufferManager()->Acquire(VulkanQueue::EType::Graphic);
+    RenderSystem::Get().GetCommandBufferManager()->Release(_commandBuffer);
+    _commandBuffer = RenderSystem::Get().GetCommandBufferManager()->Acquire(VulkanQueue::EType::Graphic);
     _commandBuffer->Begin();
 }
 
 void RenderGraph::CopyBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination)
 {
-    TPtr<VulkanBuffer> stagingBuffer = _renderingContext->AcquireStagingBuffer(size);
+    TPtr<VulkanBuffer> stagingBuffer = RenderSystem::Get().AcquireStagingBuffer(size);
     VkMemoryPropertyFlags properties = destination->GetProperties();
 
     if (properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
@@ -119,7 +118,7 @@ void RenderGraph::TransitionLayout(TPtr<VulkanImage> image, VkImageLayout oldLay
 
 void RenderGraph::CopyImage(const uint8_t* data, uint32_t size, TPtr<VulkanImage> destination)
 {
-    TPtr<VulkanBuffer> stagingBuffer = _renderingContext->AcquireStagingBuffer(size);
+    TPtr<VulkanBuffer> stagingBuffer = RenderSystem::Get().AcquireStagingBuffer(size);
 
     void* mappedAddress = stagingBuffer->MapMemory(0, size);
     memcpy(mappedAddress, data, size);
@@ -271,6 +270,11 @@ void RenderGraph::DrawIndexed(uint32_t verticesCount, uint32_t firstIndex)
 TPtr<VulkanCommandBuffer> RenderGraph::GetCommandBuffer()
 {
     return _commandBuffer;
+}
+
+TPtr<VulkanDevice> RenderGraph::GetDevice()
+{
+    return _device;
 }
 
 }

@@ -13,18 +13,16 @@ class VulkanBuffer;
 class VulkanImage;
 class VulkanImageView;
 class VulkanCommandBuffer;
-class VulkanCommandBufferManager;
-class VulkanRenderPass;
-class VulkanFramebuffer;
 class VulkanDescriptorSet;
+class VulkanRenderPass;
 struct RenderTargets;
 struct RHIPipelineState;
-class RenderingContext;
+
 
 class RenderGraph
 {
 public:
-    RenderGraph(TPtr<RenderingContext> renderingContext);
+    RenderGraph();
     virtual ~RenderGraph();
 
     void BeginRenderPass();
@@ -47,6 +45,7 @@ public:
     void DrawIndexed(uint32_t verticesCount, uint32_t firstIndex);
 
     TPtr<VulkanCommandBuffer> GetCommandBuffer();
+    TPtr<VulkanDevice> GetDevice();
 
 private:
     TPtr<VulkanDevice> _device;
@@ -54,8 +53,6 @@ private:
     TPtr<VulkanCommandBuffer> _commandBuffer;
     TPtr<RenderTargets> _pendingRenderTargets;
     TPtr<VulkanRenderPass> _pendingRenderPass;
-
-    TPtr<RenderingContext> _renderingContext;
 };
 
 }

@@ -3,7 +3,6 @@
 #include "Material.h"
 #include "Mesh.h"
 #include "RenderSystem.h"
-#include "Render/RenderingContext.h"
 #include "Render/RenderGraph.h"
 #include "Graphic/VulkanBuffer.h"
 #include "Graphic/VulkanBufferManager.h"
@@ -231,14 +230,14 @@ Pass::~Pass()
 {
 }
 
-void Pass::BuildRenderResource(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph)
+void Pass::BuildRenderResource(TPtr<RenderGraph> renderGraph)
 {
-    CreateGraphicTextures(renderingContext, renderGraph);
-    CreateGraphicBuffers(renderingContext, renderGraph);
+    CreateGraphicTextures(renderGraph);
+    CreateGraphicBuffers(renderGraph);
     CreateGraphicShaders();
 
     CreateDescriptorSetLayout();
-    CreateDescriptorSet(renderingContext, renderGraph);
+    CreateDescriptorSet(renderGraph);
     LinkDescriptorSet();
 
     CreatePipelineLayout();
@@ -246,14 +245,14 @@ void Pass::BuildRenderResource(TPtr<RenderingContext> renderingContext, TPtr<Ren
 
 
 
-TPtr<VulkanImageView> CreateGraphicImage(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph, TPtr<TextureResource> texture)
+TPtr<VulkanImageView> CreateGraphicImage(TPtr<RenderGraph> renderGraph, TPtr<TextureResource> texture)
 {
     assert(texture->IsLoaded());
 
     uint32_t imageSize = texture->GetWidth() * texture->GetHeight() * 4;
     VkExtent3D extent{texture->GetWidth(), texture->GetHeight(), 1};
 
-    TPtr<VulkanImage> vulkanImage = std::make_shared<VulkanImage>(renderingContext->GetDevice(), extent, VkFormat::VK_FORMAT_R8G8B8A8_SRGB);
+    TPtr<VulkanImage> vulkanImage = std::make_shared<VulkanImage>(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_R8G8B8A8_SRGB);
     renderGraph->CopyImage(static_cast<const uint8_t*>(texture->GetData()), imageSize, vulkanImage);
 
     TPtr<VulkanImageView> vulkanImageView = std::make_shared<VulkanImageView>(vulkanImage);
@@ -262,7 +261,7 @@ TPtr<VulkanImageView> CreateGraphicImage(TPtr<RenderingContext> renderingContext
 }
 
 
-void Pass::CreateGraphicTextures(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph)
+void Pass::CreateGraphicTextures(TPtr<RenderGraph> renderGraph)
 {
     assert(_owner.expired() == false);
 
@@ -284,7 +283,7 @@ void Pass::CreateGraphicTextures(TPtr<RenderingContext> renderingContext, TPtr<R
             VulkanImageBindingInfo vulkanBindingInfo;
 
             vulkanBindingInfo.bindingPoint = bindingInfo.bindingPoint;
-            vulkanBindingInfo.vulkanImageView = CreateGraphicImage(renderingContext, renderGraph, bindingInfo.texture);
+            vulkanBindingInfo.vulkanImageView = CreateGraphicImage(renderGraph, bindingInfo.texture);
             vulkanBindingInfo.vulkanSampler = std::make_shared<VulkanSampler>(device);
 
             vulkanBindingInfoList.push_back(vulkanBindingInfo);
@@ -295,9 +294,9 @@ void Pass::CreateGraphicTextures(TPtr<RenderingContext> renderingContext, TPtr<R
     }
 }
 
-void Pass::CreateGraphicBuffers(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph)
+void Pass::CreateGraphicBuffers(TPtr<RenderGraph> renderGraph)
 {
-    _uniformBuffer = renderingContext->AcquireBuffer(sizeof(glm::mat4x4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    _uniformBuffer = RenderSystem::Get().AcquireBuffer(sizeof(glm::mat4x4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
 TPtr<VulkanShader> CreateGraphicShader(TPtr<VulkanDevice> device, VkShaderStageFlagBits shaderStage,
@@ -354,9 +353,9 @@ void Pass::CreateDescriptorSetLayout()
     _descriptorSetLayout = std::make_shared<VulkanDescriptorSetLayout>(device, localDescriptorSetLayoutBindings);
 }
 
-void Pass::CreateDescriptorSet(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph)
+void Pass::CreateDescriptorSet(TPtr<RenderGraph> renderGraph)
 {
-    TPtr<VulkanDescriptorPool> descriptorPool = renderingContext->GetDescriptorPool();
+    TPtr<VulkanDescriptorPool> descriptorPool = RenderSystem::Get().GetDescriptorPool();
 
     _descriptorSet = std::make_shared<VulkanDescriptorSet>(descriptorPool, _descriptorSetLayout);
 }
@@ -473,7 +472,7 @@ void Pass::ApplyPipelineState(RHIPipelineState& state)
     state.layout = _pipelineLayout->GetRawPipelineLayout();
 }
 
-void Pass::UpdateUniformBuffer(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph, const glm::mat4x4& mvp)
+void Pass::UpdateUniformBuffer(TPtr<RenderGraph> renderGraph, const glm::mat4x4& mvp)
 {
     renderGraph->CopyBuffer(reinterpret_cast<const uint8_t*>(&mvp), sizeof(mvp), _uniformBuffer);
 }

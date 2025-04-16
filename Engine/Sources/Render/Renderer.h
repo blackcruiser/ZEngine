@@ -16,8 +16,8 @@ class Viewport;
 class RendererInterface
 {
 public:
-    virtual void Init(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph, TPtr<Scene> scene) = 0;
-    virtual void RenderFrame(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph, TPtr<Viewport> viewport, TPtr<Scene> scene) = 0;
+    virtual void Init(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene) = 0;
+    virtual void RenderFrame(TPtr<RenderGraph> renderGraph, TPtr<Viewport> viewport, TPtr<Scene> scene) = 0;
 };
 
 } // namespace ZE

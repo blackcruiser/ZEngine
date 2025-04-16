@@ -13,7 +13,7 @@ class DirectionalLightPass : public RenderPass
 {
 public:
     virtual void Prepare(TPtr<Scene> scene) override;
-    virtual void Draw(TPtr<RenderingContext>& renderingContext, TPtr<RenderGraph>& commandBuffer, const TPtrArr<SceneObject>& objectsToRender) override;
+    virtual void Draw(TPtr<RenderGraph>& commandBuffer, const TPtrArr<SceneObject>& objectsToRender) override;
 };
 
 }

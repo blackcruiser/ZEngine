@@ -25,10 +25,10 @@ public:
 
     uint32_t GetVerticesCount();
 
-    void CreateVertexBuffer(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph);
+    void CreateVertexBuffer(TPtr<RenderGraph> renderGraph);
     TPtr<VulkanBuffer> GetVertexBuffer();
 
-    void CreateIndexBuffer(TPtr<RenderingContext> renderingContext, TPtr<RenderGraph> renderGraph);
+    void CreateIndexBuffer(TPtr<RenderGraph> renderGraph);
     TPtr<VulkanBuffer> GetIndexBuffer();
 
     void ApplyPipelineState(RHIPipelineState& state);

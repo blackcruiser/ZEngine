@@ -3,7 +3,6 @@
 #include "Material.h"
 #include "Graphic/PipelineState.h"
 #include "RenderSystem.h"
-#include "RenderingContext.h"
 #include "RenderGraph.h"
 #include "RenderTargets.h"
 #include "Scene/SceneObject.h"
@@ -18,7 +17,7 @@ void DepthPass::Prepare(TPtr<Scene> scene)
 {
 }
 
-void DepthPass::Draw(TPtr<RenderingContext>& renderingContext, TPtr<RenderGraph>& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
+void DepthPass::Draw(TPtr<RenderGraph>& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
 {
     EPassType passType = EPassType::DepthPass;
     for (const TPtr<SceneObject>& object : objectsToRender)
