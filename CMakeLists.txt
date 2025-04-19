@@ -3,11 +3,18 @@ cmake_minimum_required(VERSION 3.10)
 # set the project name 
 project(ZEngine VERSION 0.1) 
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 
 # Source
 set(EngineSourcesDirectory ${CMAKE_CURRENT_LIST_DIR}/Engine/Sources)
+
+## Debug Module
+set(DebugSourceDirectory ${EngineSourcesDirectory}/Debug)
+# should not use file(GLOB ...)
+file(GLOB DebugIncludes "${DebugSourceDirectory}/*.h")
+aux_source_directory(${DebugSourceDirectory}/Src DebugSources)
+source_group(TREE ${EngineSourcesDirectory} FILES ${DebugSources} ${DebugIncludes})
 
 ## Graphic Module
 set(GraphicSourceDirectory ${EngineSourcesDirectory}/Graphic)
@@ -73,10 +80,10 @@ target_include_directories(stb_image INTERFACE ${ThirdPartiesSourcesDirectory}/s
 file(GLOB EngineIncludes "${EngineSourcesDirectory}/*.h")
 aux_source_directory(${EngineSourcesDirectory} EngineSources)
 
-add_library(Engine ${GraphicSources} ${GraphicIncludes} ${InputSources} ${InputIncludes} ${RenderSources} ${RenderIncludes} ${SceneSources} ${SceneIncludes} ${ResourceSources} ${ResourceIncludes} ${EngineSources} ${EngineIncludes})
+add_library(Engine ${DebugSources} ${DebugIncludes} ${GraphicSources} ${GraphicIncludes} ${InputSources} ${InputIncludes} ${RenderSources} ${RenderIncludes} ${SceneSources} ${SceneIncludes} ${ResourceSources} ${ResourceIncludes} ${EngineSources} ${EngineIncludes})
 target_include_directories(Engine 
                             PUBLIC ${EngineSourcesDirectory}
-                            PRIVATE ${GraphicSourceDirectory} ${InputSourceDirectory} ${RenderSourceDirectory} ${SceneSourceDirectory} ${ResourceSourceDirectory})
+                            PRIVATE ${DebugSourceDirectory} ${GraphicSourceDirectory} ${InputSourceDirectory} ${RenderSourceDirectory} ${SceneSourceDirectory} ${ResourceSourceDirectory})
 target_link_libraries(Engine PUBLIC glfw glm::glm Vulkan::Vulkan tinyobjloader stb_image)
 
 
