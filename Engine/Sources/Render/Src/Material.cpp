@@ -230,8 +230,10 @@ Pass::~Pass()
 {
 }
 
-void Pass::BuildRenderResource(TPtr<RenderGraph> renderGraph)
+void Pass::InitRenderResource(TPtr<RenderGraph> renderGraph)
 {
+    RenderResource::InitRenderResource(renderGraph);
+
     CreateGraphicTextures(renderGraph);
     CreateGraphicBuffers(renderGraph);
     CreateGraphicShaders();
@@ -241,9 +243,21 @@ void Pass::BuildRenderResource(TPtr<RenderGraph> renderGraph)
     LinkDescriptorSet();
 
     CreatePipelineLayout();
+
+    renderGraph->Execute();
 }
 
+void Pass::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
+{
+    _shaders.clear();
+    _textures.clear();
+    _uniformBuffer.reset();
+    _descriptorSetLayout.reset();
+    _descriptorSet.reset();
+    _pipelineLayout.reset();
 
+    RenderResource::CleanupRenderResource(renderGraph);
+}
 
 TPtr<VulkanImageView> CreateGraphicImage(TPtr<RenderGraph> renderGraph, TPtr<TextureResource> texture)
 {

@@ -5,7 +5,9 @@
 #include "Graphic/VulkanBufferManager.h"
 #include "Graphic/VulkanCommandBufferManager.h"
 #include "Graphic/VulkanDescriptorPool.h"
-#include "Render/RenderSystem.h"
+#include "RenderSystem.h"
+#include "RenderResource.h"
+#include "RenderGraph.h"
 
 #include <vulkan/vulkan.h>
 
@@ -15,39 +17,23 @@
 
 namespace ZE {
 
-RenderSystem* RenderSystem::_instance{nullptr};
-
-void RenderSystem::Initialize()
-{
-    assert(_instance == nullptr);
-
-    if (_instance != nullptr)
-        return;
-
-    _instance = new RenderSystem();
-}
-
-void RenderSystem::Cleanup()
-{
-    assert(_instance);
-
-    if (_instance == nullptr)
-        return;
-
-
-    delete _instance;
-    _instance = nullptr;
-}
-
 RenderSystem& RenderSystem::Get()
 {
-    assert(_instance);
+    static RenderSystem instance;
 
-    return *_instance;
+    return instance;
 }
 
 RenderSystem::RenderSystem()
     : _GPU(nullptr), _device(nullptr)
+{
+}
+
+RenderSystem::~RenderSystem()
+{
+}
+
+void RenderSystem::Initialize()
 {
     CreateVulkanInstance();
 
@@ -68,10 +54,8 @@ RenderSystem::RenderSystem()
     _bufferManager = std::make_shared<VulkanBufferManager>(_device);
 }
 
-RenderSystem::~RenderSystem()
+void RenderSystem::Cleanup()
 {
-    _device->WaitIdle();
-
     _bufferManager.reset();
     _commandBufferManager.reset();
     _descriptorPool.reset();
@@ -81,6 +65,20 @@ RenderSystem::~RenderSystem()
     _GPU.reset();
 
     DestroyVulkanInstance();
+}
+
+void RenderSystem::InitializeResources()
+{
+    TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
+    RenderResource::InitializeRenderResources(renderGraph);
+}
+
+void RenderSystem::CleanupResources()
+{
+    _device->WaitIdle();
+
+    TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
+    RenderResource::CleanupRenderResources(renderGraph);
 }
 
 void RenderSystem::CreateVulkanInstance()

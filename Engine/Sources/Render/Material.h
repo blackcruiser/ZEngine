@@ -2,6 +2,7 @@
 #include "CoreTypes.h"
 #include "Resource/MaterialResource.h"
 #include "Graphic/VulkanPipeline.h"
+#include "RenderResource.h"
 
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
@@ -28,13 +29,14 @@ struct VulkanImageBindingInfo
     TPtr<VulkanSampler> vulkanSampler;
 };
 
-class Pass
+class Pass : public RenderResource
 {
 public:
     Pass(TPtr<PassResource> passResource);
     ~Pass();
 
-    void BuildRenderResource(TPtr<RenderGraph> renderGraph);
+    virtual void InitRenderResource(TPtr<RenderGraph> renderGraph) override;
+    virtual void CleanupRenderResource(TPtr<RenderGraph> renderGraph) override;
 
 private:
     void CreateGraphicTextures(TPtr<RenderGraph> renderGraph);
@@ -70,7 +72,7 @@ private:
     TWeakPtr<PassResource> _owner;
 };
 
-class Material
+class Material : public RenderResource
 {
 public:
     Material(TPtr<MaterialResource> material);

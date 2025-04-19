@@ -29,6 +29,7 @@ public:
     void EndRenderPass();
 
     void Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr);
+    void Execute();
 
     void CopyBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination);
     void CopyImage(const uint8_t* data, uint32_t size, TPtr<VulkanImage> destination);
