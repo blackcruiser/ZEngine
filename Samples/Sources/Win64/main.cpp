@@ -7,6 +7,8 @@
 #include "Resource/ShaderResource.h"
 #include "Resource/TextureResource.h"
 #include "Resource/ZEMaterialTypes.h"
+#include "Render/Mesh.h"
+#include "Render/Material.h"
 #include "Scene/CameraComponent.h"
 #include "Scene/MeshComponent.h"
 #include "Scene/Scene.h"
@@ -88,11 +90,50 @@ ZE::TPtr<ZE::Scene> CreateSampleScene()
     return scene;
 }
 
+void InitScene(ZE::TPtr<ZE::Scene> scene)
+{
+    const ZE::TPtrArr<ZE::SceneObject>& objects = scene->GetObjects();
+
+    for (ZE::TPtr<ZE::SceneObject> object : objects)
+    {
+        ZE::TPtr<ZE::MeshComponent> meshComponent = object->GetComponent<ZE::MeshComponent>();
+        if (meshComponent == nullptr)
+            continue;
+
+            ZE::TPtr<ZE::MeshResource> meshResource = meshComponent->GetMesh();
+        if (meshResource != nullptr)
+        {
+            ZE::TPtr<ZE::Mesh> mesh = std::make_shared<ZE::Mesh>(meshResource);
+            meshResource->SetMesh(mesh);
+        }
+
+        ZE::TPtr<ZE::MaterialResource> materialResource = meshComponent->GetMaterial(0);
+        if (materialResource != nullptr)
+        {
+            ZE::TPtr<ZE::Material> material = std::make_shared<ZE::Material>(materialResource);
+            materialResource->SetMaterial(material);
+
+            for (int i = 0; i < static_cast<int>(ZE::EPassType::PassCount); i++)
+            {
+                ZE::EPassType passType = static_cast<ZE::EPassType>(i);
+
+                ZE::TPtr<ZE::PassResource> passResource = materialResource->GetPass(passType);
+                if (passResource != nullptr)
+                {
+                    ZE::TPtr<ZE::Pass> pass = std::make_shared<ZE::Pass>(passResource);
+                    material->SetPass(passType, pass);
+                }
+            }
+        }
+    }
+}
+
 int main()
 {
     ZE::Application app;
 
     ZE::TPtr<ZE::Scene> scene = CreateSampleScene();
+    InitScene(scene);
     app.Run(scene);
 
     return 0;

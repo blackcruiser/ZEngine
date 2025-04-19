@@ -26,7 +26,6 @@ Viewport::Viewport(TPtr<VulkanDevice> device, void* windowHandle, const glm::ive
 Viewport::~Viewport()
 {
     TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
-
     uint32_t imageCount = _swapchain->GetImageCount();
     for (uint32_t i = 0; i < imageCount; i++)
     {

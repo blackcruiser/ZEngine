@@ -16,13 +16,10 @@ Mesh::~Mesh()
 {
 }
 
-uint32_t Mesh::GetVerticesCount()
+void Mesh::InitRenderResource(TPtr<RenderGraph> renderGraph)
 {
-    return _verticesCount;
-}
+    RenderResource::InitRenderResource(renderGraph);
 
-void Mesh::CreateVertexBuffer(TPtr<RenderGraph> renderGraph)
-{
     assert(_owner.expired() == false);
 
     TPtr<MeshResource> MeshResource = _owner.lock();
@@ -34,26 +31,34 @@ void Mesh::CreateVertexBuffer(TPtr<RenderGraph> renderGraph)
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     renderGraph->CopyBuffer(reinterpret_cast<const uint8_t*>(vertices.data()), byteSize, _vertexBuffer);
-}
-
-TPtr<VulkanBuffer> Mesh::GetVertexBuffer()
-{
-    return _vertexBuffer;
-}
-
-void Mesh::CreateIndexBuffer(TPtr<RenderGraph> renderGraph)
-{
-    assert(_owner.expired() == false);
-
-    TPtr<MeshResource> MeshResource = _owner.lock();
 
     const std::vector<uint32_t>& indexes = MeshResource->GetIndexes(0);
-    uint32_t byteSize = static_cast<uint32_t>(indexes.size()) * sizeof(uint32_t);
+    byteSize = static_cast<uint32_t>(indexes.size()) * sizeof(uint32_t);
 
     _indexBuffer = RenderSystem::Get().AcquireBuffer(byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     renderGraph->CopyBuffer(reinterpret_cast<const uint8_t*>(indexes.data()), byteSize, _indexBuffer);
     _verticesCount = static_cast<uint32_t>(indexes.size());
+
+    renderGraph->Execute();
+}
+
+void Mesh::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
+{
+    _indexBuffer.reset();
+    _vertexBuffer.reset();
+
+    RenderResource::CleanupRenderResource(renderGraph);
+}
+
+uint32_t Mesh::GetVerticesCount()
+{
+    return _verticesCount;
+}
+
+TPtr<VulkanBuffer> Mesh::GetVertexBuffer()
+{
+    return _vertexBuffer;
 }
 
 TPtr<VulkanBuffer> Mesh::GetIndexBuffer()
@@ -96,7 +101,6 @@ void Mesh::ApplyPipelineState(RHIPipelineState& state)
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
-
 }
 
 } // namespace ZE

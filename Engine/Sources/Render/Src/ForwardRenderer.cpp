@@ -34,45 +34,6 @@ ForwardRenderer::~ForwardRenderer()
 
 void ForwardRenderer::Init(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene)
 {
-    const TPtrArr<SceneObject>& objects = scene->GetObjects();
-
-    for (TPtr<SceneObject> object : objects)
-    {
-        TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
-        if (meshComponent == nullptr)
-            continue;
-
-        TPtr<MeshResource> meshResource = meshComponent->GetMesh();
-        if (meshResource != nullptr)
-        {
-            TPtr<Mesh> mesh = std::make_shared<Mesh>(meshResource);
-            mesh->CreateVertexBuffer(renderGraph);
-            mesh->CreateIndexBuffer(renderGraph);
-            meshResource->SetMesh(mesh);
-        }
-
-        TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
-        if (materialResource != nullptr)
-        {
-            TPtr<Material> material = std::make_shared<Material>(materialResource);
-            materialResource->SetMaterial(material);
-
-            for (int i = 0; i < static_cast<int>(EPassType::PassCount); i++)
-            {
-                EPassType passType = static_cast<EPassType>(i);
-
-                TPtr<PassResource> passResource = materialResource->GetPass(passType);
-                if (passResource != nullptr)
-                {
-                    TPtr<Pass> pass = std::make_shared<Pass>(passResource);
-                    material->SetPass(passType, pass);
-                    pass->BuildRenderResource(renderGraph);
-                }
-            }
-        }
-    }
-
-    renderGraph->Execute({}, {}, {});
 }
 
 TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene)

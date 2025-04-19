@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "Graphic/VulkanDevice.h"
 #include "Input/InputSystem.h"
+#include "Render/RenderResource.h"
 #include "Render/Window.h"
 #include "Render/RenderGraph.h"
 #include "Render/RenderSystem.h"
@@ -18,55 +19,54 @@ const std::string AppName("ZEngine");
 const glm::ivec2 size{800, 800};
 
 Application::Application()
-    : _renderer(nullptr)
 {
-    RenderSystem::Initialize();
-    InputSystem::Initialize();
 
-    _window = std::make_shared<Window>(AppName, size);
 
-    InputSystem::Get().AttachTo(_window);
-
-    _renderer = std::make_shared<ForwardRenderer>();
 }
 
 Application::~Application()
 {
-    _renderer.reset();
 
-    InputSystem::Get().DetachFrom(_window);
-
-    _window->UnregisterInput(InputSystem::Get());
-    _window.reset();
-
-    InputSystem::Cleanup();
-    RenderSystem::Cleanup();
 }
 
 void Application::Run(TPtr<Scene> scene)
 {
     scene->Load();
 
-    {
-        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
-        _renderer->Init(renderGraph, scene);
-        RenderSystem::Get().GetDevice()->WaitIdle();
-    }
+    RenderSystem::Get().Initialize();
+    InputSystem::Initialize();
 
-    _window->CreateViewport(RenderSystem::Get().GetDevice());
-    TPtr<Viewport> viewport = _window->GetViewport();
+    TPtr<Window> window = std::make_shared<Window>(AppName, size);
+    InputSystem::Get().AttachTo(window);
 
-    while (!_window->ShouldClose())
+
+    window->CreateViewport(RenderSystem::Get().GetDevice());
+    TPtr<Viewport> viewport = window->GetViewport();
+
+    TPtr<RendererInterface> renderer = std::make_shared<ForwardRenderer>();
+    while (!window->ShouldClose())
     {
         glfwPollEvents();
 
         viewport->Advance();
         TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
-        _renderer->RenderFrame(renderGraph, viewport, scene);
+        renderer->RenderFrame(renderGraph, viewport, scene);
         viewport->Present(renderGraph);
     }
 
-    RenderSystem::Get().GetDevice()->WaitIdle();
+    TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
+    graphicQueue->WaitIdle();
+    graphicQueue.reset();
+
+    renderer.reset();
+    viewport.reset();
+
+    InputSystem::Get().DetachFrom(window);
+    window->UnregisterInput(InputSystem::Get());
+    window.reset();
+
+    RenderSystem::Get().Cleanup();
+    InputSystem::Cleanup();
 
     scene->Unload();
 }

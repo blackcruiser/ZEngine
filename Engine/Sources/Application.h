@@ -19,10 +19,6 @@ public:
     ~Application();
 
     void Run(TPtr<Scene> scene);
-
-private:
-    TPtr<Window> _window;
-    TPtr<RendererInterface> _renderer;
 };
 
 }

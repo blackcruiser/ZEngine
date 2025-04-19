@@ -18,14 +18,17 @@ class VulkanRenderPass;
 class RenderSystem
 {
 public:
-    static void Initialize();
-    static void Cleanup();
     static RenderSystem& Get();
 
 private:
     RenderSystem();
     ~RenderSystem();
 
+public:
+    void Initialize();
+    void Cleanup();
+
+private:
     void CreateVulkanInstance();
     void DestroyVulkanInstance();
 
@@ -41,9 +44,7 @@ public:
     TPtr<VulkanBufferManager> GetBufferManager();
     TPtrSet<VulkanGraphicPipeline>& GetPipelineCache();
 
-
 private:
-    static RenderSystem* _instance;
     VkInstance _vkInstance;
 
     TPtr<VulkanGPU> _GPU;
@@ -54,8 +55,6 @@ private:
     TPtr<VulkanCommandBufferManager> _commandBufferManager;
     TPtr<VulkanBufferManager> _bufferManager;
     TPtrSet<VulkanGraphicPipeline> _pipelineCache;
-
-    TPtrArr<VulkanRenderPass> _renderPassArr;
 };
 
 } // namespace ZE

@@ -42,6 +42,11 @@ void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, cons
     _commandBuffer->Begin();
 }
 
+void RenderGraph::Execute()
+{
+    Execute({}, {}, {});
+}
+
 void RenderGraph::CopyBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination)
 {
     VkMemoryPropertyFlags properties = destination->GetProperties();

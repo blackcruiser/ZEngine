@@ -5,7 +5,9 @@
 #include "Graphic/VulkanBufferManager.h"
 #include "Graphic/VulkanCommandBufferManager.h"
 #include "Graphic/VulkanDescriptorPool.h"
-#include "Render/RenderSystem.h"
+#include "RenderSystem.h"
+#include "RenderResource.h"
+#include "RenderGraph.h"
 
 #include <vulkan/vulkan.h>
 
@@ -15,39 +17,23 @@
 
 namespace ZE {
 
-RenderSystem* RenderSystem::_instance{nullptr};
-
-void RenderSystem::Initialize()
-{
-    assert(_instance == nullptr);
-
-    if (_instance != nullptr)
-        return;
-
-    _instance = new RenderSystem();
-}
-
-void RenderSystem::Cleanup()
-{
-    assert(_instance);
-
-    if (_instance == nullptr)
-        return;
-
-
-    delete _instance;
-    _instance = nullptr;
-}
-
 RenderSystem& RenderSystem::Get()
 {
-    assert(_instance);
+    static RenderSystem instance;
 
-    return *_instance;
+    return instance;
 }
 
 RenderSystem::RenderSystem()
     : _GPU(nullptr), _device(nullptr)
+{
+}
+
+RenderSystem::~RenderSystem()
+{
+}
+
+void RenderSystem::Initialize()
 {
     CreateVulkanInstance();
 
@@ -66,10 +52,30 @@ RenderSystem::RenderSystem()
     _commandBufferManager = std::make_shared<VulkanCommandBufferManager>(_device, _queueArr);
 
     _bufferManager = std::make_shared<VulkanBufferManager>(_device);
+
+    {
+        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
+        std::unordered_set<RenderResource*>& renderResources = RenderResource::GetAll();
+        for (RenderResource* resource : renderResources)
+        {
+            if (resource->IsRenderResourceInitialized())
+                continue;
+            resource->InitRenderResource(renderGraph);
+        }
+    }
 }
 
-RenderSystem::~RenderSystem()
+void RenderSystem::Cleanup()
 {
+    {
+        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
+        std::unordered_set<RenderResource*>& renderResources = RenderResource::GetAll();
+        for (RenderResource* resource : renderResources)
+        {
+            resource->CleanupRenderResource(renderGraph);
+        }
+    }
+
     _device->WaitIdle();
 
     _bufferManager.reset();

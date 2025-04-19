@@ -2,6 +2,7 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "RenderResource.h"
 
 #include "Graphic/VulkanPipeline.h"
 
@@ -14,18 +15,17 @@ class MeshResource;
 class VulkanBuffer;
 class RenderGraph;
 
-class Mesh
+class Mesh : public RenderResource
 {
 public:
     Mesh(TPtr<MeshResource> meshResource);
     ~Mesh();
 
+    virtual void InitRenderResource(TPtr<RenderGraph> renderGraph) override;
+    virtual void CleanupRenderResource(TPtr<RenderGraph> renderGraph) override;
+
     uint32_t GetVerticesCount();
-
-    void CreateVertexBuffer(TPtr<RenderGraph> renderGraph);
     TPtr<VulkanBuffer> GetVertexBuffer();
-
-    void CreateIndexBuffer(TPtr<RenderGraph> renderGraph);
     TPtr<VulkanBuffer> GetIndexBuffer();
 
     void ApplyPipelineState(RHIPipelineState& state);
