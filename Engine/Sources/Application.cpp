@@ -20,13 +20,10 @@ const glm::ivec2 size{800, 800};
 
 Application::Application()
 {
-
-
 }
 
 Application::~Application()
 {
-
 }
 
 void Application::Run(TPtr<Scene> scene)

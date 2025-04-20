@@ -8,8 +8,6 @@
 
 namespace ZE {
 
-class Window;
-class RendererInterface;
 class Scene;
 
 class Application
