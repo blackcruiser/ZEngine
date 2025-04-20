@@ -52,17 +52,6 @@ void RenderSystem::Initialize()
     _commandBufferManager = std::make_shared<VulkanCommandBufferManager>(_device, _queueArr);
 
     _bufferManager = std::make_shared<VulkanBufferManager>(_device);
-
-    {
-        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
-        std::unordered_set<RenderResource*>& renderResources = RenderResource::GetAll();
-        for (RenderResource* resource : renderResources)
-        {
-            if (resource->IsRenderResourceInitialized())
-                continue;
-            resource->InitRenderResource(renderGraph);
-        }
-    }
 }
 
 void RenderSystem::Cleanup()
@@ -87,6 +76,18 @@ void RenderSystem::Cleanup()
     _GPU.reset();
 
     DestroyVulkanInstance();
+}
+
+void RenderSystem::InitializeResources()
+{
+    TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
+    RenderResource::InitializeRenderResources(renderGraph);
+}
+
+void RenderSystem::CleanupResources()
+{
+    TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
+    RenderResource::CleanupRenderResources(renderGraph);
 }
 
 void RenderSystem::CreateVulkanInstance()

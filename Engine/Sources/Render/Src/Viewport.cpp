@@ -11,9 +11,20 @@ const uint32_t kImageCount = 3;
 namespace ZE {
 
 Viewport::Viewport(TPtr<VulkanDevice> device, void* windowHandle, const glm::ivec2& size) :
-    _size(size), _currentIndex(0)
+    _size(size), _currentIndex(0), _windowHandle(windowHandle)
 {
-    _swapchain = std::make_shared<VulkanSwapchain>(device, windowHandle, size, kImageCount);
+}
+
+Viewport::~Viewport()
+{
+}
+
+void Viewport::InitRenderResource(TPtr<RenderGraph> renderGraph)
+{
+    RenderResource::InitRenderResource(renderGraph);
+
+    TPtr<VulkanDevice> device = renderGraph->GetDevice();
+    _swapchain = std::make_shared<VulkanSwapchain>(device, _windowHandle, _size, kImageCount);
 
     for (uint32_t i = 0; i < kImageCount; i++)
     {
@@ -23,9 +34,9 @@ Viewport::Viewport(TPtr<VulkanDevice> device, void* windowHandle, const glm::ive
     }
 }
 
-Viewport::~Viewport()
+void Viewport::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
 {
-    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+    TPtr<VulkanDevice> device = renderGraph->GetDevice();
     uint32_t imageCount = _swapchain->GetImageCount();
     for (uint32_t i = 0; i < imageCount; i++)
     {
@@ -33,6 +44,10 @@ Viewport::~Viewport()
         device->DestroyGraphicSemaphore(_presentSemaphores[i]);
         device->DestroyFence(_presentFences[i]);
     }
+
+    _swapchain.reset();
+
+    RenderResource::CleanupRenderResource(renderGraph);
 }
 
 glm::ivec2 Viewport::GetSize()

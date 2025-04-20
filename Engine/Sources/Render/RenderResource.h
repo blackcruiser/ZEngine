@@ -13,11 +13,14 @@ class RenderResource
 {
 public:
     static std::unordered_set<RenderResource*>& GetAll();
-    static std::unordered_set<RenderResource*>& GetInitialized();
+    static std::unordered_set<RenderResource*>& GetUninitialized();
+
+    static void InitializeRenderResources(TPtr<RenderGraph> renderGraph);
+    static void CleanupRenderResources(TPtr<RenderGraph> renderGraph);
 
 private:
     static std::unordered_set<RenderResource*> _resourceSet;
-    static std::unordered_set<RenderResource*> _initializedResourceSet;
+    static std::unordered_set<RenderResource*> _uninitializedResourceSet;
 
 public:
     RenderResource();

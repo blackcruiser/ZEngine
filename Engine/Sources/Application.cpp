@@ -45,6 +45,8 @@ void Application::Run(TPtr<Scene> scene)
     {
         glfwPollEvents();
 
+        RenderSystem::Get().InitializeResources();
+
         viewport->Advance();
         TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
         renderer->RenderFrame(renderGraph, viewport, scene);
@@ -53,8 +55,10 @@ void Application::Run(TPtr<Scene> scene)
 
     TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
     graphicQueue->WaitIdle();
-    graphicQueue.reset();
 
+    RenderSystem::Get().CleanupResources();
+
+    graphicQueue.reset();
     renderer.reset();
     viewport.reset();
 

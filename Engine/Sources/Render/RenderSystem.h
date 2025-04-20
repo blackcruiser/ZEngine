@@ -28,6 +28,9 @@ public:
     void Initialize();
     void Cleanup();
 
+    void InitializeResources();
+    void CleanupResources();
+
 private:
     void CreateVulkanInstance();
     void DestroyVulkanInstance();
