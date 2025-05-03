@@ -56,17 +56,6 @@ void RenderSystem::Initialize()
 
 void RenderSystem::Cleanup()
 {
-    {
-        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
-        std::unordered_set<RenderResource*>& renderResources = RenderResource::GetAll();
-        for (RenderResource* resource : renderResources)
-        {
-            resource->CleanupRenderResource(renderGraph);
-        }
-    }
-
-    _device->WaitIdle();
-
     _bufferManager.reset();
     _commandBufferManager.reset();
     _descriptorPool.reset();
@@ -86,6 +75,8 @@ void RenderSystem::InitializeResources()
 
 void RenderSystem::CleanupResources()
 {
+    _device->WaitIdle();
+
     TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
     RenderResource::CleanupRenderResources(renderGraph);
 }

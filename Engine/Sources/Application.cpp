@@ -53,12 +53,8 @@ void Application::Run(TPtr<Scene> scene)
         viewport->Present(renderGraph);
     }
 
-    TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
-    graphicQueue->WaitIdle();
-
     RenderSystem::Get().CleanupResources();
 
-    graphicQueue.reset();
     renderer.reset();
     viewport.reset();
 
