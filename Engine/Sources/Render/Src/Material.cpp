@@ -249,8 +249,27 @@ void Pass::InitRenderResource(TPtr<RenderGraph> renderGraph)
 
 void Pass::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
 {
-    _shaders.clear();
-    _textures.clear();
+    delete  _pipelineLayout;
+    delete _descriptorSet;
+    delete _descriptorSetLayout;
+    delete _uniformBuffer;
+
+    for (auto iter = _shaders.begin(); iter != _shaders.end(); iter++)
+    {
+        delete iter->second;
+    }
+
+    for (auto iter = _textures.begin(); iter != _textures.end(); iter++)
+    {
+        std::list<VulkanImageBindingInfo>& bindingInfos = iter->second;
+        for (VulkanImageBindingInfo& bindingInfo : bindingInfos)
+        {
+            delete bindingInfo.vulkanSampler;
+            VulkanImage* image =  bindingInfo.vulkanImageView->GetImage();
+            delete bindingInfo.vulkanImageView;
+            delete image;
+        }
+    }
 
     RenderResource::CleanupRenderResource(renderGraph);
 }
@@ -289,7 +308,6 @@ void Pass::CreateGraphicTextures(TPtr<RenderGraph> renderGraph)
         std::list<VulkanImageBindingInfo> vulkanBindingInfoList;
         for (const TextureBindingInfo& bindingInfo : textureList)
         {
-
             VulkanImageBindingInfo vulkanBindingInfo;
 
             vulkanBindingInfo.bindingPoint = bindingInfo.bindingPoint;

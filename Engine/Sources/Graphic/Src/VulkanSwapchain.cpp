@@ -71,6 +71,13 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice* device, void* windowHandle, const
 
 VulkanSwapchain::~VulkanSwapchain()
 {
+    for (VulkanImage* image : _imagerArr)
+    {
+        delete image;
+    }
+
+    delete _surface;
+
     CHECK(_swapchain != VK_NULL_HANDLE);
     vkDestroySwapchainKHR(_device->GetRawDevice(), _swapchain, nullptr);
 }
