@@ -1,36 +1,37 @@
 #include "VulkanCommandBufferManager.h"
-#include "VulkanDevice.h"
-#include "VulkanCommandPool.h"
 #include "VulkanCommandBuffer.h"
+#include "VulkanSynchronizer.h"
+#include "Misc/AssertionMacros.h"
 
 
 namespace ZE {
 
-VulkanCommandBufferManager::VulkanCommandBufferManager(TPtr<VulkanDevice> device, TPtrArr<VulkanQueue> queueArr)
+VulkanCommandBufferManager::VulkanCommandBufferManager(VulkanDevice* device, uint32_t queueFamilyIndex) :
+    VulkanDeviceChild(device), _queueFamilyIndex(queueFamilyIndex)
 {
-    for (const TPtr<VulkanQueue>& queue : queueArr)
-    {
-        TPtr<VulkanCommandPool> commandPool = std::make_shared<VulkanCommandPool>(device, queue->GetFamilyIndex());
-        _commandPools.insert(std::make_pair(queue->GetType(), commandPool));
-    }
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = queueFamilyIndex;
+
+    VkResult result = vkCreateCommandPool(device->GetRawDevice(), &poolInfo, nullptr, &_commandPool);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "Create CommandPool fail!");
 }
 
 VulkanCommandBufferManager::~VulkanCommandBufferManager()
 {
+    vkDestroyCommandPool(_device->GetRawDevice(), _commandPool, nullptr);
 }
 
-TPtr<VulkanCommandBuffer> VulkanCommandBufferManager::Acquire(VulkanQueue::EType type)
+VulkanCommandBuffer* VulkanCommandBufferManager::Acquire()
 {
-    if (_commandPools.find(type) == _commandPools.end())
-        return nullptr;
-
     for (auto iterator = _submittedCommandBuffers.begin(); iterator != _submittedCommandBuffers.end(); )
     {
-        TPtr<VulkanCommandBuffer>& commandBuffer = *iterator;
-        if (commandBuffer->GetDevice()->IsSignaled(commandBuffer->GetFence()))
+        VulkanCommandBuffer* commandBuffer = *iterator;
+        if (IsSignaled(_device, commandBuffer->GetFence()))
         {
             commandBuffer->Reset();
-            _freeCommandBuffers[commandBuffer->GetCommandPool().get()].push_back(commandBuffer);
+            _freeCommandBuffers.push_back(commandBuffer);
             iterator = _submittedCommandBuffers.erase(iterator);
         }
         else
@@ -39,21 +40,20 @@ TPtr<VulkanCommandBuffer> VulkanCommandBufferManager::Acquire(VulkanQueue::EType
         }
     }
 
-    if (_freeCommandBuffers.empty() || _freeCommandBuffers[_commandPools[type].get()].empty())
+    if (_freeCommandBuffers.empty())
     {
-        TPtr<VulkanCommandPool> commandPool = _commandPools[type];
-        return std::make_shared<VulkanCommandBuffer>(commandPool);
+        return new VulkanCommandBuffer(_device, _commandPool, _queueFamilyIndex);
     }
     else
     {
-        auto iterator = _freeCommandBuffers[_commandPools[type].get()].begin();
-        TPtr<VulkanCommandBuffer> commandBuffer = *iterator;
-        _freeCommandBuffers[_commandPools[type].get()].erase(iterator);
+        auto iterator = _freeCommandBuffers.begin();
+        VulkanCommandBuffer* commandBuffer = *iterator;
+        _freeCommandBuffers.erase(iterator);
         return commandBuffer;
     }
 }
 
-void VulkanCommandBufferManager::Release(TPtr<VulkanCommandBuffer> commandBuffer)
+void VulkanCommandBufferManager::Release(VulkanCommandBuffer* commandBuffer)
 {
     _submittedCommandBuffers.push_back(commandBuffer);
 }

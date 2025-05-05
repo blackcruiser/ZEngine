@@ -1,48 +1,46 @@
 #include "VulkanSurface.h"
-#include "VulkanGPU.h"
-#include "Window.h"
+#include "VulkanContext.h"
+#include "Misc/AssertionMacros.h"
 
 #include <glfw/glfw3.h>
 
-#include <stdexcept>
 #include <algorithm>
+
 
 namespace ZE {
 
-VulkanSurface::VulkanSurface(VkInstance vkInstance, void* window)
-    : _vkInstance(vkInstance), _vkSurface(VK_NULL_HANDLE)
+VulkanSurface::VulkanSurface(VkInstance instance, void* window)
+    : _instance(instance), _surface(VK_NULL_HANDLE)
 {
-    if (glfwCreateWindowSurface(_vkInstance, (GLFWwindow*)window, nullptr, &_vkSurface) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create window surface!");
-    }
+    VkResult result = glfwCreateWindowSurface(_instance, (GLFWwindow*)window, nullptr, &_surface);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to create surface!");
 }
 
 VulkanSurface::~VulkanSurface()
 {
-    if (_vkSurface != VK_NULL_HANDLE)
-        vkDestroySurfaceKHR(_vkInstance, _vkSurface, nullptr);
+    CHECK(_surface != VK_NULL_HANDLE);
+    vkDestroySurfaceKHR(_instance, _surface, nullptr);
 }
 
-void VulkanSurface::InitializeFormat(TPtr<VulkanGPU> GPU, VkSurfaceFormatKHR formatHint)
+void VulkanSurface::InitializeFormat(VkPhysicalDevice physicalDevice, VkSurfaceFormatKHR formatHint)
 {
-    std::vector<VkSurfaceFormatKHR> surfaceFormats = GetSupportedSurfaceFormats(GPU);
+    std::vector<VkSurfaceFormatKHR> surfaceFormats = GetSupportedSurfaceFormats(physicalDevice);
 
     for (const VkSurfaceFormatKHR& currentSurfaceFormat : surfaceFormats)
     {
         if (currentSurfaceFormat.colorSpace == formatHint.colorSpace && currentSurfaceFormat.format == formatHint.format)
         {
-            _vkSurfaceFormat = currentSurfaceFormat;
+            _surfaceFormat = currentSurfaceFormat;
             return;
         }
     }
 
-    _vkSurfaceFormat = surfaceFormats[0];
+    _surfaceFormat = surfaceFormats[0];
 }
 
-void VulkanSurface::InitializePresentMode(TPtr<VulkanGPU> GPU, VkPresentModeKHR presentModeHint)
+void VulkanSurface::InitializePresentMode(VkPhysicalDevice physicalDevice, VkPresentModeKHR presentModeHint)
 {
-    std::vector<VkPresentModeKHR> supportedPresentModes = GetSupportedPresentModes(GPU);
+    std::vector<VkPresentModeKHR> supportedPresentModes = GetSupportedPresentModes(physicalDevice);
 
     _presentMode = VkPresentModeKHR::VK_PRESENT_MODE_IMMEDIATE_KHR;
     for (const VkPresentModeKHR& presentMode : supportedPresentModes)
@@ -55,30 +53,30 @@ void VulkanSurface::InitializePresentMode(TPtr<VulkanGPU> GPU, VkPresentModeKHR 
     }
 }
 
-void VulkanSurface::InitializeExtent(TPtr<VulkanGPU> GPU, const VkExtent2D& extentHint)
+void VulkanSurface::InitializeExtent(VkPhysicalDevice physicalDevice, const VkExtent2D& extentHint)
 {
-    VkSurfaceCapabilitiesKHR capabilities = GetCpabilities(GPU);
+    VkSurfaceCapabilitiesKHR capabilities = GetCpabilities(physicalDevice);
 
     // GLFW uses two units when measuring sizes: pixels and screen coordinates.
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
     {
-        _vkExtent = capabilities.currentExtent;
+        _extent = capabilities.currentExtent;
     }
     else
     {
-        _vkExtent.width = std::clamp(extentHint.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-        _vkExtent.height = std::clamp(extentHint.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+        _extent.width = std::clamp(extentHint.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        _extent.height = std::clamp(extentHint.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
     }
 }
 
 VkSurfaceKHR VulkanSurface::GetRawSurface()
 {
-    return _vkSurface;
+    return _surface;
 }
 
 VkSurfaceFormatKHR VulkanSurface::GetSurfaceFormat()
 {
-    return _vkSurfaceFormat;
+    return _surfaceFormat;
 }
 
 VkPresentModeKHR VulkanSurface::GetPresentMode()
@@ -88,48 +86,43 @@ VkPresentModeKHR VulkanSurface::GetPresentMode()
 
 VkExtent2D VulkanSurface::GetExtent()
 {
-    return _vkExtent;
+    return _extent;
 }
 
-std::vector<VkSurfaceFormatKHR> VulkanSurface::GetSupportedSurfaceFormats(TPtr<VulkanGPU> GPU)
+std::vector<VkSurfaceFormatKHR> VulkanSurface::GetSupportedSurfaceFormats(VkPhysicalDevice physicalDevice)
 {
-    VkPhysicalDevice physicalDevice = GPU->GetRawGPU();
-
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, _vkSurface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, _surface, &formatCount, nullptr);
 
     std::vector<VkSurfaceFormatKHR> surfaceFormats;
     if (formatCount != 0)
     {
         surfaceFormats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, _vkSurface, &formatCount, surfaceFormats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, _surface, &formatCount, surfaceFormats.data());
     }
 
     return surfaceFormats;
 }
 
-std::vector<VkPresentModeKHR> VulkanSurface::GetSupportedPresentModes(TPtr<VulkanGPU> GPU)
+std::vector<VkPresentModeKHR> VulkanSurface::GetSupportedPresentModes(VkPhysicalDevice physicalDevice)
 {
-    VkPhysicalDevice physicalDevice = GPU->GetRawGPU();
-
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, _vkSurface, &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, _surface, &presentModeCount, nullptr);
 
     std::vector<VkPresentModeKHR> presentModes;
     if (presentModeCount != 0)
     {
         presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, _vkSurface, &presentModeCount, presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, _surface, &presentModeCount, presentModes.data());
     }
 
     return presentModes;
 }
 
-VkSurfaceCapabilitiesKHR VulkanSurface::GetCpabilities(TPtr<VulkanGPU> GPU)
+VkSurfaceCapabilitiesKHR VulkanSurface::GetCpabilities(VkPhysicalDevice physicalDevice)
 {
-    VkPhysicalDevice physicalDevice = GPU->GetRawGPU();
     VkSurfaceCapabilitiesKHR capabilities{};
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, _vkSurface, &capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, _surface, &capabilities);
 
     return capabilities;
 }

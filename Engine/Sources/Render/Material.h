@@ -25,8 +25,8 @@ class RenderGraph;
 struct VulkanImageBindingInfo
 {
     uint32_t bindingPoint;
-    TPtr<VulkanImageView> vulkanImageView;
-    TPtr<VulkanSampler> vulkanSampler;
+    VulkanImageView* vulkanImageView;
+    VulkanSampler* vulkanSampler;
 };
 
 class Pass : public RenderResource
@@ -41,28 +41,28 @@ public:
 private:
     void CreateGraphicTextures(TPtr<RenderGraph> renderGraph);
     void CreateGraphicBuffers(TPtr<RenderGraph> renderGraph);
-    void CreateGraphicShaders();
+    void CreateGraphicShaders(TPtr<RenderGraph> renderGraph);
 
-    void CreateDescriptorSetLayout();
+    void CreateDescriptorSetLayout(TPtr<RenderGraph> renderGraph);
     void CreateDescriptorSet(TPtr<RenderGraph> renderGraph);
-    void LinkDescriptorSet();
-    void CreatePipelineLayout();
+    void LinkDescriptorSet(TPtr<RenderGraph> renderGraph);
+    void CreatePipelineLayout(TPtr<RenderGraph> renderGraph);
 
 public:
-    TPtr<VulkanDescriptorSet> GetDescriptorSet();
+    VulkanDescriptorSet* GetDescriptorSet();
 
-    TPtr<VulkanPipelineLayout> GetPipelineLayout();
+    VulkanPipelineLayout* GetPipelineLayout();
     void ApplyPipelineState(RHIPipelineState& state);
 
     void UpdateUniformBuffer(TPtr<RenderGraph> renderGraph, const glm::mat4x4& mvp);
 
 private:
-    TPtrUnorderedMap<VkShaderStageFlagBits, VulkanShader> _shaders;
+    std::unordered_map<VkShaderStageFlagBits, VulkanShader*> _shaders;
     std::unordered_map<VkShaderStageFlagBits, std::list<VulkanImageBindingInfo>> _textures;
-    TPtr<VulkanBuffer> _uniformBuffer;
-    TPtr<VulkanDescriptorSetLayout> _descriptorSetLayout;
-    TPtr<VulkanDescriptorSet> _descriptorSet;
-    TPtr<VulkanPipelineLayout> _pipelineLayout;
+    VulkanBuffer* _uniformBuffer;
+    VulkanDescriptorSetLayout* _descriptorSetLayout;
+    VulkanDescriptorSet* _descriptorSet;
+    VulkanPipelineLayout* _pipelineLayout;
 
     RHIRasterizationState rasterizationState;
     RHIDepthStencilState depthStencilState;

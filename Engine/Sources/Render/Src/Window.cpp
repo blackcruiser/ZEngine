@@ -1,6 +1,5 @@
 #include "Window.h"
 #include "Input/InputSystem.h"
-#include "Graphic/VulkanGPU.h"
 #include "Graphic/VulkanDevice.h"
 #include "Viewport.h"
 
@@ -40,12 +39,12 @@ bool Window::ShouldClose()
     return glfwWindowShouldClose(_glfwWindow);
 }
 
-void Window::CreateViewport(TPtr<VulkanDevice> device)
+void Window::CreateViewport(VulkanDevice* device)
 {
-    _viewport = std::make_shared<Viewport>(device, _glfwWindow, _size);
+    _viewport = new Viewport(_glfwWindow, _size);
 }
 
-TPtr<Viewport> Window::GetViewport()
+Viewport* Window::GetViewport()
 {
     return _viewport;
 }

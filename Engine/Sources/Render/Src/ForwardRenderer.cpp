@@ -95,15 +95,15 @@ TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<RenderGraph> renderGraph, TPt
     return objectsToRender;
 }
 
-void ForwardRenderer::RenderFrame(TPtr<RenderGraph> renderGraph, TPtr<Viewport> viewport, TPtr<Scene> scene)
+void ForwardRenderer::RenderFrame(TPtr<RenderGraph> renderGraph, Viewport* viewport, TPtr<Scene> scene)
 {
     TPtrArr<SceneObject> objectsToRender = Prepare(renderGraph, scene);
 
     glm::ivec2 size = viewport->GetSize();
     VkExtent3D extent { size.r, size.g, 1.0f };
     //Depth Pass
-    TPtr<VulkanImage> depthImage = std::make_shared<VulkanImage>(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    TPtr<VulkanImageView> depthImageView = std::make_shared<VulkanImageView>(depthImage, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
+    VulkanImage* depthImage = new VulkanImage(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    VulkanImageView* depthImageView = new VulkanImageView(depthImage, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
 
     TPtr<RenderTargets> depthRenderTargets = std::make_shared<RenderTargets>();
     depthRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Clear};
@@ -111,8 +111,8 @@ void ForwardRenderer::RenderFrame(TPtr<RenderGraph> renderGraph, TPtr<Viewport> 
     _depthPass->Execute(renderGraph, objectsToRender);
 
     //Light Pass
-    TPtr<VulkanImage> backBuffer = viewport->GetCurrentImage();
-    TPtr<VulkanImageView> backBufferView = std::make_shared<VulkanImageView>(backBuffer);
+    VulkanImage* backBuffer = viewport->GetCurrentImage();
+    VulkanImageView* backBufferView = new VulkanImageView(backBuffer);
     TPtr<RenderTargets> lightingRenderTargets = std::make_shared<RenderTargets>();
     lightingRenderTargets->colors = {RenderTargetBinding{backBufferView, ERenderTargetLoadAction::Clear}};
     lightingRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Load};

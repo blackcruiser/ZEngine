@@ -2,27 +2,25 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "VulkanDevice.h"
 
-#include <vulkan/vulkan.h>
 
 namespace ZE {
 
 class VulkanDevice;
 
-class VulkanRenderPass
+class VulkanRenderPass : public VulkanDeviceChild
 {
 public:
-    VulkanRenderPass(TPtr<VulkanDevice> device, const std::vector<VkAttachmentDescription>& colorAttachmentDescriptionArr, const VkAttachmentDescription& depthAttachment);
-    VulkanRenderPass(TPtr<VulkanDevice> device, const std::vector<VkAttachmentDescription>& colorAttachmentDescriptionArr);
-    VulkanRenderPass(TPtr<VulkanDevice> device, const VkAttachmentDescription& depthAttachment);
+    VulkanRenderPass(VulkanDevice* device, const std::vector<VkAttachmentDescription>& colorAttachmentDescriptionArr, const VkAttachmentDescription& depthAttachment);
+    VulkanRenderPass(VulkanDevice* device, const std::vector<VkAttachmentDescription>& colorAttachmentDescriptionArr);
+    VulkanRenderPass(VulkanDevice* device, const VkAttachmentDescription& depthAttachment);
     ~VulkanRenderPass();
 
     VkRenderPass GetRawRenderPass();
 
 private:
-    TPtr<VulkanDevice> _device;
-
-    VkRenderPass _vkRenderPass;
+    VkRenderPass _renderPass;
 };
 
 } // namespace ZE

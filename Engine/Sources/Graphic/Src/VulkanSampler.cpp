@@ -1,17 +1,14 @@
 #include "VulkanSampler.h"
-#include "VulkanGPU.h"
-#include "VulkanDevice.h"
-
-#include <stdexcept>
+#include "Misc/AssertionMacros.h"
 
 
 namespace ZE {
 
-VulkanSampler::VulkanSampler(TPtr<VulkanDevice> device)
-    : _device(device), _vkSampler(VK_NULL_HANDLE)
+VulkanSampler::VulkanSampler(VulkanDevice* device)
+    : VulkanDeviceChild(device), _sampler(VK_NULL_HANDLE)
 {
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(_device->GetGPU()->GetRawGPU(), &properties);
+    vkGetPhysicalDeviceProperties(_device->GetRawPhysicalDevice(), &properties);
 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -28,20 +25,19 @@ VulkanSampler::VulkanSampler(TPtr<VulkanDevice> device)
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    if (vkCreateSampler(_device->GetRawDevice(), &samplerInfo, nullptr, &_vkSampler) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create texture sampler!");
-    }
+    VkResult result = vkCreateSampler(_device->GetRawDevice(), &samplerInfo, nullptr, &_sampler);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to create Sampler!")
 }
 
 VulkanSampler::~VulkanSampler()
 {
-    if (_vkSampler != VK_NULL_HANDLE)
-        vkDestroySampler(_device->GetRawDevice(), _vkSampler, nullptr);
+    CHECK(_sampler != VK_NULL_HANDLE);
+    vkDestroySampler(_device->GetRawDevice(), _sampler, nullptr);
 }
 
 VkSampler VulkanSampler::GetRawSampler()
 {
-    return _vkSampler;
+    return _sampler;
 }
 } // namespace ZE
+

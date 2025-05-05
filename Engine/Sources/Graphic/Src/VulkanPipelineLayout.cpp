@@ -1,6 +1,6 @@
 #include "VulkanPipelineLayout.h"
 #include "VulkanDescriptorSetLayout.h"
-#include "VulkanDevice.h"
+#include "Misc/AssertionMacros.h"
 
 #include <algorithm>
 #include <iterator>
@@ -9,12 +9,12 @@
 
 namespace ZE {
 
-VulkanPipelineLayout::VulkanPipelineLayout(TPtr<VulkanDevice> device, TPtrArr<VulkanDescriptorSetLayout>& descriptorSetLayoutArr)
-    : _device(device), _descriptorSetLayoutArr(descriptorSetLayoutArr), _vkPipelineLayout(VK_NULL_HANDLE)
+VulkanPipelineLayout::VulkanPipelineLayout(VulkanDevice* device, std::vector<VulkanDescriptorSetLayout*>& descriptorSetLayoutArr)
+    : VulkanDeviceChild(device), _descriptorSetLayoutArr(descriptorSetLayoutArr), _pipelineLayout(VK_NULL_HANDLE)
 {
     std::vector<VkDescriptorSetLayout> layoutArr{};
     std::transform(
-        descriptorSetLayoutArr.begin(), descriptorSetLayoutArr.end(), std::back_inserter(layoutArr), [](TPtr<VulkanDescriptorSetLayout>& layout) {
+        descriptorSetLayoutArr.begin(), descriptorSetLayoutArr.end(), std::back_inserter(layoutArr), [](VulkanDescriptorSetLayout* layout) {
             return layout->GetRawDescriptorSetLayout();
         });
  
@@ -25,20 +25,19 @@ VulkanPipelineLayout::VulkanPipelineLayout(TPtr<VulkanDevice> device, TPtrArr<Vu
     pipelineLayoutInfo.pSetLayouts = layoutArr.data();
     pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-    if (vkCreatePipelineLayout(_device->GetRawDevice(), &pipelineLayoutInfo, nullptr, &_vkPipelineLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
+    VkResult result = vkCreatePipelineLayout(_device->GetRawDevice(), &pipelineLayoutInfo, nullptr, &_pipelineLayout);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to create PipelineLayout!");
 }
 
 VulkanPipelineLayout::~VulkanPipelineLayout()
 {
-    vkDestroyPipelineLayout(_device->GetRawDevice(), _vkPipelineLayout, nullptr);
+    CHECK(_pipelineLayout != VK_NULL_HANDLE);
+    vkDestroyPipelineLayout(_device->GetRawDevice(), _pipelineLayout, nullptr);
 }
 
 VkPipelineLayout VulkanPipelineLayout::GetRawPipelineLayout()
 {
-    return _vkPipelineLayout;
+    return _pipelineLayout;
 }
 
 } // namespace ZE

@@ -1,15 +1,13 @@
 #include "VulkanQueue.h"
-#include "VulkanDevice.h"
 #include "VulkanCommandBuffer.h"
 #include "VulkanSwapchain.h"
-
-#include <stdexcept>
+#include "Misc/AssertionMacros.h"
 
 
 namespace ZE {
 
-VulkanQueue::VulkanQueue(TPtr<VulkanDevice> device, EType type, uint32_t queueFamilyIndex)
-    : _device(device), _type(type), _familyIndex(queueFamilyIndex), _vkQueue(VK_NULL_HANDLE)
+VulkanQueue::VulkanQueue(VulkanDevice* device, EType type, uint32_t queueFamilyIndex)
+    : VulkanDeviceChild(device), _type(type), _familyIndex(queueFamilyIndex), _vkQueue(VK_NULL_HANDLE)
 {
     vkGetDeviceQueue(device->GetRawDevice(), _familyIndex, 0, &_vkQueue);
 }
@@ -18,7 +16,7 @@ VulkanQueue::~VulkanQueue()
 {
 }
 
-void VulkanQueue::Submit(TPtr<VulkanCommandBuffer> commandBuffer, const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence)
+void VulkanQueue::Submit(VulkanCommandBuffer* commandBuffer, const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence)
 {
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
@@ -33,13 +31,11 @@ void VulkanQueue::Submit(TPtr<VulkanCommandBuffer> commandBuffer, const std::vec
     submitInfo.signalSemaphoreCount = signalSemaphoreArr.size();
     submitInfo.pSignalSemaphores = signalSemaphoreArr.data();
 
-    if (vkQueueSubmit(_vkQueue, 1, &submitInfo, fence) != VK_SUCCESS)
-    {
-       // throw std::runtime_error("failed to submit draw command buffer!");
-    }
+    VkResult result = vkQueueSubmit(_vkQueue, 1, &submitInfo, fence);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to submit queue!")
 }
 
-void VulkanQueue::Present(TPtr<VulkanSwapchain> swapchain, const std::vector<VkSemaphore>& waitSemaphoreArr)
+void VulkanQueue::Present(VulkanSwapchain* swapchain, const std::vector<VkSemaphore>& waitSemaphoreArr)
 {
     VkSwapchainKHR swapchains[] = {swapchain->GetRawSwapchain()};
     uint32_t imageIndex = swapchain->GetCurrentIndex();
@@ -75,6 +71,5 @@ VkQueue VulkanQueue::GetRawQueue()
 {
     return _vkQueue;
 }
-
 
 } // namespace ZE

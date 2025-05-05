@@ -2,8 +2,7 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
-
-#include <vulkan/vulkan.h>
+#include "VulkanDevice.h"
 
 
 namespace ZE {
@@ -11,10 +10,10 @@ namespace ZE {
 class VulkanDevice;
 class VulkanCommandBuffer;
 
-class VulkanBuffer
+class VulkanBuffer : public VulkanDeviceChild
 {
 public:
-    VulkanBuffer(TPtr<VulkanDevice> device, uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+    VulkanBuffer(VulkanDevice* device, uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
     ~VulkanBuffer();
 
     void* MapMemory(VkDeviceSize offset, VkDeviceSize size);
@@ -27,13 +26,11 @@ public:
     VkDeviceMemory GetRawMemory();
 
 protected:
+    VkBuffer _buffer;
+    VkDeviceMemory _memory;
     uint32_t _size;
     VkBufferUsageFlags _usage;
     VkMemoryPropertyFlags _properties;
-    VkBuffer _vkBuffer;
-    VkDeviceMemory _vkMemory;
-
-    TPtr<VulkanDevice> _device;
 };
 
 } // namespace ZE

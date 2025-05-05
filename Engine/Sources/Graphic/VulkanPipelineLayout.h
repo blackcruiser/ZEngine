@@ -2,28 +2,25 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
-
-#include <vulkan/vulkan.h>
+#include "VulkanDevice.h"
 
 
 namespace ZE {
 
-class VulkanDevice;
 class VulkanDescriptorSetLayout;
 
-class VulkanPipelineLayout
+class VulkanPipelineLayout : public VulkanDeviceChild
 {
 public:
-    VulkanPipelineLayout(TPtr<VulkanDevice> device, TPtrArr<VulkanDescriptorSetLayout>& descriptorSetLayoutArr);
+    VulkanPipelineLayout(VulkanDevice* device, std::vector<VulkanDescriptorSetLayout*>& descriptorSetLayoutArr);
     ~VulkanPipelineLayout();
 
     VkPipelineLayout GetRawPipelineLayout();
 
 private:
-    VkPipelineLayout _vkPipelineLayout;
+    VkPipelineLayout _pipelineLayout;
 
-    TPtrArr<VulkanDescriptorSetLayout> _descriptorSetLayoutArr;
-    TPtr<VulkanDevice> _device;
+    std::vector<VulkanDescriptorSetLayout*> _descriptorSetLayoutArr;
 };
 
 } // namespace ZE

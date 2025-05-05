@@ -3,17 +3,16 @@
 #include "VulkanShader.h"
 #include "VulkanPipelineLayout.h"
 #include "VulkanRenderPass.h"
+#include "Misc/AssertionMacros.h"
 
-#include <stdexcept>
 #include <array>
 
 
 namespace ZE {
 
-
 VulkanGraphicPipeline::VulkanGraphicPipeline(
-    TPtr<VulkanDevice> device, const RHIPipelineState& state, TPtr<VulkanRenderPass> renderPass)
-    : _device(device),  _renderPass(renderPass), _vkPipeline(VK_NULL_HANDLE)
+    VulkanDevice* device, const RHIPipelineState& state, VulkanRenderPass* renderPass)
+    : VulkanDeviceChild(device),  _renderPass(renderPass), _pipeline(VK_NULL_HANDLE)
 {
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -56,21 +55,19 @@ VulkanGraphicPipeline::VulkanGraphicPipeline(
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipelineInfo.basePipelineIndex = -1;              // Optional
 
-    if (vkCreateGraphicsPipelines(_device->GetRawDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &_vkPipeline) !=
-        VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create graphics pipeline!");
-    }
+    VkResult result = vkCreateGraphicsPipelines(_device->GetRawDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &_pipeline);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to create GraphicsPipeline!")
 }
 
 VulkanGraphicPipeline::~VulkanGraphicPipeline()
 {
-    vkDestroyPipeline(_device->GetRawDevice(), _vkPipeline, nullptr);
+    CHECK(_pipeline != VK_NULL_HANDLE);
+    vkDestroyPipeline(_device->GetRawDevice(), _pipeline, nullptr);
 }
 
 VkPipeline VulkanGraphicPipeline::GetRawPipeline()
 {
-    return _vkPipeline;
+    return _pipeline;
 }
 
 } // namespace ZE

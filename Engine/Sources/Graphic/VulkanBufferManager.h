@@ -2,38 +2,40 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "VulkanDevice.h"
 
 
 namespace ZE {
 
-class VulkanDevice;
 class VulkanBuffer;
 class VulkanCommandBuffer;
 
 
 struct StagingBufferEntry
 {
-    TPtr<VulkanBuffer> buffer;
-    TWeakPtr<VulkanCommandBuffer> weakCommandBuffer;
+    VulkanBuffer* buffer;
+    VulkanCommandBuffer* commandBuffer;
     uint64_t frameCount;
 };
 
-class VulkanBufferManager
+class VulkanBufferManager : public VulkanDeviceChild
 {
 public:
-    VulkanBufferManager(TPtr<VulkanDevice> device);
+    VulkanBufferManager(VulkanDevice* device);
     ~VulkanBufferManager();
 
-    TPtr<VulkanBuffer> AcquireStagingBuffer(uint32_t size);
-    void ReleaseStagingBuffer(TPtr<VulkanBuffer> buffer, TPtr<VulkanCommandBuffer> commandBuffer = nullptr);
+    VulkanBuffer* AcquireBuffer(uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+    void ReleaseBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer = nullptr);
 
-    void Tick();
+    VulkanBuffer* AcquireStagingBuffer(uint32_t size);
+    void ReleaseStagingBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer = nullptr);
 
 private:
-    TPtrList<VulkanBuffer> _usedStagingBuffer, _freeStagingBuffer;
-    std::list<StagingBufferEntry> _pendingList;
+    void Recycle();
 
-    TPtr<VulkanDevice> _device;
+private:
+    std::list<VulkanBuffer*> _usedStagingBuffer, _freeStagingBuffer;
+    std::list<StagingBufferEntry> _pendingList;
 };
 
 } // namespace ZE

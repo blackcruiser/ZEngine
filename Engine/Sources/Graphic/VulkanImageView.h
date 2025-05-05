@@ -2,8 +2,8 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "VulkanDevice.h"
 
-#include <vulkan/vulkan.h>
 
 namespace ZE {
 
@@ -13,10 +13,10 @@ class VulkanImage;
 class VulkanImageView
 {
 public:
-    VulkanImageView(TPtr<VulkanImage> image, VkFormat format = VkFormat::VK_FORMAT_UNDEFINED, VkImageAspectFlagBits accessFlags = VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT);
+    VulkanImageView(VulkanImage* image, VkFormat format = VkFormat::VK_FORMAT_UNDEFINED, VkImageAspectFlagBits accessFlags = VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT);
     ~VulkanImageView();
 
-    TPtr<VulkanImage> GetImage();
+    VulkanImage* GetImage();
 
     VkFormat GetFormat();
     VkExtent3D GetExtent();
@@ -24,11 +24,11 @@ public:
     VkImageView GetRawImageView();
 
 private:
+    VkImageView _imageView;
     VkFormat _format;
     VkImageAspectFlagBits _accessFlags;
-    VkImageView _vkImageView;
 
-    TPtr<VulkanImage> _image;
+    VulkanImage* _image;
 };
 
 } // namespace ZE

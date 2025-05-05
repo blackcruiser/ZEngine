@@ -1,41 +1,35 @@
 #include "VulkanCommandBuffer.h"
 #include "VulkanDevice.h"
-#include "VulkanCommandPool.h"
 #include "VulkanFramebuffer.h"
 #include "VulkanRenderPass.h"
+#include "VulkanSynchronizer.h"
+#include "Misc/AssertionMacros.h"
 
 #include <stdexcept>
 
 
 namespace ZE {
 
-VulkanCommandBuffer::VulkanCommandBuffer(TPtr<VulkanCommandPool> commandPool)
-    : _commandPool(commandPool), _vkCommandBuffer(VK_NULL_HANDLE), _fence(VK_NULL_HANDLE), _status(EStatus::Initial), _executeCount(0)
+VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool inCommandPool, uint32_t inQueueFamilyIndex)
+    : VulkanDeviceChild(device), _commandBuffer(VK_NULL_HANDLE), _commandPool(inCommandPool), _queueFamilyIndex(inQueueFamilyIndex), _status(EStatus::Initial), _fence(VK_NULL_HANDLE), _executeCount(0)
 {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = _commandPool->GetRawCommandPool();
+    allocInfo.commandPool = _commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = 1;
 
-    _vkCommandBuffer;
-    VkDevice vkDevice = _commandPool->GetDevice()->GetRawDevice();
-    if (vkAllocateCommandBuffers(vkDevice, &allocInfo, &_vkCommandBuffer) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to allocate command buffers!");
-    }
+    VkResult result = vkAllocateCommandBuffers(_device->GetRawDevice(), &allocInfo, &_commandBuffer);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "Create CommandBuffer fail!");
 
-    _fence = _commandPool->GetDevice()->CreateFence(false);
+    _fence = CreateFence(device, false);
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
 {
-    _commandPool->GetDevice()->DestroyFence(_fence);
+    DestroyFence(_device, _fence);
 
-    VkDevice vkDevice = _commandPool->GetDevice()->GetRawDevice();
-    VkCommandPool vkCommandPool = _commandPool->GetRawCommandPool();
-
-    vkFreeCommandBuffers(vkDevice, vkCommandPool, 1, &_vkCommandBuffer);
+    vkFreeCommandBuffers(_device->GetRawDevice(), _commandPool, 1, &_commandBuffer);
 }
 
 void VulkanCommandBuffer::Begin()
@@ -44,30 +38,33 @@ void VulkanCommandBuffer::Begin()
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    vkBeginCommandBuffer(_vkCommandBuffer, &beginInfo);
+    vkBeginCommandBuffer(_commandBuffer, &beginInfo);
 
     // ToDo: status and signalCount should match lifecycle
     _status = EStatus::Recording;
-    _executeCount++;
 }
 
 void VulkanCommandBuffer::End()
 {
-    vkEndCommandBuffer(_vkCommandBuffer);
+    vkEndCommandBuffer(_commandBuffer);
 
     _status = EStatus::Executable;
 }
 
 void VulkanCommandBuffer::Reset()
 {
-    VkDevice vkDevice = _commandPool->GetDevice()->GetRawDevice();
+    _executeCount++;
+    _status = EStatus::Initial;
+    ResetFence(_device, _fence);
+    
+
     _cachedRenderPasses.clear();
     _cachedFramebuffers.clear();
     _cachedPipelines.clear();
-    vkResetFences(vkDevice, 1, &_fence);
+
 }
 
-void VulkanCommandBuffer::BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPtr<VulkanFramebuffer> framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors)
+void VulkanCommandBuffer::BeginRenderPass(VulkanRenderPass* renderPass, VulkanFramebuffer* framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors)
 {
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -78,7 +75,7 @@ void VulkanCommandBuffer::BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPt
     renderPassInfo.clearValueCount = clearColors.size();
     renderPassInfo.pClearValues = clearColors.data();
 
-    vkCmdBeginRenderPass(_vkCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     _cachedRenderPasses.push_back(renderPass);
     _cachedFramebuffers.push_back(framebuffer);
@@ -86,17 +83,12 @@ void VulkanCommandBuffer::BeginRenderPass(TPtr<VulkanRenderPass> renderPass, TPt
 
 void VulkanCommandBuffer::EndRenderPass()
 {
-    vkCmdEndRenderPass(_vkCommandBuffer);
+    vkCmdEndRenderPass(_commandBuffer);
 }
 
-void VulkanCommandBuffer::CachePipeline(TPtr<VulkanGraphicPipeline> pipeline)
+void VulkanCommandBuffer::CachePipeline(VulkanGraphicPipeline* pipeline)
 {
     _cachedPipelines.push_back(pipeline);
-}
-
-VkFence VulkanCommandBuffer::GetFence()
-{
-    return _fence;
 }
 
 uint32_t VulkanCommandBuffer::GetExecuteCount()
@@ -104,19 +96,19 @@ uint32_t VulkanCommandBuffer::GetExecuteCount()
     return _executeCount;
 }
 
+VkFence VulkanCommandBuffer::GetFence()
+{
+    return _fence;
+}
+
 VkCommandBuffer VulkanCommandBuffer::GetRawCommandBuffer()
 {
-    return _vkCommandBuffer;
+    return _commandBuffer;
 }
 
-TPtr<VulkanCommandPool> VulkanCommandBuffer::GetCommandPool()
+VkCommandPool VulkanCommandBuffer::GetRawCommandPool()
 {
     return _commandPool;
-}
-
-TPtr<VulkanDevice> VulkanCommandBuffer::GetDevice()
-{
-    return _commandPool->GetDevice();
 }
 
 } // namespace ZE

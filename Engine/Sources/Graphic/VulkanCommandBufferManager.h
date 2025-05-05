@@ -9,23 +9,23 @@
 namespace ZE {
 
 class VulkanDevice;
-class VulkanCommandPool;
 class VulkanCommandBuffer;
 
-class VulkanCommandBufferManager
+class VulkanCommandBufferManager : public VulkanDeviceChild
 {
 public:
-    VulkanCommandBufferManager(TPtr<VulkanDevice> device, TPtrArr<VulkanQueue> queueArr);
+    VulkanCommandBufferManager(VulkanDevice* device, uint32_t queueFamilyIndex);
     ~VulkanCommandBufferManager();
 
-    TPtr<VulkanCommandBuffer> Acquire(VulkanQueue::EType type);
-    void Release(TPtr<VulkanCommandBuffer> commandBuffer);
+    VulkanCommandBuffer* Acquire();
+    void Release(VulkanCommandBuffer* commandBuffer);
 
 private:
-    TPtrUnorderedMap<VulkanQueue::EType, VulkanCommandPool> _commandPools;
+    uint32_t _queueFamilyIndex;
+    VkCommandPool _commandPool;
 
-    TPtrArr<VulkanCommandBuffer> _submittedCommandBuffers;
-    std::unordered_map<VulkanCommandPool*, TPtrArr<VulkanCommandBuffer>> _freeCommandBuffers;
+    std::vector<VulkanCommandBuffer*> _submittedCommandBuffers;
+    std::vector<VulkanCommandBuffer*>  _freeCommandBuffers;
 };
 
 } // namespace ZE

@@ -2,26 +2,21 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
-
-#include <vulkan/vulkan.h>
+#include "VulkanDevice.h"
 
 
 namespace ZE {
 
-class VulkanDevice;
-
-class VulkanSampler
+class VulkanSampler : public VulkanDeviceChild
 {
 public:
-    VulkanSampler(TPtr<VulkanDevice> device);
+    VulkanSampler(VulkanDevice* device);
     ~VulkanSampler();
 
     VkSampler GetRawSampler();
 
 private:
-    VkSampler _vkSampler;
-
-    TPtr<VulkanDevice> _device;
+    VkSampler _sampler;
 };
 
 } // namespace ZE

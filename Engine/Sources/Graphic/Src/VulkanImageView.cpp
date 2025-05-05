@@ -1,14 +1,12 @@
-#include "VulkanImage.h"
-#include "VulkanDevice.h"
 #include "VulkanImageView.h"
-
-#include <stdexcept>
+#include "VulkanImage.h"
+#include "Misc/AssertionMacros.h"
 
 
 namespace ZE {
 
-VulkanImageView::VulkanImageView(TPtr<VulkanImage> image, VkFormat format, VkImageAspectFlagBits accessFlags)
-    : _format(format), _accessFlags(accessFlags), _vkImageView(VK_NULL_HANDLE), _image(image)
+VulkanImageView::VulkanImageView(VulkanImage* image, VkFormat format, VkImageAspectFlagBits accessFlags)
+    : _imageView(VK_NULL_HANDLE), _format(format), _accessFlags(accessFlags), _image(image)
 {
     VkImageViewCreateInfo imageViewCreateInfo{};
     imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -25,19 +23,17 @@ VulkanImageView::VulkanImageView(TPtr<VulkanImage> image, VkFormat format, VkIma
     imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
     imageViewCreateInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(image->GetDevice()->GetRawDevice(), &imageViewCreateInfo, nullptr, &_vkImageView) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create image views!");
-    }
+    VkResult result = vkCreateImageView(image->GetDevice()->GetRawDevice(), &imageViewCreateInfo, nullptr, &_imageView);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to create ImageView!");
 }
 
 VulkanImageView::~VulkanImageView()
 {
-    if (_vkImageView != VK_NULL_HANDLE)
-        vkDestroyImageView(_image->GetDevice()->GetRawDevice(), _vkImageView, nullptr);
+    CHECK(_imageView != VK_NULL_HANDLE);
+    vkDestroyImageView(_image->GetDevice()->GetRawDevice(), _imageView, nullptr);
 }
 
-TPtr<VulkanImage> VulkanImageView::GetImage()
+VulkanImage* VulkanImageView::GetImage()
 {
     return _image;
 }
@@ -54,7 +50,7 @@ VkExtent3D VulkanImageView::GetExtent()
 
 VkImageView VulkanImageView::GetRawImageView()
 {
-    return _vkImageView;
+    return _imageView;
 }
 
 } // namespace ZE

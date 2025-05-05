@@ -1,13 +1,11 @@
 #include "VulkanRenderPass.h"
-#include "VulkanDevice.h"
-
-#include <stdexcept>
+#include "Misc/AssertionMacros.h"
 
 
 namespace ZE {
 
-VulkanRenderPass::VulkanRenderPass(TPtr<VulkanDevice> device, const std::vector<VkAttachmentDescription>& colorAttachmentDescriptionArr, const VkAttachmentDescription& depthAttachment)
-    : _device(device), _vkRenderPass(VK_NULL_HANDLE)
+VulkanRenderPass::VulkanRenderPass(VulkanDevice* device, const std::vector<VkAttachmentDescription>& colorAttachmentDescriptionArr, const VkAttachmentDescription& depthAttachment)
+    : VulkanDeviceChild(device), _renderPass(VK_NULL_HANDLE)
 {
     std::vector<VkAttachmentDescription> attachmentDescriptionArr;
     attachmentDescriptionArr.insert(attachmentDescriptionArr.begin(), colorAttachmentDescriptionArr.begin(), colorAttachmentDescriptionArr.end());
@@ -53,14 +51,12 @@ VulkanRenderPass::VulkanRenderPass(TPtr<VulkanDevice> device, const std::vector<
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(_device->GetRawDevice(), &renderPassInfo, nullptr, &_vkRenderPass) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create render pass!");
-    }
+    VkResult result = vkCreateRenderPass(_device->GetRawDevice(), &renderPassInfo, nullptr, &_renderPass);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to create RenderPass!")
 }
 
-VulkanRenderPass::VulkanRenderPass(TPtr<VulkanDevice> device, const std::vector<VkAttachmentDescription>& colorAttachmentDescriptionArr)
-    : _device(device), _vkRenderPass(VK_NULL_HANDLE)
+VulkanRenderPass::VulkanRenderPass(VulkanDevice* device, const std::vector<VkAttachmentDescription>& colorAttachmentDescriptionArr)
+    : VulkanDeviceChild(device), _renderPass(VK_NULL_HANDLE)
 {
     // Reference
     std::vector<VkAttachmentReference> colorAttachmentRefArr;
@@ -97,14 +93,12 @@ VulkanRenderPass::VulkanRenderPass(TPtr<VulkanDevice> device, const std::vector<
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(_device->GetRawDevice(), &renderPassInfo, nullptr, &_vkRenderPass) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create render pass!");
-    }
+    VkResult result = vkCreateRenderPass(_device->GetRawDevice(), &renderPassInfo, nullptr, &_renderPass);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to create RenderPass!")
 }
 
-VulkanRenderPass::VulkanRenderPass(TPtr<VulkanDevice> device, const VkAttachmentDescription& depthAttachment)
-    : _device(device), _vkRenderPass(VK_NULL_HANDLE)
+VulkanRenderPass::VulkanRenderPass(VulkanDevice* device, const VkAttachmentDescription& depthAttachment)
+    : VulkanDeviceChild(device), _renderPass(VK_NULL_HANDLE)
 {
     // Reference
     VkAttachmentReference depthAttachmentRef{};
@@ -135,23 +129,19 @@ VulkanRenderPass::VulkanRenderPass(TPtr<VulkanDevice> device, const VkAttachment
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(_device->GetRawDevice(), &renderPassInfo, nullptr, &_vkRenderPass) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create render pass!");
-    }
+    VkResult result = vkCreateRenderPass(_device->GetRawDevice(), &renderPassInfo, nullptr, &_renderPass);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to create RenderPass!")
 }
 
 VulkanRenderPass::~VulkanRenderPass()
 {
-    if (_vkRenderPass != VK_NULL_HANDLE)
-        vkDestroyRenderPass(_device->GetRawDevice(), _vkRenderPass, nullptr);
+    CHECK(_renderPass != VK_NULL_HANDLE);
+    vkDestroyRenderPass(_device->GetRawDevice(), _renderPass, nullptr);
 }
-
 
 VkRenderPass VulkanRenderPass::GetRawRenderPass()
 {
-    return _vkRenderPass;
+    return _renderPass;
 }
-
 
 } // namespace ZE

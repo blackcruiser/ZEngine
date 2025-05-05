@@ -236,13 +236,13 @@ void Pass::InitRenderResource(TPtr<RenderGraph> renderGraph)
 
     CreateGraphicTextures(renderGraph);
     CreateGraphicBuffers(renderGraph);
-    CreateGraphicShaders();
+    CreateGraphicShaders(renderGraph);
 
-    CreateDescriptorSetLayout();
+    CreateDescriptorSetLayout(renderGraph);
     CreateDescriptorSet(renderGraph);
-    LinkDescriptorSet();
+    LinkDescriptorSet(renderGraph);
 
-    CreatePipelineLayout();
+    CreatePipelineLayout(renderGraph);
 
     renderGraph->Execute();
 }
@@ -251,25 +251,21 @@ void Pass::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
 {
     _shaders.clear();
     _textures.clear();
-    _uniformBuffer.reset();
-    _descriptorSetLayout.reset();
-    _descriptorSet.reset();
-    _pipelineLayout.reset();
 
     RenderResource::CleanupRenderResource(renderGraph);
 }
 
-TPtr<VulkanImageView> CreateGraphicImage(TPtr<RenderGraph> renderGraph, TPtr<TextureResource> texture)
+VulkanImageView* CreateGraphicImage(TPtr<RenderGraph> renderGraph, TPtr<TextureResource> texture)
 {
     assert(texture->IsLoaded());
 
     uint32_t imageSize = texture->GetWidth() * texture->GetHeight() * 4;
     VkExtent3D extent{texture->GetWidth(), texture->GetHeight(), 1};
 
-    TPtr<VulkanImage> vulkanImage = std::make_shared<VulkanImage>(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_R8G8B8A8_SRGB);
+    VulkanImage* vulkanImage = new VulkanImage(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_R8G8B8A8_SRGB);
     renderGraph->CopyImage(static_cast<const uint8_t*>(texture->GetData()), imageSize, vulkanImage);
 
-    TPtr<VulkanImageView> vulkanImageView = std::make_shared<VulkanImageView>(vulkanImage);
+    VulkanImageView* vulkanImageView = new VulkanImageView(vulkanImage);
 
     return vulkanImageView;
 }
@@ -280,7 +276,7 @@ void Pass::CreateGraphicTextures(TPtr<RenderGraph> renderGraph)
     assert(_owner.expired() == false);
 
     TPtr<PassResource> passResource = _owner.lock();
-    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+    VulkanDevice* device = renderGraph->GetDevice();
 
     const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& textureMap =
         passResource->GetTextureMap();
@@ -298,7 +294,7 @@ void Pass::CreateGraphicTextures(TPtr<RenderGraph> renderGraph)
 
             vulkanBindingInfo.bindingPoint = bindingInfo.bindingPoint;
             vulkanBindingInfo.vulkanImageView = CreateGraphicImage(renderGraph, bindingInfo.texture);
-            vulkanBindingInfo.vulkanSampler = std::make_shared<VulkanSampler>(device);
+            vulkanBindingInfo.vulkanSampler = new VulkanSampler(device);
 
             vulkanBindingInfoList.push_back(vulkanBindingInfo);
         }
@@ -310,29 +306,29 @@ void Pass::CreateGraphicTextures(TPtr<RenderGraph> renderGraph)
 
 void Pass::CreateGraphicBuffers(TPtr<RenderGraph> renderGraph)
 {
-    _uniformBuffer = RenderSystem::Get().AcquireBuffer(sizeof(glm::mat4x4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    _uniformBuffer = RenderSystem::Get().GetBufferManager()->AcquireBuffer(sizeof(glm::mat4x4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
-TPtr<VulkanShader> CreateGraphicShader(TPtr<VulkanDevice> device, VkShaderStageFlagBits shaderStage,
+VulkanShader* CreateGraphicShader(VulkanDevice* device, VkShaderStageFlagBits shaderStage,
                                        TPtr<ShaderResource> shader)
 {
     if (shader == nullptr)
         return nullptr;
 
-    return std::make_shared<VulkanShader>(device, shader->GetByteCode());
+    return new VulkanShader(device, shader->GetByteCode());
 }
 
-void Pass::CreateGraphicShaders()
+void Pass::CreateGraphicShaders(TPtr<RenderGraph> renderGraph)
 {
     assert(_owner.expired() == false);
     TPtr<PassResource> passResource = _owner.lock();
 
-    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+    VulkanDevice* device = renderGraph->GetDevice();
     const TPtrUnorderedMap<EShaderStage, ShaderResource>& shaderMap = passResource->GetShaderMap();
     for (auto& [stage, shader] : shaderMap)
     {
         VkShaderStageFlagBits vulkanBit = ConvertShaderStageToVulkanBit(stage);
-        TPtr<VulkanShader> vulkanShader = CreateGraphicShader(device, vulkanBit, shader);
+        VulkanShader* vulkanShader = CreateGraphicShader(device, vulkanBit, shader);
         _shaders.insert(std::make_pair(vulkanBit, vulkanShader));
 
         for (RHIShaderState& shaderState : shaderStates)
@@ -345,9 +341,9 @@ void Pass::CreateGraphicShaders()
     }
 }
 
-void Pass::CreateDescriptorSetLayout()
+void Pass::CreateDescriptorSetLayout(TPtr<RenderGraph> renderGraph)
 {
-    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+    VulkanDevice* device = renderGraph->GetDevice();
 
     VkDescriptorSetLayoutBinding matrixDescriptorSetlayoutBinding{};
     matrixDescriptorSetlayoutBinding.binding = 0;
@@ -364,17 +360,17 @@ void Pass::CreateDescriptorSetLayout()
     std::vector<VkDescriptorSetLayoutBinding> localDescriptorSetLayoutBindings = {
         matrixDescriptorSetlayoutBinding, samplerDescriptorSetlayoutBinding};
 
-    _descriptorSetLayout = std::make_shared<VulkanDescriptorSetLayout>(device, localDescriptorSetLayoutBindings);
+    _descriptorSetLayout = new VulkanDescriptorSetLayout(device, localDescriptorSetLayoutBindings);
 }
 
 void Pass::CreateDescriptorSet(TPtr<RenderGraph> renderGraph)
 {
-    TPtr<VulkanDescriptorPool> descriptorPool = RenderSystem::Get().GetDescriptorPool();
+    VulkanDescriptorPool* descriptorPool = RenderSystem::Get().GetDescriptorPool();
 
-    _descriptorSet = std::make_shared<VulkanDescriptorSet>(descriptorPool, _descriptorSetLayout);
+    _descriptorSet = new VulkanDescriptorSet(renderGraph->GetDevice(), descriptorPool, _descriptorSetLayout);
 }
 
-void Pass::LinkDescriptorSet()
+void Pass::LinkDescriptorSet(TPtr<RenderGraph> renderGraph)
 {
     {
         VkDescriptorBufferInfo bufferInfo{};
@@ -400,20 +396,20 @@ void Pass::LinkDescriptorSet()
     }
 }
 
-void Pass::CreatePipelineLayout()
+void Pass::CreatePipelineLayout(TPtr<RenderGraph> renderGraph)
 {
-    TPtr<VulkanDevice> device = RenderSystem::Get().GetDevice();
+    VulkanDevice* device = renderGraph->GetDevice();
 
-    TPtrArr<VulkanDescriptorSetLayout> descriptorSetLayoutArr{_descriptorSetLayout};
-    _pipelineLayout = std::make_shared<VulkanPipelineLayout>(device, descriptorSetLayoutArr);
+    std::vector<VulkanDescriptorSetLayout*> descriptorSetLayoutArr{_descriptorSetLayout};
+    _pipelineLayout = new VulkanPipelineLayout(device, descriptorSetLayoutArr);
 }
 
-TPtr<VulkanDescriptorSet> Pass::GetDescriptorSet()
+VulkanDescriptorSet* Pass::GetDescriptorSet()
 {
     return _descriptorSet;
 }
 
-TPtr<VulkanPipelineLayout> Pass::GetPipelineLayout()
+VulkanPipelineLayout* Pass::GetPipelineLayout()
 {
     return _pipelineLayout;
 }

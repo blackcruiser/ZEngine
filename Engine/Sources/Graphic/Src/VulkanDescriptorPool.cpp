@@ -6,9 +6,8 @@
 
 namespace ZE {
 
-VulkanDescriptorPool::VulkanDescriptorPool(TPtr<VulkanDevice> device,
-                                           const std::vector<VkDescriptorPoolSize>& descriptorPoolSizeArr)
-    : _device(device), _descriptorPool(VK_NULL_HANDLE)
+VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice* device, const std::vector<VkDescriptorPoolSize>& descriptorPoolSizeArr)
+    : VulkanDeviceChild(device), _descriptorPool(VK_NULL_HANDLE)
 {
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -26,11 +25,6 @@ VulkanDescriptorPool::VulkanDescriptorPool(TPtr<VulkanDevice> device,
 VulkanDescriptorPool::~VulkanDescriptorPool()
 {
     vkDestroyDescriptorPool(_device->GetRawDevice(), _descriptorPool, nullptr);
-}
-
-TPtr<VulkanDevice> VulkanDescriptorPool::GetDevice()
-{
-    return _device;
 }
 
 VkDescriptorPool VulkanDescriptorPool::GetRawDescriptorPool()

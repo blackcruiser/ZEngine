@@ -31,29 +31,29 @@ public:
     void Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr);
     void Execute();
 
-    void CopyBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination);
-    void CopyImage(const uint8_t* data, uint32_t size, TPtr<VulkanImage> destination);
+    void CopyBuffer(const uint8_t* data, uint32_t size, VulkanBuffer* destination);
+    void CopyImage(const uint8_t* data, uint32_t size, VulkanImage* destination);
 
-    void TransitionLayout(TPtr<VulkanImage> image, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void TransitionLayout(VulkanImage* image, VkImageLayout oldLayout, VkImageLayout newLayout);
 
     void SetRenderTargets(TPtr<RenderTargets> renderTargets);
-    TPtr<VulkanImageView> GetFramebuffer();
+    VulkanImageView* GetFramebuffer();
 
-    void SetPipelineState(const RHIPipelineState& pipelineState, TPtr<VulkanDescriptorSet> descriptorSet);
+    void SetPipelineState(const RHIPipelineState& pipelineState, VulkanDescriptorSet* descriptorSet);
 
-    void BindVertexBuffer(TPtr<VulkanBuffer> vertexBuffer, TPtr<VulkanBuffer> indexBuffer);
+    void BindVertexBuffer(VulkanBuffer* vertexBuffer, VulkanBuffer* indexBuffer);
 
     void DrawIndexed(uint32_t verticesCount, uint32_t firstIndex);
 
-    TPtr<VulkanCommandBuffer> GetCommandBuffer();
-    TPtr<VulkanDevice> GetDevice();
+    VulkanCommandBuffer* GetCommandBuffer();
+    VulkanDevice* GetDevice();
 
 private:
-    TPtr<VulkanDevice> _device;
+    VulkanDevice* _device;
 
-    TPtr<VulkanCommandBuffer> _commandBuffer;
+    VulkanCommandBuffer* _commandBuffer;
     TPtr<RenderTargets> _pendingRenderTargets;
-    TPtr<VulkanRenderPass> _pendingRenderPass;
+    VulkanRenderPass* _pendingRenderPass;
 };
 
 }

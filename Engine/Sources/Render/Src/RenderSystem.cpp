@@ -1,5 +1,5 @@
 #include "RenderSystem.h"
-#include "Graphic/VulkanGPU.h"
+#include "Graphic/VulkanContext.h"
 #include "Graphic/VulkanDevice.h"
 #include "Graphic/VulkanBuffer.h"
 #include "Graphic/VulkanBufferManager.h"
@@ -25,7 +25,7 @@ RenderSystem& RenderSystem::Get()
 }
 
 RenderSystem::RenderSystem()
-    : _GPU(nullptr), _device(nullptr)
+    : _instance(nullptr), _device(nullptr)
 {
 }
 
@@ -35,36 +35,56 @@ RenderSystem::~RenderSystem()
 
 void RenderSystem::Initialize()
 {
-    CreateVulkanInstance();
+    _instance = CreateInstance();
+    _physicalDevice = AcquirePhysicalDevice(_instance);
+    _device = new VulkanDevice(_instance, _physicalDevice);
 
-    _GPU = std::make_shared<VulkanGPU>(_vkInstance);
-    _device = std::make_shared<VulkanDevice>(_GPU);
+    std::vector<VkQueueFamilyProperties> queueFamilyProperties = GetQueueFamilyProperties(_physicalDevice);
+    for (size_t i = 0; i < queueFamilyProperties.size(); i++)
+    {
+        VkQueueFamilyProperties properties = queueFamilyProperties[i];
 
-    TPtr<VulkanQueue> graphicQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Graphic, _device->GetGraphicQueueFamilyIndex());
-    TPtr<VulkanQueue> computeQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Compute, _device->GetComputeQueueFamilyIndex());
-    TPtr<VulkanQueue> transferQueue = std::make_shared<VulkanQueue>(_device, VulkanQueue::EType::Transfer, _device->GetTransferQueueFamilyIndex()); 
+        if ((properties.queueFlags & VK_QUEUE_GRAPHICS_BIT) == VK_QUEUE_GRAPHICS_BIT)
+        {
+            _graphicQueue = new VulkanQueue(_device, VulkanQueue::EType::Graphic, i);
+            _graphicCommandBufferManager = new VulkanCommandBufferManager(_device, i);
+        }
 
-    _queueArr = {graphicQueue, computeQueue, transferQueue};
+        if ((properties.queueFlags & VK_QUEUE_COMPUTE_BIT) == VK_QUEUE_COMPUTE_BIT)
+        {
+            _computeQueue = new VulkanQueue(_device, VulkanQueue::EType::Compute, i);
+            _computeCommandBufferManager = new VulkanCommandBufferManager(_device, i);
+        }
+
+        if ((properties.queueFlags & VK_QUEUE_TRANSFER_BIT) == VK_QUEUE_TRANSFER_BIT)
+        {
+            _transferQueue = new VulkanQueue(_device, VulkanQueue::EType::Transfer, i);
+            _transferCommandBufferManager = new VulkanCommandBufferManager(_device, i);
+        }
+    }
 
     std::vector<VkDescriptorPoolSize> poolSizeArr = {{VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10}, {VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}};
-    _descriptorPool = std::make_shared<VulkanDescriptorPool>(_device, poolSizeArr);
+    _descriptorPool = new VulkanDescriptorPool(_device, poolSizeArr);
 
-    _commandBufferManager = std::make_shared<VulkanCommandBufferManager>(_device, _queueArr);
-
-    _bufferManager = std::make_shared<VulkanBufferManager>(_device);
+    _bufferManager = new VulkanBufferManager(_device);
 }
 
 void RenderSystem::Cleanup()
 {
-    _bufferManager.reset();
-    _commandBufferManager.reset();
-    _descriptorPool.reset();
-    _queueArr.clear();
+    delete _bufferManager;
+    delete _graphicCommandBufferManager;
+    delete _computeCommandBufferManager;
+    delete _transferCommandBufferManager;
+    delete _descriptorPool;
 
-    _device.reset();
-    _GPU.reset();
+    delete _graphicQueue;
+    delete _computeQueue;
+    delete _transferQueue;
 
-    DestroyVulkanInstance();
+    delete _device;
+
+    _physicalDevice = VK_NULL_HANDLE;
+    DestroyInstance(_instance);
 }
 
 void RenderSystem::InitializeResources()
@@ -81,102 +101,53 @@ void RenderSystem::CleanupResources()
     RenderResource::CleanupRenderResources(renderGraph);
 }
 
-void RenderSystem::CreateVulkanInstance()
-{
-    const std::string appName{"ZEngine"};
-
-    // Instance
-    VkApplicationInfo vkAppInfo{};
-    vkAppInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    vkAppInfo.pApplicationName = appName.c_str();
-    vkAppInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    vkAppInfo.pEngineName = appName.c_str();
-    vkAppInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    vkAppInfo.apiVersion = VK_HEADER_VERSION_COMPLETE;
-
-    const std::vector<const char*> extensions = {
-        "VK_KHR_surface",
-#ifdef ZE_PLATFORM_WINDOWS
-        "VK_KHR_win32_surface",
-#endif
-#ifdef ZE_PLATFORM_MACOS
-        VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
-        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
-#endif
-    };
-
-    const std::vector<const char*> validationLayers = {
-#ifdef ZE_DEBUG
-        "VK_LAYER_KHRONOS_validation"
-#endif
-    };
-
-    VkInstanceCreateInfo vkInstanceCreateInfo{};
-    vkInstanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    vkInstanceCreateInfo.pApplicationInfo = &vkAppInfo;
-    vkInstanceCreateInfo.enabledExtensionCount = extensions.size();
-    vkInstanceCreateInfo.ppEnabledExtensionNames = extensions.data();
-    vkInstanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-    vkInstanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
-#ifdef ZE_PLATFORM_MACOS
-    vkInstanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-#endif
-
-    VkResult result = vkCreateInstance(&vkInstanceCreateInfo, nullptr, &_vkInstance);
-    if (result != VkResult::VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create vulkan instance!");
-        return;
-    }
-}
-
-void RenderSystem::DestroyVulkanInstance()
-{
-    if (_vkInstance != VK_NULL_HANDLE)
-        vkDestroyInstance(_vkInstance, nullptr);
-}
-
 void RenderSystem::Tick()
 {
 }
 
-TPtr<VulkanDevice> RenderSystem::GetDevice()
+VulkanDevice* RenderSystem::GetDevice()
 {
     return _device;
 }
 
-TPtr<VulkanBuffer> RenderSystem::AcquireBuffer(uint32_t size, VkBufferUsageFlags bits, VkMemoryPropertyFlags properties)
+VulkanQueue* RenderSystem::GetQueue(VulkanQueue::EType type)
 {
-    return std::make_shared<VulkanBuffer>(_device, size, bits, properties);
+    switch (type)
+    {
+    case VulkanQueue::EType::Graphic:
+        return _graphicQueue;
+    case VulkanQueue::EType::Compute:
+        return _computeQueue;
+    case VulkanQueue::EType::Transfer:
+        return _transferQueue;
+    }
+
+    return nullptr;
 }
 
-TPtr<VulkanQueue> RenderSystem::GetQueue(VulkanQueue::EType type)
-{
-    size_t index = static_cast<size_t>(type) - 1;
-    if (index >= _queueArr.size())
-        return nullptr;
-    else
-        return _queueArr[index];
-}
-
-TPtr<VulkanDescriptorPool> RenderSystem::GetDescriptorPool()
+VulkanDescriptorPool* RenderSystem::GetDescriptorPool()
 {
     return _descriptorPool;
 }
 
-TPtr<VulkanCommandBufferManager> RenderSystem::GetCommandBufferManager()
+VulkanCommandBufferManager* RenderSystem::GetCommandBufferManager(VulkanQueue::EType type)
 {
-    return _commandBufferManager;
+    switch (type)
+    {
+    case VulkanQueue::EType::Graphic:
+        return _graphicCommandBufferManager;
+    case VulkanQueue::EType::Compute:
+        return _computeCommandBufferManager;
+    case VulkanQueue::EType::Transfer:
+        return _transferCommandBufferManager;
+    }
+
+    return nullptr;
 }
 
-TPtr<VulkanBufferManager> RenderSystem::GetBufferManager()
+VulkanBufferManager* RenderSystem::GetBufferManager()
 {
     return _bufferManager;
-}
-
-TPtrSet<VulkanGraphicPipeline>& RenderSystem::GetPipelineCache()
-{
-    return _pipelineCache;
 }
 
 } // namespace ZE

@@ -2,17 +2,15 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
-
-#include <vulkan/vulkan.h>
+#include "VulkanDevice.h"
 
 
 namespace ZE {
 
-class VulkanDevice;
 class VulkanCommandBuffer;
 class VulkanSwapchain;
 
-class VulkanQueue
+class VulkanQueue : public VulkanDeviceChild
 {
 public:
     enum class EType : int
@@ -25,11 +23,11 @@ public:
 
 
 public:
-    VulkanQueue(TPtr<VulkanDevice> device, EType type, uint32_t queueFamilyIndex);
+    VulkanQueue(VulkanDevice* device, EType type, uint32_t queueFamilyIndex);
     ~VulkanQueue();
 
-    void Submit(TPtr<VulkanCommandBuffer> commandBuffer, const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std ::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence);
-    void Present(TPtr<VulkanSwapchain> swapchain, const std::vector<VkSemaphore>& waitSemaphoreArr);
+    void Submit(VulkanCommandBuffer* commandBuffer, const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std ::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence);
+    void Present(VulkanSwapchain* swapchain, const std::vector<VkSemaphore>& waitSemaphoreArr);
 
     void WaitIdle();
 
@@ -39,11 +37,9 @@ public:
     VkQueue GetRawQueue();
 
 private:
+    VkQueue _vkQueue;
     uint32_t _familyIndex;
     EType _type;
-    VkQueue _vkQueue;
-
-    TPtr<VulkanDevice> _device;
 };
 
 } // namespace ZE

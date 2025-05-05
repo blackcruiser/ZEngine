@@ -2,20 +2,20 @@
 #include "VulkanDevice.h"
 #include "VulkanImageView.h"
 #include "VulkanRenderPass.h"
+#include "Misc/AssertionMacros.h"
 
-#include <stdexcept>
 #include <algorithm>
 #include <iterator>
 
 
 namespace ZE {
 
-VulkanFramebuffer::VulkanFramebuffer(TPtr<VulkanDevice> device, TPtr<VulkanRenderPass> renderPass, const TPtrArr<VulkanImageView>& imageViewArr, const VkExtent2D& extent)
-    : _device(device), _vkFramebuffer(VK_NULL_HANDLE)
+VulkanFramebuffer::VulkanFramebuffer(VulkanDevice* device, VulkanRenderPass* renderPass, const std::vector<VulkanImageView*>& imageViewArr, const VkExtent2D& extent)
+    : VulkanDeviceChild(device), _framebuffer(VK_NULL_HANDLE)
 {
     std::copy(imageViewArr.begin(), imageViewArr.end(), std::back_inserter(_imageViewArr));
     std::vector<VkImageView> vkImageViewArr;
-    std::transform(imageViewArr.begin(), imageViewArr.end(), std::back_inserter(vkImageViewArr), [](TPtr<VulkanImageView> imageView) {
+    std::transform(imageViewArr.begin(), imageViewArr.end(), std::back_inserter(vkImageViewArr), [](VulkanImageView* imageView) {
         return imageView->GetRawImageView();
     });
 
@@ -28,22 +28,20 @@ VulkanFramebuffer::VulkanFramebuffer(TPtr<VulkanDevice> device, TPtr<VulkanRende
     framebufferInfo.height = extent.height;
     framebufferInfo.layers = 1;
 
-    if (vkCreateFramebuffer(_device->GetRawDevice(), &framebufferInfo, nullptr, &_vkFramebuffer) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create framebuffer!");
-    }
+    VkResult result = vkCreateFramebuffer(_device->GetRawDevice(), &framebufferInfo, nullptr, &_framebuffer);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "failed to allocate DescriptorSets!");
 }
 
 VulkanFramebuffer::~VulkanFramebuffer()
 {
-    if (_vkFramebuffer != VK_NULL_HANDLE)
-        vkDestroyFramebuffer(_device->GetRawDevice(), _vkFramebuffer, nullptr);
+    CHECK(_framebuffer != VK_NULL_HANDLE);
+    vkDestroyFramebuffer(_device->GetRawDevice(), _framebuffer, nullptr);
 }
 
 
 VkFramebuffer VulkanFramebuffer::GetRawFramebuffer()
 {
-    return _vkFramebuffer;
+    return _framebuffer;
 }
 
 

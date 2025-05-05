@@ -1,36 +1,29 @@
 #include "VulkanDescriptorSetLayout.h"
-#include "VulkanDevice.h"
-
-#include <stdexcept>
+#include "Misc/AssertionMacros.h"
 
 
 namespace ZE {
 
-VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(TPtr<VulkanDevice> device, const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings)
-    : _device(device), _vkDescriptorSetLayout(VK_NULL_HANDLE)
+VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VulkanDevice* device, const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings)
+    : VulkanDeviceChild(device), _descriptorSetLayout(VK_NULL_HANDLE)
 {
-    VkDevice vkDevice = _device->GetRawDevice();
-
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = layoutBindings.size();
     layoutInfo.pBindings = layoutBindings.data();
 
-    if (vkCreateDescriptorSetLayout(vkDevice, &layoutInfo, nullptr, &_vkDescriptorSetLayout) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create descriptor set layout!");
-    }
+    VkResult result = vkCreateDescriptorSetLayout(_device->GetRawDevice(), &layoutInfo, nullptr, &_descriptorSetLayout);
+    CHECK_MSG(result == VkResult::VK_SUCCESS, "failed to create DescriptorSetLayout!");
 }
 
 VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout()
 {
-    VkDevice vkDevice = _device->GetRawDevice();
-
-    vkDestroyDescriptorSetLayout(vkDevice, _vkDescriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(_device->GetRawDevice(), _descriptorSetLayout, nullptr);
 }
 
 VkDescriptorSetLayout VulkanDescriptorSetLayout::GetRawDescriptorSetLayout()
 {
-    return _vkDescriptorSetLayout;
+    return _descriptorSetLayout;
 }
+
 } // namespace ZE
