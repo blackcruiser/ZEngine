@@ -2,6 +2,7 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "Graphic/VulkanDevice.h"
 
 #include <vulkan/vulkan.h>
 
@@ -12,11 +13,11 @@ class VulkanDescriptorPool;
 class VulkanDescriptorSetLayout;
 
 
-class VulkanDescriptorSet
+class VulkanDescriptorSet : public VulkanDeviceChild
 {
 public:
 public:
-    VulkanDescriptorSet(TPtr<VulkanDescriptorPool> descriptorPool, TPtr<VulkanDescriptorSetLayout> descriptorSetLayout);
+    VulkanDescriptorSet(VulkanDevice* device, VulkanDescriptorPool* descriptorPool, VulkanDescriptorSetLayout* descriptorSetLayout);
     ~VulkanDescriptorSet();
 
     void Update(uint32_t binding, uint32_t arrayElement, const VkDescriptorBufferInfo& bufferInfo);
@@ -27,8 +28,8 @@ public:
 private:
     VkDescriptorSet _vkDescriptorSet;
 
-    TPtr<VulkanDescriptorSetLayout> _descriptorSetLayout;
-    TPtr<VulkanDescriptorPool> _descriptorPool;
+    VulkanDescriptorSetLayout* _descriptorSetLayout;
+    VulkanDescriptorPool* _descriptorPool;
 };
 
 } // namespace ZE

@@ -21,24 +21,24 @@ namespace ZE {
 RenderGraph::RenderGraph()
 {
     _device = RenderSystem::Get().GetDevice();
-    _commandBuffer = RenderSystem::Get().GetCommandBufferManager()->Acquire(VulkanQueue::EType::Graphic);
+    _commandBuffer = RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Acquire();
     _commandBuffer->Begin();
 }
 
 RenderGraph::~RenderGraph()
 {
     _commandBuffer->End();
-    RenderSystem::Get().GetCommandBufferManager()->Release(_commandBuffer);
+    RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Release(_commandBuffer);
 }
 
 void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr)
 {
     _commandBuffer->End();
-    TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
+    VulkanQueue* graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
     graphicQueue->Submit(_commandBuffer, waitSemaphoreArr, waitStageArr, signalSemaphoreArr, _commandBuffer->GetFence());
 
-    RenderSystem::Get().GetCommandBufferManager()->Release(_commandBuffer);
-    _commandBuffer = RenderSystem::Get().GetCommandBufferManager()->Acquire(VulkanQueue::EType::Graphic);
+    RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Release(_commandBuffer);
+    _commandBuffer = RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Acquire();
     _commandBuffer->Begin();
 }
 
@@ -47,7 +47,7 @@ void RenderGraph::Execute()
     Execute({}, {}, {});
 }
 
-void RenderGraph::CopyBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination)
+void RenderGraph::CopyBuffer(const uint8_t* data, uint32_t size, VulkanBuffer* destination)
 {
     VkMemoryPropertyFlags properties = destination->GetProperties();
 
@@ -59,7 +59,7 @@ void RenderGraph::CopyBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuff
     }
     else if (properties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
     {
-        TPtr<VulkanBuffer> stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(size);
+        VulkanBuffer* stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(size);
     
         void* mappedAddress = stagingBuffer->MapMemory(0, size);
         memcpy(mappedAddress, data, size);
@@ -73,7 +73,7 @@ void RenderGraph::CopyBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuff
     }
 }
 
-void RenderGraph::TransitionLayout(TPtr<VulkanImage> image, VkImageLayout oldLayout, VkImageLayout newLayout)
+void RenderGraph::TransitionLayout(VulkanImage* image, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -125,9 +125,9 @@ void RenderGraph::TransitionLayout(TPtr<VulkanImage> image, VkImageLayout oldLay
     image->SetLayout(newLayout);
 }
 
-void RenderGraph::CopyImage(const uint8_t* data, uint32_t size, TPtr<VulkanImage> destination)
+void RenderGraph::CopyImage(const uint8_t* data, uint32_t size, VulkanImage* destination)
 {
-    TPtr<VulkanBuffer> stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(size);
+    VulkanBuffer* stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(size);
 
     void* mappedAddress = stagingBuffer->MapMemory(0, size);
     memcpy(mappedAddress, data, size);
@@ -173,9 +173,9 @@ void RenderGraph::SetRenderTargets(TPtr<RenderTargets> renderTargets)
     _pendingRenderTargets = renderTargets;
 }
 
-void RenderGraph::SetPipelineState(const RHIPipelineState& pipelineState, TPtr<VulkanDescriptorSet> descriptorSet)
+void RenderGraph::SetPipelineState(const RHIPipelineState& pipelineState, VulkanDescriptorSet* descriptorSet)
 {
-    TPtr<VulkanGraphicPipeline> pipeline = std::make_shared<VulkanGraphicPipeline>(_device, pipelineState, _pendingRenderPass);
+    VulkanGraphicPipeline* pipeline = new VulkanGraphicPipeline(_device, pipelineState, _pendingRenderPass);
 
     vkCmdBindPipeline(_commandBuffer->GetRawCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetRawPipeline());
 
@@ -189,13 +189,13 @@ void RenderGraph::BeginRenderPass()
     VkExtent3D extent3D = _pendingRenderTargets->colors.empty() ? _pendingRenderTargets->depthStencil.value().target->GetExtent() : _pendingRenderTargets->colors[0].target->GetExtent();
     VkExtent2D extent2D{extent3D.width, extent3D.height};
 
-    TPtrArr<VulkanImageView> framebufferImageArr;
+    std::vector<VulkanImageView*> framebufferImageArr;
     std::vector<VkAttachmentDescription> colorAttachmentArr;
     std::vector<VkClearValue> clearValues;
 
     for (auto& bindings : _pendingRenderTargets->colors)
     {
-        TPtr<VulkanImageView> imageView = bindings.target;
+        VulkanImageView* imageView = bindings.target;
 
         VkAttachmentDescription attachment{};
         attachment.format = imageView->GetImage()->GetFormat();
@@ -217,7 +217,7 @@ void RenderGraph::BeginRenderPass()
         imageView->GetImage()->SetLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     }
 
-    TPtr<VulkanRenderPass> renderPass;
+    VulkanRenderPass* renderPass = nullptr;
     if (_pendingRenderTargets->depthStencil.has_value())
     {
         RenderTargetBinding& depthBinding = _pendingRenderTargets->depthStencil.value();
@@ -231,7 +231,7 @@ void RenderGraph::BeginRenderPass()
         depthAttachment.initialLayout = depthBinding.target->GetImage()->GetLayout();
         depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-        renderPass = std::make_shared<VulkanRenderPass>(_device, colorAttachmentArr, depthAttachment);
+        renderPass = new VulkanRenderPass(_device, colorAttachmentArr, depthAttachment);
         framebufferImageArr.emplace_back(_pendingRenderTargets->depthStencil.value().target);
 
         VkClearValue clearValue;
@@ -243,10 +243,10 @@ void RenderGraph::BeginRenderPass()
     }
     else
     {
-        renderPass = std::make_shared<VulkanRenderPass>(_device, colorAttachmentArr);
+        renderPass = new VulkanRenderPass(_device, colorAttachmentArr);
     }
 
-    TPtr<VulkanFramebuffer> framebuffer = std::make_shared<VulkanFramebuffer>(_device, renderPass, framebufferImageArr, extent2D);
+    VulkanFramebuffer* framebuffer = new VulkanFramebuffer(_device, renderPass, framebufferImageArr, extent2D);
     _commandBuffer->BeginRenderPass(renderPass, framebuffer, {{0, 0}, extent2D}, clearValues);
 
     VkViewport viewport{0.0f, 0.0f, static_cast<float>(extent2D.width), static_cast<float>(extent2D.height), 0.0f, 1.0f};
@@ -264,7 +264,7 @@ void RenderGraph::EndRenderPass()
     _commandBuffer->EndRenderPass();
 }
 
-void RenderGraph::BindVertexBuffer(TPtr<VulkanBuffer> vertexBuffer, TPtr<VulkanBuffer> indexBuffer)
+void RenderGraph::BindVertexBuffer(VulkanBuffer* vertexBuffer, VulkanBuffer* indexBuffer)
 {
     // Vertex Input
     VkBuffer vertexBuffers[] = {vertexBuffer->GetRawBuffer()};
@@ -278,12 +278,12 @@ void RenderGraph::DrawIndexed(uint32_t verticesCount, uint32_t firstIndex)
     vkCmdDrawIndexed(_commandBuffer->GetRawCommandBuffer(), verticesCount, 1, firstIndex, 0, 0);
 }
 
-TPtr<VulkanCommandBuffer> RenderGraph::GetCommandBuffer()
+VulkanCommandBuffer* RenderGraph::GetCommandBuffer()
 {
     return _commandBuffer;
 }
 
-TPtr<VulkanDevice> RenderGraph::GetDevice()
+VulkanDevice* RenderGraph::GetDevice()
 {
     return _device;
 }

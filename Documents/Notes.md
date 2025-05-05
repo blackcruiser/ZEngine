@@ -9,3 +9,7 @@
 获取新CommandBuffer时，可以重置已提交的CommandBuffer状态。
 
 5. AcquireNextImage需要fence同步。保证semaphore被触发后再调用。否则会产生"If semaphore is not VK_NULL_HANDLE, it must not have any uncompleted signal or wait operations pending"错误。
+
+6. Vulkan对象的生命周期还是需要手动控制，所以不再使用shared_ptr。
+
+7. CommandBuffer需要fence同步，但是fence想使用manager管理，只能在CommandBuffer创建后再传入fence。Unity使用FrameTracking管理fence和semaphore，unreal则是直接使用。

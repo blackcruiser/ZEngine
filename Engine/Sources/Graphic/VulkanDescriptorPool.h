@@ -2,28 +2,23 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "Graphic/VulkanDevice.h"
 
 #include <vulkan/vulkan.h>
 
 
 namespace ZE {
 
-class VulkanDevice;
-
-class VulkanDescriptorPool
+class VulkanDescriptorPool : public VulkanDeviceChild
 {
 public:
-    VulkanDescriptorPool(TPtr<VulkanDevice> device, const std::vector<VkDescriptorPoolSize>& descriptorPoolSizeArr);
+    VulkanDescriptorPool(VulkanDevice* device, const std::vector<VkDescriptorPoolSize>& descriptorPoolSizeArr);
     ~VulkanDescriptorPool();
-
-    TPtr<VulkanDevice> GetDevice();
 
     VkDescriptorPool GetRawDescriptorPool();
 
 private:
     VkDescriptorPool _descriptorPool;
-
-    TPtr<VulkanDevice> _device;
 };
 
 } // namespace ZE

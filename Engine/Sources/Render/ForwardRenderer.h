@@ -24,7 +24,7 @@ public:
     virtual void Init(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene) override;
     TPtrArr<SceneObject> Prepare(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene);
     void Draw(TPtr<RenderGraph> commandBuffer, TPtr<Scene> scene);
-    virtual void RenderFrame(TPtr<RenderGraph> commandBuffer, TPtr<Viewport> viewport, TPtr<Scene> scene) override;
+    virtual void RenderFrame(TPtr<RenderGraph> commandBuffer, Viewport* viewport, TPtr<Scene> scene) override;
 
 private:
     TPtr<DepthPass> _depthPass;

@@ -18,12 +18,12 @@ enum class ERenderTargetLoadAction : uint8_t
 
 struct RenderTargetBinding
 {
-    RenderTargetBinding(TPtr<VulkanImageView> inTarget, ERenderTargetLoadAction inAction)
+    RenderTargetBinding(VulkanImageView* inTarget, ERenderTargetLoadAction inAction)
         : target(inTarget), loadAction(inAction)
     {
     }
 
-    TPtr<VulkanImageView> target;
+    VulkanImageView* target;
     ERenderTargetLoadAction loadAction;
 };
 

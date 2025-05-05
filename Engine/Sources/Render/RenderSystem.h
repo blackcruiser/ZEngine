@@ -31,33 +31,29 @@ public:
     void InitializeResources();
     void CleanupResources();
 
-private:
-    void CreateVulkanInstance();
-    void DestroyVulkanInstance();
-
 public:
     void Tick();
-
-    TPtr<VulkanBuffer> AcquireBuffer(uint32_t size, VkBufferUsageFlags bits, VkMemoryPropertyFlags properties);
     
-    TPtr<VulkanDevice> GetDevice();
-    TPtr<VulkanQueue> GetQueue(VulkanQueue::EType type);
-    TPtr<VulkanDescriptorPool> GetDescriptorPool();
-    TPtr<VulkanCommandBufferManager> GetCommandBufferManager();
-    TPtr<VulkanBufferManager> GetBufferManager();
-    TPtrSet<VulkanGraphicPipeline>& GetPipelineCache();
+    VulkanDevice* GetDevice();
+    VulkanQueue* GetQueue(VulkanQueue::EType type);
+    VulkanDescriptorPool* GetDescriptorPool();
+    VulkanCommandBufferManager* GetCommandBufferManager(VulkanQueue::EType type);
+    VulkanBufferManager* GetBufferManager();
 
 private:
-    VkInstance _vkInstance;
+    VkInstance _instance;
+    VkPhysicalDevice _physicalDevice;
 
-    TPtr<VulkanGPU> _GPU;
-    TPtr<VulkanDevice> _device;
+    VulkanDevice* _device;
+    VulkanQueue* _graphicQueue;
+    VulkanQueue* _computeQueue;
+    VulkanQueue* _transferQueue;
 
-    TPtrArr<VulkanQueue> _queueArr;
-    TPtr<VulkanDescriptorPool> _descriptorPool;
-    TPtr<VulkanCommandBufferManager> _commandBufferManager;
-    TPtr<VulkanBufferManager> _bufferManager;
-    TPtrSet<VulkanGraphicPipeline> _pipelineCache;
+    VulkanDescriptorPool* _descriptorPool;
+    VulkanCommandBufferManager* _graphicCommandBufferManager;
+    VulkanCommandBufferManager* _computeCommandBufferManager;
+    VulkanCommandBufferManager* _transferCommandBufferManager;
+    VulkanBufferManager* _bufferManager;
 };
 
 } // namespace ZE

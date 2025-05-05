@@ -2,26 +2,21 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
-
-#include <vulkan/vulkan.h>
+#include "VulkanDevice.h"
 
 
 namespace ZE {
 
-class VulkanDevice;
-
-class VulkanDescriptorSetLayout
+class VulkanDescriptorSetLayout : public VulkanDeviceChild
 {
 public:
-    VulkanDescriptorSetLayout(TPtr<VulkanDevice> device, const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings);
+    VulkanDescriptorSetLayout(VulkanDevice* device, const std::vector<VkDescriptorSetLayoutBinding>& layoutBindings);
     ~VulkanDescriptorSetLayout();
 
     VkDescriptorSetLayout GetRawDescriptorSetLayout();
 
 private:
-    VkDescriptorSetLayout _vkDescriptorSetLayout;
-
-    TPtr<VulkanDevice> _device;
+    VkDescriptorSetLayout _descriptorSetLayout;
 };
 
 } // namespace ZE

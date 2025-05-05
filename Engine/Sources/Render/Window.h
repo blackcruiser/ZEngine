@@ -25,8 +25,8 @@ public:
 
     bool ShouldClose();
 
-    void CreateViewport(TPtr<VulkanDevice> device);
-    TPtr<Viewport> GetViewport();
+    void CreateViewport(VulkanDevice* device);
+    Viewport* GetViewport();
 
     glm::ivec2 GetSize();
 
@@ -37,7 +37,7 @@ public:
 private:
     GLFWwindow* _glfwWindow;
     glm::ivec2 _size;
-    TPtr<Viewport> _viewport;
+    Viewport* _viewport;
 };
 
 } // namespace ZE

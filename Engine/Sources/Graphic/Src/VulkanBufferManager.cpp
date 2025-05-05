@@ -1,7 +1,7 @@
 #include "VulkanBufferManager.h"
-#include "VulkanDevice.h"
 #include "VulkanBuffer.h"
 #include "VulkanCommandBuffer.h"
+#include "Debug/AssertionMacros.h"
 
 #include <algorithm>
 #include <iterator>
@@ -9,85 +9,86 @@
 
 namespace ZE {
 
-VulkanBufferManager::VulkanBufferManager(TPtr<VulkanDevice> device)
-    : _device(device)
+VulkanBufferManager::VulkanBufferManager(VulkanDevice* device)
+    : VulkanDeviceChild(device)
 {
 }
 
 VulkanBufferManager::~VulkanBufferManager()
 {
+    Recycle();
+
+    for (VulkanBuffer* buffer : _freeStagingBuffers)
+    {
+        delete buffer;
+    }
+
+    ZE_CHECK(_usedStagingBuffers.empty());
+    ZE_CHECK(_pendingStagingBufferEntries.empty());
 }
 
-TPtr<VulkanBuffer> VulkanBufferManager::AcquireStagingBuffer(uint32_t size)
+VulkanBuffer* VulkanBufferManager::AcquireBuffer(uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
-    TPtr<VulkanBuffer> stagingBuffer{nullptr};
+    return  new VulkanBuffer(_device, size, usage, properties);
+}
 
-    for (auto iter = _freeStagingBuffer.begin(); iter != _freeStagingBuffer.end(); iter++)
+void VulkanBufferManager::ReleaseBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer)
+{
+    delete buffer;
+}
+
+VulkanBuffer* VulkanBufferManager::AcquireStagingBuffer(uint32_t size)
+{
+    Recycle();
+
+    VulkanBuffer* stagingBuffer = nullptr;
+
+    for (auto iter = _freeStagingBuffers.begin(); iter != _freeStagingBuffers.end(); iter++)
     {
         if ((*iter)->GetSize() >= size)
         {
             stagingBuffer = *iter;
-            _freeStagingBuffer.erase(iter);
+            _freeStagingBuffers.erase(iter);
             break;
         }
     }
 
     if (stagingBuffer == nullptr)
     {
-        stagingBuffer = std::make_shared<VulkanBuffer>(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        stagingBuffer = new VulkanBuffer(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     }
 
-    _usedStagingBuffer.push_back(stagingBuffer);
+    _usedStagingBuffers.push_back(stagingBuffer);
 
     return stagingBuffer;
 }
 
-void VulkanBufferManager::ReleaseStagingBuffer(TPtr<VulkanBuffer> buffer, TPtr<VulkanCommandBuffer> commandBuffer)
+void VulkanBufferManager::ReleaseStagingBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer)
 {
     if (commandBuffer == nullptr)
-        _freeStagingBuffer.push_back(buffer);
+        _freeStagingBuffers.push_back(buffer);
     else
     {
-        _pendingList.push_back({buffer, commandBuffer, commandBuffer->GetExecuteCount()});
+        _pendingStagingBufferEntries.push_back({buffer, commandBuffer, commandBuffer->GetExecuteCount()});
     }
 
-    _usedStagingBuffer.remove(buffer);
+    _usedStagingBuffers.remove(buffer);
 }
 
-void VulkanBufferManager::Tick()
+void VulkanBufferManager::Recycle()
 {
-    auto removeFilterFunc = [](StagingBufferEntry& entry) {
-        if (entry.weakCommandBuffer.expired())
-            return true;
+    for (auto iter = _pendingStagingBufferEntries.begin(); iter != _pendingStagingBufferEntries.end(); )
+    {
+        StagingBufferEntry& entry = *iter;
+        if (entry.frameCount < entry.commandBuffer->GetExecuteCount())
+        {
+            _freeStagingBuffers.push_back(entry.buffer);
+            iter = _pendingStagingBufferEntries.erase(iter);
+        }
         else
         {
-            TPtr<VulkanCommandBuffer> commandBuffer = entry.weakCommandBuffer.lock();
-            if (entry.frameCount < commandBuffer->GetExecuteCount())
-                return true;
-            else
-                return false;
+            iter ++;
         }
-    };
-
-    auto firstIter = std::find_if(_pendingList.begin(), _pendingList.end(), removeFilterFunc);
-    if (firstIter != _pendingList.end())
-    {
-        _freeStagingBuffer.push_back(firstIter->buffer);
-
-        for (auto iter = firstIter; ++iter != _pendingList.end();)
-        {
-            if (removeFilterFunc(*iter))
-            {
-                _freeStagingBuffer.push_back(iter->buffer);
-            }
-            else
-            {
-                *firstIter = std::move(*iter);
-                firstIter++;
-            }
-        }
-
-        _pendingList.erase(firstIter, _pendingList.end());
     }
 }
 

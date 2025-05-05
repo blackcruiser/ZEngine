@@ -2,25 +2,21 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "VulkanDevice.h"
 
-#include <vulkan/vulkan.h>
 
 namespace ZE {
 
-class VulkanDevice;
-
-class VulkanShader
+class VulkanShader : public VulkanDeviceChild
 {
 public:
-    VulkanShader(TPtr<VulkanDevice> device, const std::vector<char>& byteCode);
+    VulkanShader(VulkanDevice* device, const std::vector<char>& byteCode);
     ~VulkanShader();
 
     VkShaderModule GetRawShader();
 
 private:
-    TPtr<VulkanDevice> _device;
-
-    VkShaderModule _vkShaderModule;
+    VkShaderModule _shaderModule;
 };
 
 } // namespace ZE

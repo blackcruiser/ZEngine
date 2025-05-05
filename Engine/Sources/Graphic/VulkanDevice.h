@@ -3,43 +3,39 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 
-#include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
 
 namespace ZE {
 
-class VulkanGPU;
-class VulkanSurface;
-
 class VulkanDevice
 {
 public:
-    VulkanDevice(TPtr<VulkanGPU> GPU);
+    VulkanDevice(VkInstance instance, VkPhysicalDevice physicalDevice);
     ~VulkanDevice();
-
-    VkSemaphore CreateGraphicSemaphore();
-    void DestroyGraphicSemaphore(VkSemaphore semaphore);
-
-    VkFence CreateFence(bool isSignaled = false);
-    void DestroyFence(VkFence fence);
-    bool IsSignaled(VkFence fence);
 
     void WaitIdle();
 
-    TPtr<VulkanGPU> GetGPU();
-
     VkDevice GetRawDevice();
-
-    uint32_t GetGraphicQueueFamilyIndex();
-    uint32_t GetComputeQueueFamilyIndex();
-    uint32_t GetTransferQueueFamilyIndex();
+    VkInstance GetRawInstance();
+    VkPhysicalDevice GetRawPhysicalDevice();
 
 private:
-    VkDevice _vkDevice;
-    uint32_t _graphicQueueFamilyIndex, _computeQueueFamilyIndex, _transferQueueFamilyIndex;
+    VkDevice _device;
+    VkInstance _instance;
+    VkPhysicalDevice _physicalDevice;
+};
 
-    TPtr<VulkanGPU> _GPU;
+class VulkanDeviceChild
+{
+public:
+    VulkanDeviceChild(VulkanDevice* device);
+    VulkanDeviceChild() = delete;
+    
+    VulkanDevice* GetDevice();
+
+protected:
+    VulkanDevice* _device;
 };
 
 } // namespace ZE

@@ -3,30 +3,25 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 #include "PipelineState.h"
-
-#include <vulkan/vulkan.h>
+#include "VulkanDevice.h"
 
 
 namespace ZE {
 
-class VulkanDevice;
-class VulkanShader;
-class VulkanPipelineLayout;
 class VulkanRenderPass;
 
-class VulkanGraphicPipeline
+class VulkanGraphicPipeline : public VulkanDeviceChild
 {
 public:
-    VulkanGraphicPipeline(TPtr<VulkanDevice> device, const RHIPipelineState& state, TPtr<VulkanRenderPass> renderPass);
+    VulkanGraphicPipeline(VulkanDevice* device, const RHIPipelineState& state, VulkanRenderPass* renderPass);
     ~VulkanGraphicPipeline();
 
     VkPipeline GetRawPipeline();
 
 private:
-    VkPipeline _vkPipeline;
+    VkPipeline _pipeline;
 
-    TPtr<VulkanDevice> _device;
-    TPtr<VulkanRenderPass> _renderPass;
+    VulkanRenderPass* _renderPass;
 };
 
 } // namespace ZE

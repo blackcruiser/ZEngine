@@ -2,6 +2,7 @@
 #include "Graphic/VulkanDevice.h"
 #include "Graphic/VulkanSwapchain.h"
 #include "Graphic/VulkanQueue.h"
+#include "Graphic/VulkanSynchronizer.h"
 #include "Render/RenderSystem.h"
 #include "Render/RenderGraph.h"
 
@@ -10,7 +11,7 @@ const uint32_t kImageCount = 3;
 
 namespace ZE {
 
-Viewport::Viewport(TPtr<VulkanDevice> device, void* windowHandle, const glm::ivec2& size) :
+Viewport::Viewport(void* windowHandle, const glm::ivec2& size) :
     _size(size), _currentIndex(0), _windowHandle(windowHandle)
 {
 }
@@ -23,29 +24,29 @@ void Viewport::InitRenderResource(TPtr<RenderGraph> renderGraph)
 {
     RenderResource::InitRenderResource(renderGraph);
 
-    TPtr<VulkanDevice> device = renderGraph->GetDevice();
-    _swapchain = std::make_shared<VulkanSwapchain>(device, _windowHandle, _size, kImageCount);
+    VulkanDevice* device = renderGraph->GetDevice();
+    _swapchain = new VulkanSwapchain(device, _windowHandle, _size, kImageCount);
 
     for (uint32_t i = 0; i < kImageCount; i++)
     {
-        _submitSemaphores.emplace_back(device->CreateGraphicSemaphore());
-        _presentSemaphores.emplace_back(device->CreateGraphicSemaphore());
-        _presentFences.emplace_back(device->CreateFence(true));
+        _submitSemaphores.emplace_back(CreateSemaphore(device));
+        _presentSemaphores.emplace_back(CreateSemaphore(device));
+        _presentFences.emplace_back(CreateFence(device, true));
     }
 }
 
 void Viewport::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
 {
-    TPtr<VulkanDevice> device = renderGraph->GetDevice();
+    VulkanDevice* device = renderGraph->GetDevice();
     uint32_t imageCount = _swapchain->GetImageCount();
     for (uint32_t i = 0; i < imageCount; i++)
     {
-        device->DestroyGraphicSemaphore(_submitSemaphores[i]);
-        device->DestroyGraphicSemaphore(_presentSemaphores[i]);
-        device->DestroyFence(_presentFences[i]);
+        DestroySemaphore(device, _submitSemaphores[i]);
+        DestroySemaphore(device, _presentSemaphores[i]);
+        DestroyFence(device, _presentFences[i]);
     }
 
-    _swapchain.reset();
+    delete _swapchain;
 
     RenderResource::CleanupRenderResource(renderGraph);
 }
@@ -55,7 +56,7 @@ glm::ivec2 Viewport::GetSize()
     return _size;
 }
 
-TPtr<VulkanImage> Viewport::GetCurrentImage()
+VulkanImage* Viewport::GetCurrentImage()
 {
     return _swapchain->GetCurrentImage();
 }
@@ -73,11 +74,11 @@ void Viewport::Advance()
 
 void Viewport::Present(TPtr<RenderGraph> renderGraph)
 {
-    TPtr<VulkanImage> currentImage = GetCurrentImage();
+    VulkanImage* currentImage = GetCurrentImage();
     renderGraph->TransitionLayout(currentImage, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     renderGraph->Execute({_submitSemaphores[_currentIndex]}, {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}, {_presentSemaphores[_currentIndex]});
 
-    TPtr<VulkanQueue> graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
+    VulkanQueue* graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
     graphicQueue->Present(_swapchain, {_presentSemaphores[_currentIndex]});
 }
 

@@ -38,7 +38,7 @@ void Application::Run(TPtr<Scene> scene)
 
 
     window->CreateViewport(RenderSystem::Get().GetDevice());
-    TPtr<Viewport> viewport = window->GetViewport();
+    Viewport* viewport = window->GetViewport();
 
     TPtr<RendererInterface> renderer = std::make_shared<ForwardRenderer>();
     while (!window->ShouldClose())
@@ -56,7 +56,7 @@ void Application::Run(TPtr<Scene> scene)
     RenderSystem::Get().CleanupResources();
 
     renderer.reset();
-    viewport.reset();
+    delete viewport;
 
     InputSystem::Get().DetachFrom(window);
     window->UnregisterInput(InputSystem::Get());

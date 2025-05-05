@@ -19,7 +19,7 @@ class RenderGraph;
 class Viewport : public RenderResource
 {
 public:
-    Viewport(TPtr<VulkanDevice> device, void* windowHandle, const glm::ivec2& size);
+    Viewport(void* windowHandle, const glm::ivec2& size);
     ~Viewport();
 
     virtual void InitRenderResource(TPtr<RenderGraph> renderGraph) override;
@@ -27,7 +27,7 @@ public:
 
     glm::ivec2 GetSize();
     
-    TPtr<VulkanImage> GetCurrentImage();
+    VulkanImage* GetCurrentImage();
 
     void Advance();
 
@@ -35,7 +35,7 @@ public:
 
 private:
     void* _windowHandle;
-    TPtr<VulkanSwapchain> _swapchain;
+    VulkanSwapchain* _swapchain;
     std::vector<VkSemaphore> _submitSemaphores, _presentSemaphores;
     std::vector<VkFence> _presentFences;
     uint32_t _currentIndex;
