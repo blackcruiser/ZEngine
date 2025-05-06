@@ -20,6 +20,8 @@ public:
     VulkanCommandBuffer* Acquire();
     void Release(VulkanCommandBuffer* commandBuffer);
 
+    void Recycle();
+
 private:
     uint32_t _queueFamilyIndex;
     VkCommandPool _commandPool;

@@ -20,25 +20,19 @@ VulkanCommandBufferManager::VulkanCommandBufferManager(VulkanDevice* device, uin
 
 VulkanCommandBufferManager::~VulkanCommandBufferManager()
 {
+    Recycle();
+
+    for (VulkanCommandBuffer* commandBuffer : _freeCommandBuffers)
+    {
+        delete commandBuffer;
+    }
+
     vkDestroyCommandPool(_device->GetRawDevice(), _commandPool, nullptr);
 }
 
 VulkanCommandBuffer* VulkanCommandBufferManager::Acquire()
 {
-    for (auto iterator = _submittedCommandBuffers.begin(); iterator != _submittedCommandBuffers.end(); )
-    {
-        VulkanCommandBuffer* commandBuffer = *iterator;
-        if (IsSignaled(_device, commandBuffer->GetFence()))
-        {
-            commandBuffer->Reset();
-            _freeCommandBuffers.push_back(commandBuffer);
-            iterator = _submittedCommandBuffers.erase(iterator);
-        }
-        else
-        {
-            iterator++;
-        }
-    }
+    Recycle();
 
     if (_freeCommandBuffers.empty())
     {
@@ -56,6 +50,24 @@ VulkanCommandBuffer* VulkanCommandBufferManager::Acquire()
 void VulkanCommandBufferManager::Release(VulkanCommandBuffer* commandBuffer)
 {
     _submittedCommandBuffers.push_back(commandBuffer);
+}
+
+void VulkanCommandBufferManager::Recycle()
+{
+    for (auto iterator = _submittedCommandBuffers.begin(); iterator != _submittedCommandBuffers.end(); )
+    {
+        VulkanCommandBuffer* commandBuffer = *iterator;
+        if (IsSignaled(_device, commandBuffer->GetFence()))
+        {
+            commandBuffer->Reset();
+            _freeCommandBuffers.push_back(commandBuffer);
+            iterator = _submittedCommandBuffers.erase(iterator);
+        }
+        else
+        {
+            iterator++;
+        }
+    }
 }
 
 } // namespace ZE

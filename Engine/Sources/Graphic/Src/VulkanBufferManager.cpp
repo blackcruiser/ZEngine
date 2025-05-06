@@ -1,6 +1,7 @@
 #include "VulkanBufferManager.h"
 #include "VulkanBuffer.h"
 #include "VulkanCommandBuffer.h"
+#include "Misc/AssertionMacros.h"
 
 #include <algorithm>
 #include <iterator>
@@ -15,6 +16,15 @@ VulkanBufferManager::VulkanBufferManager(VulkanDevice* device)
 
 VulkanBufferManager::~VulkanBufferManager()
 {
+    Recycle();
+
+    for (VulkanBuffer* buffer : _freeStagingBuffers)
+    {
+        delete buffer;
+    }
+
+    CHECK(_usedStagingBuffers.empty());
+    CHECK(_pendingStagingBufferEntries.empty());
 }
 
 VulkanBuffer* VulkanBufferManager::AcquireBuffer(uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
@@ -33,12 +43,12 @@ VulkanBuffer* VulkanBufferManager::AcquireStagingBuffer(uint32_t size)
 
     VulkanBuffer* stagingBuffer = nullptr;
 
-    for (auto iter = _freeStagingBuffer.begin(); iter != _freeStagingBuffer.end(); iter++)
+    for (auto iter = _freeStagingBuffers.begin(); iter != _freeStagingBuffers.end(); iter++)
     {
         if ((*iter)->GetSize() >= size)
         {
             stagingBuffer = *iter;
-            _freeStagingBuffer.erase(iter);
+            _freeStagingBuffers.erase(iter);
             break;
         }
     }
@@ -48,7 +58,7 @@ VulkanBuffer* VulkanBufferManager::AcquireStagingBuffer(uint32_t size)
         stagingBuffer = new VulkanBuffer(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     }
 
-    _usedStagingBuffer.push_back(stagingBuffer);
+    _usedStagingBuffers.push_back(stagingBuffer);
 
     return stagingBuffer;
 }
@@ -56,24 +66,24 @@ VulkanBuffer* VulkanBufferManager::AcquireStagingBuffer(uint32_t size)
 void VulkanBufferManager::ReleaseStagingBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer)
 {
     if (commandBuffer == nullptr)
-        _freeStagingBuffer.push_back(buffer);
+        _freeStagingBuffers.push_back(buffer);
     else
     {
-        _pendingList.push_back({buffer, commandBuffer, commandBuffer->GetExecuteCount()});
+        _pendingStagingBufferEntries.push_back({buffer, commandBuffer, commandBuffer->GetExecuteCount()});
     }
 
-    _usedStagingBuffer.remove(buffer);
+    _usedStagingBuffers.remove(buffer);
 }
 
 void VulkanBufferManager::Recycle()
 {
-    for (auto iter = _pendingList.begin(); iter != _pendingList.end(); )
+    for (auto iter = _pendingStagingBufferEntries.begin(); iter != _pendingStagingBufferEntries.end(); )
     {
         StagingBufferEntry& entry = *iter;
         if (entry.frameCount < entry.commandBuffer->GetExecuteCount())
         {
-            _freeStagingBuffer.push_back(entry.buffer);
-            iter = _pendingList.erase(iter);
+            _freeStagingBuffers.push_back(entry.buffer);
+            iter = _pendingStagingBufferEntries.erase(iter);
         }
         else
         {

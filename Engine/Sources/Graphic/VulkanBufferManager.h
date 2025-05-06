@@ -34,8 +34,8 @@ private:
     void Recycle();
 
 private:
-    std::list<VulkanBuffer*> _usedStagingBuffer, _freeStagingBuffer;
-    std::list<StagingBufferEntry> _pendingList;
+    std::list<VulkanBuffer*> _usedStagingBuffers, _freeStagingBuffers;
+    std::list<StagingBufferEntry> _pendingStagingBufferEntries;
 };
 
 } // namespace ZE
