@@ -1,6 +1,6 @@
 #include "VulkanFramebuffer.h"
 #include "VulkanDevice.h"
-#include "VulkanImageView.h"
+#include "VulkanImage.h"
 #include "VulkanRenderPass.h"
 #include "Debug/AssertionMacros.h"
 
@@ -10,13 +10,13 @@
 
 namespace ZE {
 
-VulkanFramebuffer::VulkanFramebuffer(VulkanDevice* device, VulkanRenderPass* renderPass, const std::vector<VulkanImageView*>& imageViewArr, const VkExtent2D& extent)
+VulkanFramebuffer::VulkanFramebuffer(VulkanDevice* device, VulkanRenderPass* renderPass, const std::vector<VulkanImage*>& imageArr, const VkExtent2D& extent)
     : VulkanDeviceChild(device), _framebuffer(VK_NULL_HANDLE)
 {
-    std::copy(imageViewArr.begin(), imageViewArr.end(), std::back_inserter(_imageViewArr));
+    std::copy(imageArr.begin(), imageArr.end(), std::back_inserter(_imageArr));
     std::vector<VkImageView> vkImageViewArr;
-    std::transform(imageViewArr.begin(), imageViewArr.end(), std::back_inserter(vkImageViewArr), [](VulkanImageView* imageView) {
-        return imageView->GetRawImageView();
+    std::transform(imageArr.begin(), imageArr.end(), std::back_inserter(vkImageViewArr), [](VulkanImage* image) {
+        return image->GetRawImageView();
     });
 
     VkFramebufferCreateInfo framebufferInfo{};

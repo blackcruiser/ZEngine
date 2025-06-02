@@ -8,13 +8,13 @@
 namespace ZE {
 
 class VulkanDevice;
-class VulkanImageView;
+class VulkanImage;
 class VulkanRenderPass;
 
 class VulkanFramebuffer : public VulkanDeviceChild
 {
 public:
-    VulkanFramebuffer(VulkanDevice* device, VulkanRenderPass* renderPass, const std::vector<VulkanImageView*>& imageViewArr, const VkExtent2D& extent);
+    VulkanFramebuffer(VulkanDevice* device, VulkanRenderPass* renderPass, const std::vector<VulkanImage*>& imageArr, const VkExtent2D& extent);
     ~VulkanFramebuffer();
 
     VkFramebuffer GetRawFramebuffer();
@@ -22,7 +22,7 @@ public:
 private:
     VkFramebuffer _framebuffer;
 
-    std::vector<VulkanImageView*> _imageViewArr;
+    std::vector<VulkanImage*> _imageArr;
 };
 
 } // namespace ZE

@@ -3,13 +3,13 @@
 #include "Graphic/VulkanCommandBuffer.h"
 #include "Graphic/VulkanCommandBufferManager.h"
 #include "Graphic/VulkanBuffer.h"
-#include "Graphic/VulkanBufferManager.h"
+#include "Graphic/VulkanStagingBufferManager.h"
 #include "Graphic/VulkanImage.h"
-#include "Graphic/VulkanImageView.h"
 #include "Graphic/VulkanPipeline.h"
 #include "Graphic/VulkanDescriptorSet.h"
 #include "Graphic/VulkanFramebuffer.h"
 #include "Graphic/VulkanRenderPass.h"
+#include "Graphic/GraphicResource.h"
 #include "Render/RenderSystem.h"
 #include "Render/RenderTargets.h"
 
@@ -36,6 +36,8 @@ void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, cons
     _commandBuffer->End();
     VulkanQueue* graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
     graphicQueue->Submit(_commandBuffer, waitSemaphoreArr, waitStageArr, signalSemaphoreArr, _commandBuffer->GetFence());
+
+    RenderSystem::Get().GetResourceDeleter()->DelayDestroy();
 
     RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Release(_commandBuffer);
     _commandBuffer = RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Acquire();
@@ -189,32 +191,32 @@ void RenderGraph::BeginRenderPass()
     VkExtent3D extent3D = _pendingRenderTargets->colors.empty() ? _pendingRenderTargets->depthStencil.value().target->GetExtent() : _pendingRenderTargets->colors[0].target->GetExtent();
     VkExtent2D extent2D{extent3D.width, extent3D.height};
 
-    std::vector<VulkanImageView*> framebufferImageArr;
+    std::vector<VulkanImage*> framebufferImageArr;
     std::vector<VkAttachmentDescription> colorAttachmentArr;
     std::vector<VkClearValue> clearValues;
 
     for (auto& bindings : _pendingRenderTargets->colors)
     {
-        VulkanImageView* imageView = bindings.target;
+        VulkanImage* image = bindings.target;
 
         VkAttachmentDescription attachment{};
-        attachment.format = imageView->GetImage()->GetFormat();
+        attachment.format = image->GetFormat();
         attachment.samples = VK_SAMPLE_COUNT_1_BIT;
         attachment.loadOp = ConvertRenderTargetLoadActionToVulkan(bindings.loadAction);
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachment.initialLayout = imageView->GetImage()->GetLayout();
+        attachment.initialLayout = image->GetLayout();
         attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         colorAttachmentArr.emplace_back(attachment);
-        framebufferImageArr.emplace_back(imageView);
+        framebufferImageArr.emplace_back(image);
 
         VkClearValue clearValue;
         clearValue.color = {0.0f, 0.0f, 0.0f, 0.0f};
         clearValues.push_back(clearValue);
 
-        imageView->GetImage()->SetLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+        image->SetLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     }
 
     VulkanRenderPass* renderPass = nullptr;
@@ -228,7 +230,7 @@ void RenderGraph::BeginRenderPass()
         depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depthAttachment.initialLayout = depthBinding.target->GetImage()->GetLayout();
+        depthAttachment.initialLayout = depthBinding.target->GetLayout();
         depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
         renderPass = new VulkanRenderPass(_device, colorAttachmentArr, depthAttachment);
@@ -239,7 +241,7 @@ void RenderGraph::BeginRenderPass()
         clearValue.depthStencil.stencil = 0;
         clearValues.push_back(clearValue);
 
-        depthBinding.target->GetImage()->SetLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        depthBinding.target->SetLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     }
     else
     {

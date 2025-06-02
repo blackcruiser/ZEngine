@@ -25,7 +25,7 @@ void Viewport::InitRenderResource(TPtr<RenderGraph> renderGraph)
     RenderResource::InitRenderResource(renderGraph);
 
     VulkanDevice* device = renderGraph->GetDevice();
-    _swapchain = new VulkanSwapchain(device, _windowHandle, _size, kImageCount);
+    _swapchain = new VulkanSwapchain(RenderSystem::Get().GetResourceDeleter(), device, _windowHandle, _size, kImageCount);
 
     for (uint32_t i = 0; i < kImageCount; i++)
     {

@@ -9,6 +9,13 @@ set(CMAKE_CXX_STANDARD 23)
 # Source
 set(EngineSourcesDirectory ${CMAKE_CURRENT_LIST_DIR}/Engine/Sources)
 
+## Core Module
+set(CoreSourceDirectory ${EngineSourcesDirectory}/Core)
+# should not use file(GLOB ...)
+file(GLOB CoreIncludes "${CoreSourceDirectory}/*.h")
+aux_source_directory(${CoreSourceDirectory}/Src CoreSources)
+source_group(TREE ${EngineSourcesDirectory} FILES ${CoreSources} ${CoreIncludes})
+
 ## Debug Module
 set(DebugSourceDirectory ${EngineSourcesDirectory}/Debug)
 # should not use file(GLOB ...)
@@ -80,10 +87,10 @@ target_include_directories(stb_image INTERFACE ${ThirdPartiesSourcesDirectory}/s
 file(GLOB EngineIncludes "${EngineSourcesDirectory}/*.h")
 aux_source_directory(${EngineSourcesDirectory} EngineSources)
 
-add_library(Engine ${DebugSources} ${DebugIncludes} ${GraphicSources} ${GraphicIncludes} ${InputSources} ${InputIncludes} ${RenderSources} ${RenderIncludes} ${SceneSources} ${SceneIncludes} ${ResourceSources} ${ResourceIncludes} ${EngineSources} ${EngineIncludes})
+add_library(Engine ${CoreSources} ${CoreIncludes} ${DebugSources} ${DebugIncludes} ${GraphicSources} ${GraphicIncludes} ${InputSources} ${InputIncludes} ${RenderSources} ${RenderIncludes} ${SceneSources} ${SceneIncludes} ${ResourceSources} ${ResourceIncludes} ${EngineSources} ${EngineIncludes})
 target_include_directories(Engine 
                             PUBLIC ${EngineSourcesDirectory}
-                            PRIVATE ${DebugSourceDirectory} ${GraphicSourceDirectory} ${InputSourceDirectory} ${RenderSourceDirectory} ${SceneSourceDirectory} ${ResourceSourceDirectory})
+                            PRIVATE ${CoreSourceDirectory} ${DebugSourceDirectory} ${GraphicSourceDirectory} ${InputSourceDirectory} ${RenderSourceDirectory} ${SceneSourceDirectory} ${ResourceSourceDirectory})
 target_link_libraries(Engine PUBLIC glfw glm::glm Vulkan::Vulkan tinyobjloader stb_image)
 
 

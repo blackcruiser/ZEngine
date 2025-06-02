@@ -18,14 +18,11 @@ struct StagingBufferEntry
     uint64_t frameCount;
 };
 
-class VulkanBufferManager : public VulkanDeviceChild
+class VulkanStagingBufferManager : public VulkanDeviceChild
 {
 public:
-    VulkanBufferManager(VulkanDevice* device);
-    ~VulkanBufferManager();
-
-    VulkanBuffer* AcquireBuffer(uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
-    void ReleaseBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer = nullptr);
+    VulkanStagingBufferManager(VulkanDevice* device);
+    ~VulkanStagingBufferManager();
 
     VulkanBuffer* AcquireStagingBuffer(uint32_t size);
     void ReleaseStagingBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer = nullptr);

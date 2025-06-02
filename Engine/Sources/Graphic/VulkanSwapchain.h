@@ -3,6 +3,7 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 #include "VulkanDevice.h"
+#include "GraphicResource.h"
 
 #include <glm/vec2.hpp>
 
@@ -13,10 +14,10 @@ class VulkanSurface;
 class VulkanDevice;
 class VulkanImage;
 
-class VulkanSwapchain : public VulkanDeviceChild
+class VulkanSwapchain : public GraphicResource, public VulkanDeviceChild
 {
 public:
-    VulkanSwapchain(VulkanDevice* device, void* windowHandle, const glm::ivec2& size, uint32_t imageCount);
+    VulkanSwapchain(GraphicResourceDeleter* deleter, VulkanDevice* device, void* windowHandle, const glm::ivec2& size, uint32_t imageCount);
     ~VulkanSwapchain();
 
     uint32_t GetImageCount();

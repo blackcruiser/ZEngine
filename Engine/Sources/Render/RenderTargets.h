@@ -7,7 +7,7 @@
 
 namespace ZE {
 
-class VulkanImageView;
+class VulkanImage;
 
 enum class ERenderTargetLoadAction : uint8_t
 {
@@ -18,12 +18,12 @@ enum class ERenderTargetLoadAction : uint8_t
 
 struct RenderTargetBinding
 {
-    RenderTargetBinding(VulkanImageView* inTarget, ERenderTargetLoadAction inAction)
+    RenderTargetBinding(VulkanImage* inTarget, ERenderTargetLoadAction inAction)
         : target(inTarget), loadAction(inAction)
     {
     }
 
-    VulkanImageView* target;
+    VulkanImage* target;
     ERenderTargetLoadAction loadAction;
 };
 

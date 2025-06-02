@@ -21,8 +21,8 @@ VulkanSurface* CreateSurface(VulkanDevice* device, void* windowHandle, const glm
     return surface;
 }
 
-VulkanSwapchain::VulkanSwapchain(VulkanDevice* device, void* windowHandle, const glm::ivec2& size, uint32_t imageCount)
-    : VulkanDeviceChild(device), _swapchain(VK_NULL_HANDLE), _imageCount(imageCount), _acquiredIndex(-1)
+VulkanSwapchain::VulkanSwapchain(GraphicResourceDeleter* deleter, VulkanDevice* device, void* windowHandle, const glm::ivec2& size, uint32_t imageCount)
+    : GraphicResource(deleter), VulkanDeviceChild(device), _swapchain(VK_NULL_HANDLE), _imageCount(imageCount), _acquiredIndex(-1)
 {
     _surface = CreateSurface(device, windowHandle, size);
     VkSurfaceFormatKHR surfaceFormat = _surface->GetSurfaceFormat();
@@ -64,7 +64,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice* device, void* windowHandle, const
     VkExtent3D extent3D{extent.width, extent.height, 1};
     for (size_t i = 0; i < count; i++)
     {
-        VulkanImage* vulkanImage = new VulkanImage(_device, vkImages[i], extent3D, surfaceFormat.format);
+        VulkanImage* vulkanImage = new VulkanImage(deleter, _device, vkImages[i], extent3D, surfaceFormat.format);
         _imagerArr.push_back(vulkanImage);
     }
 }

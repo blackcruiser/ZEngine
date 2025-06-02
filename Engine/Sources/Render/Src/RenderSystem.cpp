@@ -2,9 +2,10 @@
 #include "Graphic/VulkanContext.h"
 #include "Graphic/VulkanDevice.h"
 #include "Graphic/VulkanBuffer.h"
-#include "Graphic/VulkanBufferManager.h"
+#include "Graphic/VulkanStagingBufferManager.h"
 #include "Graphic/VulkanCommandBufferManager.h"
 #include "Graphic/VulkanDescriptorPool.h"
+#include "Graphic/GraphicResource.h"
 #include "RenderSystem.h"
 #include "RenderResource.h"
 #include "RenderGraph.h"
@@ -66,11 +67,15 @@ void RenderSystem::Initialize()
     std::vector<VkDescriptorPoolSize> poolSizeArr = {{VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10}, {VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}};
     _descriptorPool = new VulkanDescriptorPool(_device, poolSizeArr);
 
-    _bufferManager = new VulkanBufferManager(_device);
+    _bufferManager = new VulkanStagingBufferManager(_device);
+
+    _resourceDeleter = new GraphicResourceDeleter();
 }
 
 void RenderSystem::Cleanup()
 {
+    delete _resourceDeleter;
+
     delete _bufferManager;
     delete _graphicCommandBufferManager;
     delete _computeCommandBufferManager;
@@ -96,6 +101,8 @@ void RenderSystem::InitializeResources()
 void RenderSystem::CleanupResources()
 {
     _device->WaitIdle();
+
+    _resourceDeleter->DelayDestroy();
 
     TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
     RenderResource::CleanupRenderResources(renderGraph);
@@ -145,9 +152,14 @@ VulkanCommandBufferManager* RenderSystem::GetCommandBufferManager(VulkanQueue::E
     return nullptr;
 }
 
-VulkanBufferManager* RenderSystem::GetBufferManager()
+VulkanStagingBufferManager* RenderSystem::GetBufferManager()
 {
     return _bufferManager;
+}
+
+GraphicResourceDeleter* RenderSystem::GetResourceDeleter()
+{
+    return _resourceDeleter;
 }
 
 } // namespace ZE

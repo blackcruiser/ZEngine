@@ -3,6 +3,7 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 #include "VulkanDevice.h"
+#include "GraphicResource.h"
 
 
 namespace ZE {
@@ -11,11 +12,11 @@ class VulkanDevice;
 class VulkanCommandBuffer;
 class VulkanBuffer;
 
-class VulkanImage : public VulkanDeviceChild
+class VulkanImage : public GraphicResource, public VulkanDeviceChild
 {
 public:
-    VulkanImage(VulkanDevice* device, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    VulkanImage(VulkanDevice* device, VkImage vkImage, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    VulkanImage(GraphicResourceDeleter* deleter, VulkanDevice* device, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    VulkanImage(GraphicResourceDeleter* deleter, VulkanDevice* device, VkImage vkImage, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     ~VulkanImage();
 
     void TransitionLayout(VulkanCommandBuffer* commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout);
@@ -29,6 +30,7 @@ public:
     VkFormat GetFormat();
 
     VkImage GetRawImage();
+    VkImageView GetRawImageView();
 
 private:
     VkImage _image;
@@ -37,6 +39,7 @@ private:
     VkExtent3D _extent;
     VkFormat _format;
     VkImageLayout _layout;
+    VkImageView _view;
 };
 
 } // namespace ZE

@@ -14,7 +14,7 @@
 namespace ZE {
 
 class VulkanSampler;
-class VulkanImageView;
+class VulkanImage;
 class VulkanShader;
 class VulkanBuffer;
 class VulkanDescriptorSet;
@@ -25,7 +25,7 @@ class RenderGraph;
 struct VulkanImageBindingInfo
 {
     uint32_t bindingPoint;
-    VulkanImageView* vulkanImageView;
+    VulkanImage* vulkanImage;
     VulkanSampler* vulkanSampler;
 };
 

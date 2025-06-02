@@ -1,6 +1,7 @@
-#include "VulkanBufferManager.h"
+#include "VulkanStagingBufferManager.h"
 #include "VulkanBuffer.h"
 #include "VulkanCommandBuffer.h"
+#include "Render/RenderSystem.h"
 #include "Debug/AssertionMacros.h"
 
 #include <algorithm>
@@ -9,12 +10,12 @@
 
 namespace ZE {
 
-VulkanBufferManager::VulkanBufferManager(VulkanDevice* device)
+VulkanStagingBufferManager::VulkanStagingBufferManager(VulkanDevice* device)
     : VulkanDeviceChild(device)
 {
 }
 
-VulkanBufferManager::~VulkanBufferManager()
+VulkanStagingBufferManager::~VulkanStagingBufferManager()
 {
     Recycle();
 
@@ -27,17 +28,7 @@ VulkanBufferManager::~VulkanBufferManager()
     ZE_CHECK(_pendingStagingBufferEntries.empty());
 }
 
-VulkanBuffer* VulkanBufferManager::AcquireBuffer(uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
-{
-    return  new VulkanBuffer(_device, size, usage, properties);
-}
-
-void VulkanBufferManager::ReleaseBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer)
-{
-    delete buffer;
-}
-
-VulkanBuffer* VulkanBufferManager::AcquireStagingBuffer(uint32_t size)
+VulkanBuffer* VulkanStagingBufferManager::AcquireStagingBuffer(uint32_t size)
 {
     Recycle();
 
@@ -55,7 +46,7 @@ VulkanBuffer* VulkanBufferManager::AcquireStagingBuffer(uint32_t size)
 
     if (stagingBuffer == nullptr)
     {
-        stagingBuffer = new VulkanBuffer(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        stagingBuffer = new VulkanBuffer(RenderSystem::Get().GetResourceDeleter(), _device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     }
 
     _usedStagingBuffers.push_back(stagingBuffer);
@@ -63,7 +54,7 @@ VulkanBuffer* VulkanBufferManager::AcquireStagingBuffer(uint32_t size)
     return stagingBuffer;
 }
 
-void VulkanBufferManager::ReleaseStagingBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer)
+void VulkanStagingBufferManager::ReleaseStagingBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer)
 {
     if (commandBuffer == nullptr)
         _freeStagingBuffers.push_back(buffer);
@@ -75,7 +66,7 @@ void VulkanBufferManager::ReleaseStagingBuffer(VulkanBuffer* buffer, VulkanComma
     _usedStagingBuffers.remove(buffer);
 }
 
-void VulkanBufferManager::Recycle()
+void VulkanStagingBufferManager::Recycle()
 {
     for (auto iter = _pendingStagingBufferEntries.begin(); iter != _pendingStagingBufferEntries.end(); )
     {

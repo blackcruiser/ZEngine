@@ -3,6 +3,7 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 #include "VulkanDevice.h"
+#include "GraphicResource.h"
 
 
 namespace ZE {
@@ -10,10 +11,10 @@ namespace ZE {
 class VulkanDevice;
 class VulkanCommandBuffer;
 
-class VulkanBuffer : public VulkanDeviceChild
+class VulkanBuffer : public GraphicResource, public VulkanDeviceChild
 {
 public:
-    VulkanBuffer(VulkanDevice* device, uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+    VulkanBuffer(GraphicResourceDeleter* deleter, VulkanDevice* device, uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
     ~VulkanBuffer();
 
     void* MapMemory(VkDeviceSize offset, VkDeviceSize size);

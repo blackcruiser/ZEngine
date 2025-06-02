@@ -4,7 +4,6 @@
 #include "RenderTargets.h"
 #include "Viewport.h"
 #include "Graphic/VulkanImage.h"
-#include "Graphic/VulkanImageView.h"
 #include "Material.h"
 #include "Mesh.h"
 #include "DirectionalLightPass.h"
@@ -102,20 +101,18 @@ void ForwardRenderer::RenderFrame(TPtr<RenderGraph> renderGraph, Viewport* viewp
     glm::ivec2 size = viewport->GetSize();
     VkExtent3D extent { size.r, size.g, 1.0f };
     //Depth Pass
-    VulkanImage* depthImage = new VulkanImage(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    VulkanImageView* depthImageView = new VulkanImageView(depthImage, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT);
+    VulkanImage* depthImage = new VulkanImage(RenderSystem::Get().GetResourceDeleter(), renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     TPtr<RenderTargets> depthRenderTargets = std::make_shared<RenderTargets>();
-    depthRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Clear};
+    depthRenderTargets->depthStencil = RenderTargetBinding{depthImage, ERenderTargetLoadAction::Clear};
     renderGraph->SetRenderTargets(depthRenderTargets);
     _depthPass->Execute(renderGraph, objectsToRender);
 
     //Light Pass
     VulkanImage* backBuffer = viewport->GetCurrentImage();
-    VulkanImageView* backBufferView = new VulkanImageView(backBuffer);
     TPtr<RenderTargets> lightingRenderTargets = std::make_shared<RenderTargets>();
-    lightingRenderTargets->colors = {RenderTargetBinding{backBufferView, ERenderTargetLoadAction::Clear}};
-    lightingRenderTargets->depthStencil = RenderTargetBinding{depthImageView, ERenderTargetLoadAction::Load};
+    lightingRenderTargets->colors = {RenderTargetBinding{backBuffer, ERenderTargetLoadAction::Clear}};
+    lightingRenderTargets->depthStencil = RenderTargetBinding{depthImage, ERenderTargetLoadAction::Load};
     renderGraph->SetRenderTargets(lightingRenderTargets);
     _directionalLightPass->Execute(renderGraph, objectsToRender);
 }

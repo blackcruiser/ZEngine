@@ -11,9 +11,10 @@ class VulkanDevice;
 class VulkanBuffer;
 class VulkanDescriptorPool;
 class VulkanCommandBufferManager;
-class VulkanBufferManager;
+class VulkanStagingBufferManager;
 class VulkanGraphicPipeline;
 class VulkanRenderPass;
+class GraphicResourceDeleter;
 
 class RenderSystem
 {
@@ -38,7 +39,9 @@ public:
     VulkanQueue* GetQueue(VulkanQueue::EType type);
     VulkanDescriptorPool* GetDescriptorPool();
     VulkanCommandBufferManager* GetCommandBufferManager(VulkanQueue::EType type);
-    VulkanBufferManager* GetBufferManager();
+    VulkanStagingBufferManager* GetBufferManager();
+
+    GraphicResourceDeleter* GetResourceDeleter();
 
 private:
     VkInstance _instance;
@@ -53,7 +56,9 @@ private:
     VulkanCommandBufferManager* _graphicCommandBufferManager;
     VulkanCommandBufferManager* _computeCommandBufferManager;
     VulkanCommandBufferManager* _transferCommandBufferManager;
-    VulkanBufferManager* _bufferManager;
+    VulkanStagingBufferManager* _bufferManager;
+    
+    GraphicResourceDeleter* _resourceDeleter;
 };
 
 } // namespace ZE

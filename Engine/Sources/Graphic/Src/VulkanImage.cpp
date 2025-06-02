@@ -6,9 +6,9 @@
 
 namespace ZE {
 
-VulkanImage::VulkanImage(VulkanDevice* device, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
-    : VulkanDeviceChild(device), _image(VK_NULL_HANDLE), _memory(VK_NULL_HANDLE)
-    , _hasOwnship(true), _extent(extent), _format(format), _layout(VK_IMAGE_LAYOUT_UNDEFINED)
+VulkanImage::VulkanImage(GraphicResourceDeleter* deleter, VulkanDevice* device, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
+    : GraphicResource(deleter), VulkanDeviceChild(device), _image(VK_NULL_HANDLE), _memory(VK_NULL_HANDLE)
+    , _hasOwnship(true), _extent(extent), _format(format), _layout(VK_IMAGE_LAYOUT_UNDEFINED), _view(VK_NULL_HANDLE)
 {
     // Image
     VkImageCreateInfo imageInfo{};
@@ -40,19 +40,71 @@ VulkanImage::VulkanImage(VulkanDevice* device, const VkExtent3D& extent, VkForma
     ZE_CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to allocate image memory!")
 
     vkBindImageMemory(_device->GetRawDevice(), _image, _memory, 0);
+
+    // ImageView
+    VkImageViewCreateInfo imageViewCreateInfo{};
+    imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageViewCreateInfo.image = _image;
+    imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageViewCreateInfo.format = _format;
+    imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    if ((usageFlags & VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT || (usageFlags & VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT) == VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT)
+        imageViewCreateInfo.subresourceRange.aspectMask = VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT;
+    else if ((usageFlags & VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+        imageViewCreateInfo.subresourceRange.aspectMask = VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT;
+    else
+        imageViewCreateInfo.subresourceRange.aspectMask = VkImageAspectFlagBits::VK_IMAGE_ASPECT_NONE;
+    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    imageViewCreateInfo.subresourceRange.levelCount = 1;
+    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewCreateInfo.subresourceRange.layerCount = 1;
+
+    result = vkCreateImageView(_device->GetRawDevice(), &imageViewCreateInfo, nullptr, &_view);
+    ZE_CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to create ImageView!");
 }
 
-VulkanImage::VulkanImage(VulkanDevice* device, VkImage vkImage, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
-    : VulkanDeviceChild(device), _image(vkImage), _memory(VK_NULL_HANDLE), _hasOwnship(false), _extent(extent), _format(format), _layout(VK_IMAGE_LAYOUT_UNDEFINED)
+VulkanImage::VulkanImage(GraphicResourceDeleter* deleter, VulkanDevice* device, VkImage vkImage, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
+    : GraphicResource(deleter), VulkanDeviceChild(device), _image(vkImage), _memory(VK_NULL_HANDLE), _hasOwnship(false), _extent(extent), _format(format), _layout(VK_IMAGE_LAYOUT_UNDEFINED), _view(VK_NULL_HANDLE)
 {
+    // ImageView
+    VkImageViewCreateInfo imageViewCreateInfo{};
+    imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageViewCreateInfo.image = _image;
+    imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageViewCreateInfo.format = _format;
+    imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    if ((usageFlags & VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT || (usageFlags & VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT) == VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT)
+        imageViewCreateInfo.subresourceRange.aspectMask = VkImageAspectFlagBits::VK_IMAGE_ASPECT_COLOR_BIT;
+    else if ((usageFlags & VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+        imageViewCreateInfo.subresourceRange.aspectMask = VkImageAspectFlagBits::VK_IMAGE_ASPECT_DEPTH_BIT;
+    else
+        imageViewCreateInfo.subresourceRange.aspectMask = VkImageAspectFlagBits::VK_IMAGE_ASPECT_NONE;
+    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    imageViewCreateInfo.subresourceRange.levelCount = 1;
+    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewCreateInfo.subresourceRange.layerCount = 1;
+
+    VkResult result = vkCreateImageView(_device->GetRawDevice(), &imageViewCreateInfo, nullptr, &_view);
+    ZE_CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to create ImageView!");
 }
 
 VulkanImage::~VulkanImage()
 {
+    VkDevice rawDevice = _device->GetRawDevice();
+
+    if (_view != VK_NULL_HANDLE)
+    {
+        vkDestroyImageView(rawDevice, _view, nullptr);
+    }
+
     if (_hasOwnship)
     {
-        VkDevice rawDevice = _device->GetRawDevice();
-
         ZE_CHECK(_image != VK_NULL_HANDLE);
         vkDestroyImage(rawDevice, _image, nullptr);
 
@@ -87,6 +139,11 @@ VkFormat VulkanImage::GetFormat()
 VkImage VulkanImage::GetRawImage()
 {
     return _image;
+}
+
+VkImageView VulkanImage::GetRawImageView()
+{
+    return _view;
 }
 
 } // namespace ZE
