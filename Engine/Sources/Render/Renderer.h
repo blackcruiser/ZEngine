@@ -14,7 +14,7 @@ class Viewport;
 class RendererInterface
 {
 public:
-    virtual void Init(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene) = 0;
+    virtual void Init(TPtr<RenderGraph> renderGraph, Viewport* viewport) = 0;
     virtual void RenderFrame(TPtr<RenderGraph> renderGraph, Viewport* viewport, TPtr<Scene> scene) = 0;
 };
 

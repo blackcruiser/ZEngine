@@ -31,8 +31,13 @@ ForwardRenderer::~ForwardRenderer()
 {
 }
 
-void ForwardRenderer::Init(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene)
+void ForwardRenderer::Init(TPtr<RenderGraph> renderGraph, Viewport* viewport)
 {
+    glm::ivec2 size = viewport->GetSize();
+    VkExtent3D extent{size.r, size.g, 1.0f};
+
+    // Depth Pass
+   _depthRenderTarget = new VulkanImage(RenderSystem::Get().GetResourceDeleter(), renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
 TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene)
@@ -96,25 +101,17 @@ TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<RenderGraph> renderGraph, TPt
 
 void ForwardRenderer::RenderFrame(TPtr<RenderGraph> renderGraph, Viewport* viewport, TPtr<Scene> scene)
 {
-    TPtrArr<SceneObject> objectsToRender = Prepare(renderGraph, scene);
+    {
+        VulkanImage* backBuffer = viewport->GetCurrentImage();
+        _depthPass->Init(_depthRenderTarget);
+        _directionalLightPass->Init(backBuffer, _depthRenderTarget);
+    }
 
-    glm::ivec2 size = viewport->GetSize();
-    VkExtent3D extent { size.r, size.g, 1.0f };
-    //Depth Pass
-    VulkanImage* depthImage = new VulkanImage(RenderSystem::Get().GetResourceDeleter(), renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-
-    TPtr<RenderTargets> depthRenderTargets = std::make_shared<RenderTargets>();
-    depthRenderTargets->depthStencil = RenderTargetBinding{depthImage, ERenderTargetLoadAction::Clear};
-    renderGraph->SetRenderTargets(depthRenderTargets);
-    _depthPass->Execute(renderGraph, objectsToRender);
-
-    //Light Pass
-    VulkanImage* backBuffer = viewport->GetCurrentImage();
-    TPtr<RenderTargets> lightingRenderTargets = std::make_shared<RenderTargets>();
-    lightingRenderTargets->colors = {RenderTargetBinding{backBuffer, ERenderTargetLoadAction::Clear}};
-    lightingRenderTargets->depthStencil = RenderTargetBinding{depthImage, ERenderTargetLoadAction::Load};
-    renderGraph->SetRenderTargets(lightingRenderTargets);
-    _directionalLightPass->Execute(renderGraph, objectsToRender);
+    {
+        TPtrArr<SceneObject> objectsToRender = Prepare(renderGraph, scene);
+        _depthPass->Execute(renderGraph, objectsToRender);
+        _directionalLightPass->Execute(renderGraph, objectsToRender);
+    }
 }
 
 } // namespace ZE

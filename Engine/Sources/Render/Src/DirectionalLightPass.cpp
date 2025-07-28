@@ -13,12 +13,18 @@
 
 namespace ZE {
 
-void DirectionalLightPass::Prepare(TPtr<Scene> scene)
+void DirectionalLightPass::Init(VulkanImage* colorRenderTarget, VulkanImage* depthRenderTarget)
 {
+    renderTargets = std::make_shared<RenderTargets>();
+    renderTargets->colors = {RenderTargetBinding{colorRenderTarget, ERenderTargetLoadAction::Clear}};
+    renderTargets->depthStencil = RenderTargetBinding{depthRenderTarget, ERenderTargetLoadAction::Load};
 }
 
 void DirectionalLightPass::Draw(TPtr<RenderGraph>& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
 {
+    renderGraph->SetRenderTargets(renderTargets);
+    renderGraph->BeginRenderPass();
+
     EPassType passType = EPassType::BasePass;
     for (const TPtr<SceneObject>& object : objectsToRender)
     {
@@ -41,6 +47,8 @@ void DirectionalLightPass::Draw(TPtr<RenderGraph>& renderGraph, const TPtrArr<Sc
         // Draw
         renderGraph->DrawIndexed(mesh->GetVerticesCount(), 0);
     }
+
+    renderGraph->EndRenderPass();
 }
 
 }

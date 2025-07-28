@@ -39,8 +39,9 @@ void Application::Run(TPtr<Scene> scene)
 
     window->CreateViewport(RenderSystem::Get().GetDevice());
     Viewport* viewport = window->GetViewport();
-
+    TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
     TPtr<RendererInterface> renderer = std::make_shared<ForwardRenderer>();
+    renderer->Init(renderGraph, viewport);
     while (!window->ShouldClose())
     {
         glfwPollEvents();
@@ -48,7 +49,7 @@ void Application::Run(TPtr<Scene> scene)
         RenderSystem::Get().InitializeResources();
 
         viewport->Advance();
-        TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
+        
         renderer->RenderFrame(renderGraph, viewport, scene);
         viewport->Present(renderGraph);
     }

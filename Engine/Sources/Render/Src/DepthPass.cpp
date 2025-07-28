@@ -13,12 +13,17 @@
 
 namespace ZE {
 
-void DepthPass::Prepare(TPtr<Scene> scene)
+void DepthPass::Init(VulkanImage* depthRenderTarget)
 {
+    renderTargets = std::make_shared<RenderTargets>();
+    renderTargets->depthStencil = RenderTargetBinding{depthRenderTarget, ERenderTargetLoadAction::Clear};
 }
 
 void DepthPass::Draw(TPtr<RenderGraph>& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
 {
+    renderGraph->SetRenderTargets(renderTargets);
+    renderGraph->BeginRenderPass();
+
     EPassType passType = EPassType::DepthPass;
     for (const TPtr<SceneObject>& object : objectsToRender)
     {
@@ -42,6 +47,7 @@ void DepthPass::Draw(TPtr<RenderGraph>& renderGraph, const TPtrArr<SceneObject>&
         renderGraph->DrawIndexed(mesh->GetVerticesCount(), 0);
     }
 
+    renderGraph->EndRenderPass();
 }
 
 }

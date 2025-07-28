@@ -4,11 +4,17 @@
 
 namespace ZE {
 
+class VulkanImage;
+struct RenderTargets;
+
 class DepthPass : public RenderPass
 {
 public:
-    virtual void Prepare(TPtr<Scene> scene) override;
+    void Init(VulkanImage* depthRenderTarget);
     virtual void Draw(TPtr<RenderGraph>& commandBuffer, const TPtrArr<SceneObject>& objectsToRender) override;
+
+private:
+    TPtr<RenderTargets> renderTargets;
 };
 
 }
