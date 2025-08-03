@@ -69,7 +69,7 @@ public:
 
     void AddObject(ReferenceCountObject* object);
 
-    void DelayDestroy();
+    void CleanupPool();
 
 private:
     std::list<ReferenceCountObject*> _resourceList;

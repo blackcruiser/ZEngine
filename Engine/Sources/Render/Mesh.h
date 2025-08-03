@@ -25,14 +25,14 @@ public:
     virtual void CleanupRenderResource(TPtr<RenderGraph> renderGraph) override;
 
     uint32_t GetVerticesCount();
-    VulkanBuffer* GetVertexBuffer();
-    VulkanBuffer* GetIndexBuffer();
+    TPtr<VulkanBuffer> GetVertexBuffer();
+    TPtr<VulkanBuffer> GetIndexBuffer();
 
     void ApplyPipelineState(RHIPipelineState& state);
 
 private:
-    VulkanBuffer* _vertexBuffer;
-    VulkanBuffer* _indexBuffer;
+    TPtr<VulkanBuffer> _vertexBuffer;
+    TPtr<VulkanBuffer> _indexBuffer;
     uint32_t _verticesCount;
 
     TWeakPtr<MeshResource> _owner;

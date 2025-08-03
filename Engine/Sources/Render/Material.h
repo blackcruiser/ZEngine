@@ -25,8 +25,8 @@ class RenderGraph;
 struct VulkanImageBindingInfo
 {
     uint32_t bindingPoint;
-    VulkanImage* vulkanImage;
-    VulkanSampler* vulkanSampler;
+    TPtr<VulkanImage> vulkanImage;
+    TPtr<VulkanSampler> vulkanSampler;
 };
 
 class Pass : public RenderResource
@@ -59,7 +59,7 @@ public:
 private:
     std::unordered_map<VkShaderStageFlagBits, VulkanShader*> _shaders;
     std::unordered_map<VkShaderStageFlagBits, std::list<VulkanImageBindingInfo>> _textures;
-    VulkanBuffer* _uniformBuffer;
+    TPtr<VulkanBuffer> _uniformBuffer;
     VulkanDescriptorSetLayout* _descriptorSetLayout;
     VulkanDescriptorSet* _descriptorSet;
     VulkanPipelineLayout* _pipelineLayout;

@@ -13,7 +13,7 @@
 
 namespace ZE {
 
-void DepthPass::Init(VulkanImage* depthRenderTarget)
+void DepthPass::Init(TPtr<VulkanImage> depthRenderTarget)
 {
     renderTargets = std::make_shared<RenderTargets>();
     renderTargets->depthStencil = RenderTargetBinding{depthRenderTarget, ERenderTargetLoadAction::Clear};

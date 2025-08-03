@@ -1,20 +1,17 @@
 #pragma once
 
 #include "CoreDefines.h"
-#include "Core/ReferenceCountObject.h"
+
+#include <list>
 
 
 namespace ZE {
 
-class GraphicResource : public PooledReferenceCountObject
+class GraphicResource
 {
 public:
-    GraphicResource(ReferenceCountObjectPool* deleter);
+    GraphicResource();
     virtual ~GraphicResource();
-};
-
-class GraphicResourceDeleter : public ReferenceCountObjectPool
-{
 };
 
 }

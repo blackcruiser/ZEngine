@@ -10,12 +10,12 @@
 
 namespace ZE {
 
-VulkanFramebuffer::VulkanFramebuffer(VulkanDevice* device, VulkanRenderPass* renderPass, const std::vector<VulkanImage*>& imageArr, const VkExtent2D& extent)
+VulkanFramebuffer::VulkanFramebuffer(VulkanDevice* device, VulkanRenderPass* renderPass, const std::vector<TPtr<VulkanImage>>& imageArr, const VkExtent2D& extent)
     : VulkanDeviceChild(device), _framebuffer(VK_NULL_HANDLE)
 {
     std::copy(imageArr.begin(), imageArr.end(), std::back_inserter(_imageArr));
     std::vector<VkImageView> vkImageViewArr;
-    std::transform(imageArr.begin(), imageArr.end(), std::back_inserter(vkImageViewArr), [](VulkanImage* image) {
+    std::transform(imageArr.begin(), imageArr.end(), std::back_inserter(vkImageViewArr), [](TPtr<VulkanImage> image) {
         return image->GetRawImageView();
     });
 

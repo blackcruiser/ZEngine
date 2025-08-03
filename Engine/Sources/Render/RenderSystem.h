@@ -2,6 +2,8 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "Core/ObjectPool.h"
+#include "Graphic/GraphicResource.h"
 #include "Graphic/VulkanQueue.h"
 
 namespace ZE {
@@ -14,7 +16,15 @@ class VulkanCommandBufferManager;
 class VulkanStagingBufferManager;
 class VulkanGraphicPipeline;
 class VulkanRenderPass;
-class GraphicResourceDeleter;
+class GraphicResource;
+class RenderGraph;
+
+
+class GraphicResourceDeleter
+{
+public:
+    void operator()(GraphicResource* p);
+};
 
 class RenderSystem
 {
@@ -29,8 +39,8 @@ public:
     void Initialize();
     void Cleanup();
 
-    void InitializeResources();
-    void CleanupResources();
+    void InitializeResources(TPtr<RenderGraph> renderGraph);
+    void CleanupResources(TPtr<RenderGraph> renderGraph);
 
 public:
     void Tick();
@@ -41,7 +51,7 @@ public:
     VulkanCommandBufferManager* GetCommandBufferManager(VulkanQueue::EType type);
     VulkanStagingBufferManager* GetBufferManager();
 
-    GraphicResourceDeleter* GetResourceDeleter();
+    ObjectPool<GraphicResource>* GetGraphicResourcePool();
 
 private:
     VkInstance _instance;
@@ -58,7 +68,7 @@ private:
     VulkanCommandBufferManager* _transferCommandBufferManager;
     VulkanStagingBufferManager* _bufferManager;
     
-    GraphicResourceDeleter* _resourceDeleter;
+    ObjectPool<GraphicResource>* _graphicResourcePool;
 };
 
 } // namespace ZE

@@ -6,9 +6,10 @@
 #include "Graphic/VulkanCommandBufferManager.h"
 #include "Graphic/VulkanDescriptorPool.h"
 #include "Graphic/GraphicResource.h"
-#include "RenderSystem.h"
 #include "RenderResource.h"
 #include "RenderGraph.h"
+
+#include "Debug/AssertionMacros.h"
 
 #include <vulkan/vulkan.h>
 
@@ -17,6 +18,12 @@
 
 
 namespace ZE {
+
+ void GraphicResourceDeleter::operator()(GraphicResource* resource)
+ {
+     RenderSystem::Get().GetGraphicResourcePool()->AddResource(resource);
+ }
+
 
 RenderSystem& RenderSystem::Get()
 {
@@ -69,12 +76,14 @@ void RenderSystem::Initialize()
 
     _bufferManager = new VulkanStagingBufferManager(_device);
 
-    _resourceDeleter = new GraphicResourceDeleter();
+    _graphicResourcePool = new ObjectPool<GraphicResource>();
 }
 
 void RenderSystem::Cleanup()
 {
-    delete _resourceDeleter;
+    _graphicResourcePool->Cleanup();
+
+    delete _graphicResourcePool;
 
     delete _bufferManager;
     delete _graphicCommandBufferManager;
@@ -92,19 +101,15 @@ void RenderSystem::Cleanup()
     DestroyInstance(_instance);
 }
 
-void RenderSystem::InitializeResources()
+void RenderSystem::InitializeResources(TPtr<RenderGraph> renderGraph)
 {
-    TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
     RenderResource::InitializeRenderResources(renderGraph);
 }
 
-void RenderSystem::CleanupResources()
+void RenderSystem::CleanupResources(TPtr<RenderGraph> renderGraph)
 {
     _device->WaitIdle();
 
-    _resourceDeleter->DelayDestroy();
-
-    TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
     RenderResource::CleanupRenderResources(renderGraph);
 }
 
@@ -157,9 +162,10 @@ VulkanStagingBufferManager* RenderSystem::GetBufferManager()
     return _bufferManager;
 }
 
-GraphicResourceDeleter* RenderSystem::GetResourceDeleter()
+ObjectPool<GraphicResource>* RenderSystem::GetGraphicResourcePool()
 {
-    return _resourceDeleter;
+    ZE_CHECK(_graphicResourcePool);
+    return _graphicResourcePool;
 }
 
 } // namespace ZE

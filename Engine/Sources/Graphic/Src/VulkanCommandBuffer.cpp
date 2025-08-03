@@ -56,12 +56,10 @@ void VulkanCommandBuffer::Reset()
     _executeCount++;
     _status = EStatus::Initial;
     ResetFence(_device, _fence);
-    
 
     _cachedRenderPasses.clear();
     _cachedFramebuffers.clear();
     _cachedPipelines.clear();
-
 }
 
 void VulkanCommandBuffer::BeginRenderPass(VulkanRenderPass* renderPass, VulkanFramebuffer* framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors)

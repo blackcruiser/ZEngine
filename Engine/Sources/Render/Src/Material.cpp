@@ -15,6 +15,7 @@
 #include "Graphic/VulkanPipeline.h"
 #include "Graphic/VulkanShader.h"
 #include "Graphic/VulkanCommandBuffer.h"
+#include "Graphic/GraphicResource.h"
 #include "Resource/ShaderResource.h"
 #include "Resource/TextureResource.h"
 
@@ -251,7 +252,7 @@ void Pass::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
     delete  _pipelineLayout;
     delete _descriptorSet;
     delete _descriptorSetLayout;
-    delete _uniformBuffer;
+    _uniformBuffer.reset();
 
     for (auto iter = _shaders.begin(); iter != _shaders.end(); iter++)
     {
@@ -263,22 +264,22 @@ void Pass::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
         std::list<VulkanImageBindingInfo>& bindingInfos = iter->second;
         for (VulkanImageBindingInfo& bindingInfo : bindingInfos)
         {
-            delete bindingInfo.vulkanSampler;
-            delete bindingInfo.vulkanImage;
+            bindingInfo.vulkanSampler.reset();
+            bindingInfo.vulkanImage.reset();
         }
     }
 
     RenderResource::CleanupRenderResource(renderGraph);
 }
 
-VulkanImage* CreateGraphicImage(TPtr<RenderGraph> renderGraph, TPtr<TextureResource> texture)
+TPtr<VulkanImage> CreateGraphicImage(TPtr<RenderGraph> renderGraph, TPtr<TextureResource> texture)
 {
     assert(texture->IsLoaded());
 
     uint32_t imageSize = texture->GetWidth() * texture->GetHeight() * 4;
     VkExtent3D extent{texture->GetWidth(), texture->GetHeight(), 1};
 
-    VulkanImage* vulkanImage = new VulkanImage(RenderSystem::Get().GetResourceDeleter(), renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_R8G8B8A8_SRGB);
+    TPtr<VulkanImage> vulkanImage = TPtr<VulkanImage>(new VulkanImage(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_R8G8B8A8_SRGB), GraphicResourceDeleter());
     renderGraph->CopyImage(static_cast<const uint8_t*>(texture->GetData()), imageSize, vulkanImage);
 
     return vulkanImage;
@@ -307,7 +308,7 @@ void Pass::CreateGraphicTextures(TPtr<RenderGraph> renderGraph)
 
             vulkanBindingInfo.bindingPoint = bindingInfo.bindingPoint;
             vulkanBindingInfo.vulkanImage = CreateGraphicImage(renderGraph, bindingInfo.texture);
-            vulkanBindingInfo.vulkanSampler = new VulkanSampler(device);
+            vulkanBindingInfo.vulkanSampler = TPtr<VulkanSampler>(new VulkanSampler(device), GraphicResourceDeleter());
 
             vulkanBindingInfoList.push_back(vulkanBindingInfo);
         }
@@ -319,7 +320,7 @@ void Pass::CreateGraphicTextures(TPtr<RenderGraph> renderGraph)
 
 void Pass::CreateGraphicBuffers(TPtr<RenderGraph> renderGraph)
 {
-    _uniformBuffer = new VulkanBuffer(RenderSystem::Get().GetResourceDeleter(), renderGraph->GetDevice(), sizeof(glm::mat4x4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    _uniformBuffer = TPtr<VulkanBuffer>(new VulkanBuffer(renderGraph->GetDevice(), sizeof(glm::mat4x4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), GraphicResourceDeleter());
 }
 
 VulkanShader* CreateGraphicShader(VulkanDevice* device, VkShaderStageFlagBits shaderStage,

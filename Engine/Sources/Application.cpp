@@ -46,7 +46,7 @@ void Application::Run(TPtr<Scene> scene)
     {
         glfwPollEvents();
 
-        RenderSystem::Get().InitializeResources();
+        RenderSystem::Get().InitializeResources(renderGraph);
 
         viewport->Advance();
         
@@ -54,14 +54,17 @@ void Application::Run(TPtr<Scene> scene)
         viewport->Present(renderGraph);
     }
 
-    RenderSystem::Get().CleanupResources();
+    RenderSystem::Get().CleanupResources(renderGraph);
+    renderer->Cleanup(renderGraph);
 
     renderer.reset();
+    renderGraph.reset();
     delete viewport;
 
     InputSystem::Get().DetachFrom(window);
     window->UnregisterInput(InputSystem::Get());
     window.reset();
+
 
     RenderSystem::Get().Cleanup();
     InputSystem::Cleanup();

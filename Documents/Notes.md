@@ -13,3 +13,5 @@
 6. Vulkan对象的生命周期还是需要手动控制，所以不再使用shared_ptr。
 
 7. CommandBuffer需要fence同步，但是fence想使用manager管理，只能在CommandBuffer创建后再传入fence。Unity使用FrameTracking管理fence和semaphore，unreal则是直接使用。
+
+8. std::shared_ptrr 传入的Deleter居然不是引用，只能自己写个

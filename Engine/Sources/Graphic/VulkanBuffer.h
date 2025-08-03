@@ -14,7 +14,7 @@ class VulkanCommandBuffer;
 class VulkanBuffer : public GraphicResource, public VulkanDeviceChild
 {
 public:
-    VulkanBuffer(GraphicResourceDeleter* deleter, VulkanDevice* device, uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+    VulkanBuffer(VulkanDevice* device, uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
     ~VulkanBuffer();
 
     void* MapMemory(VkDeviceSize offset, VkDeviceSize size);

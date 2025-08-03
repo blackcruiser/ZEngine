@@ -21,8 +21,8 @@ VulkanSurface* CreateSurface(VulkanDevice* device, void* windowHandle, const glm
     return surface;
 }
 
-VulkanSwapchain::VulkanSwapchain(GraphicResourceDeleter* deleter, VulkanDevice* device, void* windowHandle, const glm::ivec2& size, uint32_t imageCount)
-    : GraphicResource(deleter), VulkanDeviceChild(device), _swapchain(VK_NULL_HANDLE), _imageCount(imageCount), _acquiredIndex(-1)
+VulkanSwapchain::VulkanSwapchain(VulkanDevice* device, void* windowHandle, const glm::ivec2& size, uint32_t imageCount)
+    : GraphicResource(), VulkanDeviceChild(device), _swapchain(VK_NULL_HANDLE), _imageCount(imageCount), _acquiredIndex(-1)
 {
     _surface = CreateSurface(device, windowHandle, size);
     VkSurfaceFormatKHR surfaceFormat = _surface->GetSurfaceFormat();
@@ -64,16 +64,16 @@ VulkanSwapchain::VulkanSwapchain(GraphicResourceDeleter* deleter, VulkanDevice* 
     VkExtent3D extent3D{extent.width, extent.height, 1};
     for (size_t i = 0; i < count; i++)
     {
-        VulkanImage* vulkanImage = new VulkanImage(deleter, _device, vkImages[i], extent3D, surfaceFormat.format);
+        TPtr<VulkanImage> vulkanImage = std::make_shared<VulkanImage>(_device, vkImages[i], extent3D, surfaceFormat.format);
         _imagerArr.push_back(vulkanImage);
     }
 }
 
 VulkanSwapchain::~VulkanSwapchain()
 {
-    for (VulkanImage* image : _imagerArr)
+    for (TPtr<VulkanImage> image : _imagerArr)
     {
-        delete image;
+        image.reset();
     }
 
     ZE_CHECK(_swapchain != VK_NULL_HANDLE);
@@ -92,7 +92,7 @@ uint32_t VulkanSwapchain::GetCurrentIndex()
     return _acquiredIndex;
 }
 
-VulkanImage* VulkanSwapchain::GetCurrentImage()
+TPtr<VulkanImage> VulkanSwapchain::GetCurrentImage()
 {
     ZE_CHECK(_acquiredIndex >= 0);
     

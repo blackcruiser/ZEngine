@@ -20,12 +20,17 @@ VulkanCommandBufferManager::VulkanCommandBufferManager(VulkanDevice* device, uin
 
 VulkanCommandBufferManager::~VulkanCommandBufferManager()
 {
-    Recycle();
+    for (VulkanCommandBuffer* commandBuffer : _submittedCommandBuffers)
+    {
+        delete commandBuffer;
+    }
+    _submittedCommandBuffers.clear();
 
     for (VulkanCommandBuffer* commandBuffer : _freeCommandBuffers)
     {
         delete commandBuffer;
     }
+    _freeCommandBuffers.clear();
 
     vkDestroyCommandPool(_device->GetRawDevice(), _commandPool, nullptr);
 }
@@ -57,7 +62,7 @@ void VulkanCommandBufferManager::Recycle()
     for (auto iterator = _submittedCommandBuffers.begin(); iterator != _submittedCommandBuffers.end(); )
     {
         VulkanCommandBuffer* commandBuffer = *iterator;
-        if (IsSignaled(_device, commandBuffer->GetFence()))
+        if (IsFenceSignaled(_device, commandBuffer->GetFence()))
         {
             commandBuffer->Reset();
             _freeCommandBuffers.push_back(commandBuffer);

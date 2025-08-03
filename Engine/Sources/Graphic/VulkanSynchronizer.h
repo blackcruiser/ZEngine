@@ -14,7 +14,7 @@ void DestroySemaphore(VulkanDevice* device, VkSemaphore semaphore);
 VkFence CreateFence(VulkanDevice* device, bool bSignaled);
 void ResetFence(VulkanDevice* device, VkFence fence);
 void DestroyFence(VulkanDevice* device, VkFence fence);
-
-bool IsSignaled(VulkanDevice* device, VkFence fence);
+void WaitFence(VulkanDevice* device, VkFence inFence);
+bool IsFenceSignaled(VulkanDevice* device, VkFence fence);
 
 }

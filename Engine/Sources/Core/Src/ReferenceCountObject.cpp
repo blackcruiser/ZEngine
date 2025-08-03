@@ -53,7 +53,7 @@ void ReferenceCountObjectPool::AddObject(ReferenceCountObject* object)
     _resourceList.emplace_back(object);
 }
 
-void ReferenceCountObjectPool::DelayDestroy()
+void ReferenceCountObjectPool::CleanupPool()
 {
     for (auto iter = _resourceList.begin(); iter != _resourceList.end(); ++iter)
     {

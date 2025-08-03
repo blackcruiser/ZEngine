@@ -5,6 +5,7 @@
 #include "Graphic/VulkanSynchronizer.h"
 #include "Render/RenderSystem.h"
 #include "Render/RenderGraph.h"
+#include "CoreTypes.h"
 
 
 const uint32_t kImageCount = 3;
@@ -25,7 +26,7 @@ void Viewport::InitRenderResource(TPtr<RenderGraph> renderGraph)
     RenderResource::InitRenderResource(renderGraph);
 
     VulkanDevice* device = renderGraph->GetDevice();
-    _swapchain = new VulkanSwapchain(RenderSystem::Get().GetResourceDeleter(), device, _windowHandle, _size, kImageCount);
+    _swapchain = new VulkanSwapchain(device, _windowHandle, _size, kImageCount);
 
     for (uint32_t i = 0; i < kImageCount; i++)
     {
@@ -56,7 +57,7 @@ glm::ivec2 Viewport::GetSize()
     return _size;
 }
 
-VulkanImage* Viewport::GetCurrentImage()
+TPtr<VulkanImage> Viewport::GetCurrentImage()
 {
     return _swapchain->GetCurrentImage();
 }
@@ -74,7 +75,7 @@ void Viewport::Advance()
 
 void Viewport::Present(TPtr<RenderGraph> renderGraph)
 {
-    VulkanImage* currentImage = GetCurrentImage();
+    TPtr<VulkanImage> currentImage = GetCurrentImage();
     renderGraph->TransitionLayout(currentImage, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     renderGraph->Execute({_submitSemaphores[_currentIndex]}, {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}, {_presentSemaphores[_currentIndex]});
 

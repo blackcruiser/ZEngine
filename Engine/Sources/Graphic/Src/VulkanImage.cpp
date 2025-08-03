@@ -6,8 +6,8 @@
 
 namespace ZE {
 
-VulkanImage::VulkanImage(GraphicResourceDeleter* deleter, VulkanDevice* device, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
-    : GraphicResource(deleter), VulkanDeviceChild(device), _image(VK_NULL_HANDLE), _memory(VK_NULL_HANDLE)
+VulkanImage::VulkanImage(VulkanDevice* device, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
+    : GraphicResource(), VulkanDeviceChild(device), _image(VK_NULL_HANDLE), _memory(VK_NULL_HANDLE)
     , _hasOwnship(true), _extent(extent), _format(format), _layout(VK_IMAGE_LAYOUT_UNDEFINED), _view(VK_NULL_HANDLE)
 {
     // Image
@@ -66,8 +66,8 @@ VulkanImage::VulkanImage(GraphicResourceDeleter* deleter, VulkanDevice* device, 
     ZE_CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to create ImageView!");
 }
 
-VulkanImage::VulkanImage(GraphicResourceDeleter* deleter, VulkanDevice* device, VkImage vkImage, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
-    : GraphicResource(deleter), VulkanDeviceChild(device), _image(vkImage), _memory(VK_NULL_HANDLE), _hasOwnship(false), _extent(extent), _format(format), _layout(VK_IMAGE_LAYOUT_UNDEFINED), _view(VK_NULL_HANDLE)
+VulkanImage::VulkanImage(VulkanDevice* device, VkImage vkImage, const VkExtent3D& extent, VkFormat format, VkImageUsageFlags usageFlags)
+    : GraphicResource(), VulkanDeviceChild(device), _image(vkImage), _memory(VK_NULL_HANDLE), _hasOwnship(false), _extent(extent), _format(format), _layout(VK_IMAGE_LAYOUT_UNDEFINED), _view(VK_NULL_HANDLE)
 {
     // ImageView
     VkImageViewCreateInfo imageViewCreateInfo{};

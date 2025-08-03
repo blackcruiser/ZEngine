@@ -27,7 +27,7 @@ public:
 
     glm::ivec2 GetSize();
     
-    VulkanImage* GetCurrentImage();
+    TPtr<VulkanImage> GetCurrentImage();
 
     void Advance();
 

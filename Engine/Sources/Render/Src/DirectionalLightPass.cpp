@@ -13,7 +13,7 @@
 
 namespace ZE {
 
-void DirectionalLightPass::Init(VulkanImage* colorRenderTarget, VulkanImage* depthRenderTarget)
+void DirectionalLightPass::Init(TPtr<VulkanImage> colorRenderTarget, TPtr<VulkanImage> depthRenderTarget)
 {
     renderTargets = std::make_shared<RenderTargets>();
     renderTargets->colors = {RenderTargetBinding{colorRenderTarget, ERenderTargetLoadAction::Clear}};

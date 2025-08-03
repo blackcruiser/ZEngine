@@ -37,7 +37,12 @@ void ForwardRenderer::Init(TPtr<RenderGraph> renderGraph, Viewport* viewport)
     VkExtent3D extent{size.r, size.g, 1.0f};
 
     // Depth Pass
-   _depthRenderTarget = new VulkanImage(RenderSystem::Get().GetResourceDeleter(), renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    _depthRenderTarget = TPtr<VulkanImage>(new VulkanImage(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT), GraphicResourceDeleter());
+}
+
+void ForwardRenderer::Cleanup(TPtr<RenderGraph> renderGraph)
+{
+    _depthRenderTarget.reset();
 }
 
 TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene)
@@ -102,7 +107,7 @@ TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<RenderGraph> renderGraph, TPt
 void ForwardRenderer::RenderFrame(TPtr<RenderGraph> renderGraph, Viewport* viewport, TPtr<Scene> scene)
 {
     {
-        VulkanImage* backBuffer = viewport->GetCurrentImage();
+        TPtr<VulkanImage> backBuffer = viewport->GetCurrentImage();
         _depthPass->Init(_depthRenderTarget);
         _directionalLightPass->Init(backBuffer, _depthRenderTarget);
     }

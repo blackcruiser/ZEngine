@@ -37,7 +37,7 @@ void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, cons
     VulkanQueue* graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
     graphicQueue->Submit(_commandBuffer, waitSemaphoreArr, waitStageArr, signalSemaphoreArr, _commandBuffer->GetFence());
 
-    RenderSystem::Get().GetResourceDeleter()->DelayDestroy();
+    RenderSystem::Get().GetGraphicResourcePool()->DelayDestroy();
 
     RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Release(_commandBuffer);
     _commandBuffer = RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Acquire();
@@ -49,7 +49,7 @@ void RenderGraph::Execute()
     Execute({}, {}, {});
 }
 
-void RenderGraph::CopyBuffer(const uint8_t* data, uint32_t size, VulkanBuffer* destination)
+void RenderGraph::CopyBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination)
 {
     VkMemoryPropertyFlags properties = destination->GetProperties();
 
@@ -75,7 +75,7 @@ void RenderGraph::CopyBuffer(const uint8_t* data, uint32_t size, VulkanBuffer* d
     }
 }
 
-void RenderGraph::TransitionLayout(VulkanImage* image, VkImageLayout oldLayout, VkImageLayout newLayout)
+void RenderGraph::TransitionLayout(TPtr<VulkanImage> image, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -127,7 +127,7 @@ void RenderGraph::TransitionLayout(VulkanImage* image, VkImageLayout oldLayout, 
     image->SetLayout(newLayout);
 }
 
-void RenderGraph::CopyImage(const uint8_t* data, uint32_t size, VulkanImage* destination)
+void RenderGraph::CopyImage(const uint8_t* data, uint32_t size, TPtr<VulkanImage> destination)
 {
     VulkanBuffer* stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(size);
 
@@ -191,13 +191,13 @@ void RenderGraph::BeginRenderPass()
     VkExtent3D extent3D = _pendingRenderTargets->colors.empty() ? _pendingRenderTargets->depthStencil.value().target->GetExtent() : _pendingRenderTargets->colors[0].target->GetExtent();
     VkExtent2D extent2D{extent3D.width, extent3D.height};
 
-    std::vector<VulkanImage*> framebufferImageArr;
+    std::vector<TPtr<VulkanImage>> framebufferImageArr;
     std::vector<VkAttachmentDescription> colorAttachmentArr;
     std::vector<VkClearValue> clearValues;
 
     for (auto& bindings : _pendingRenderTargets->colors)
     {
-        VulkanImage* image = bindings.target;
+        TPtr<VulkanImage> image = bindings.target;
 
         VkAttachmentDescription attachment{};
         attachment.format = image->GetFormat();
@@ -266,7 +266,7 @@ void RenderGraph::EndRenderPass()
     _commandBuffer->EndRenderPass();
 }
 
-void RenderGraph::BindVertexBuffer(VulkanBuffer* vertexBuffer, VulkanBuffer* indexBuffer)
+void RenderGraph::BindVertexBuffer(TPtr<VulkanBuffer> vertexBuffer, TPtr<VulkanBuffer> indexBuffer)
 {
     // Vertex Input
     VkBuffer vertexBuffers[] = {vertexBuffer->GetRawBuffer()};

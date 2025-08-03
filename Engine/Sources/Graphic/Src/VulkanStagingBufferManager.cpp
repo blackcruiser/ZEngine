@@ -1,4 +1,5 @@
 #include "VulkanStagingBufferManager.h"
+#include "VulkanSynchronizer.h"
 #include "VulkanBuffer.h"
 #include "VulkanCommandBuffer.h"
 #include "Render/RenderSystem.h"
@@ -17,12 +18,23 @@ VulkanStagingBufferManager::VulkanStagingBufferManager(VulkanDevice* device)
 
 VulkanStagingBufferManager::~VulkanStagingBufferManager()
 {
-    Recycle();
+    for (VulkanBuffer* buffer : _usedStagingBuffers)
+    {
+        delete buffer;
+    }
+    _usedStagingBuffers.clear();
+
+    for (StagingBufferEntry& entry : _pendingStagingBufferEntries)
+    {
+        delete entry.buffer;
+    }
+    _pendingStagingBufferEntries.clear();
 
     for (VulkanBuffer* buffer : _freeStagingBuffers)
     {
         delete buffer;
     }
+    _freeStagingBuffers.clear();
 
     ZE_CHECK(_usedStagingBuffers.empty());
     ZE_CHECK(_pendingStagingBufferEntries.empty());
@@ -46,7 +58,7 @@ VulkanBuffer* VulkanStagingBufferManager::AcquireStagingBuffer(uint32_t size)
 
     if (stagingBuffer == nullptr)
     {
-        stagingBuffer = new VulkanBuffer(RenderSystem::Get().GetResourceDeleter(), _device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        stagingBuffer = new VulkanBuffer(_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     }
 
     _usedStagingBuffers.push_back(stagingBuffer);

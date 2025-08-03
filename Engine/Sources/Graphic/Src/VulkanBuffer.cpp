@@ -5,8 +5,8 @@
 
 namespace ZE {
 
-VulkanBuffer::VulkanBuffer(GraphicResourceDeleter* deleter, VulkanDevice* device, uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
-    : GraphicResource(deleter), VulkanDeviceChild(device), _buffer(VK_NULL_HANDLE),
+VulkanBuffer::VulkanBuffer(VulkanDevice* device, uint32_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
+    : GraphicResource(), VulkanDeviceChild(device), _buffer(VK_NULL_HANDLE),
     _memory(VK_NULL_HANDLE), _size(size), _usage(usage), _properties(properties)
 {
     VkBufferCreateInfo bufferInfo{};

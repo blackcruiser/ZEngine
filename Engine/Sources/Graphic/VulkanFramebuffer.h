@@ -14,7 +14,7 @@ class VulkanRenderPass;
 class VulkanFramebuffer : public VulkanDeviceChild
 {
 public:
-    VulkanFramebuffer(VulkanDevice* device, VulkanRenderPass* renderPass, const std::vector<VulkanImage*>& imageArr, const VkExtent2D& extent);
+    VulkanFramebuffer(VulkanDevice* device, VulkanRenderPass* renderPass, const std::vector<TPtr<VulkanImage>>& imageArr, const VkExtent2D& extent);
     ~VulkanFramebuffer();
 
     VkFramebuffer GetRawFramebuffer();
@@ -22,7 +22,7 @@ public:
 private:
     VkFramebuffer _framebuffer;
 
-    std::vector<VulkanImage*> _imageArr;
+    std::vector<TPtr<VulkanImage>> _imageArr;
 };
 
 } // namespace ZE

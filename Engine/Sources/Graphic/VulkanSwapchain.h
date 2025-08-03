@@ -17,12 +17,12 @@ class VulkanImage;
 class VulkanSwapchain : public GraphicResource, public VulkanDeviceChild
 {
 public:
-    VulkanSwapchain(GraphicResourceDeleter* deleter, VulkanDevice* device, void* windowHandle, const glm::ivec2& size, uint32_t imageCount);
+    VulkanSwapchain(VulkanDevice* device, void* windowHandle, const glm::ivec2& size, uint32_t imageCount);
     ~VulkanSwapchain();
 
     uint32_t GetImageCount();
     uint32_t GetCurrentIndex();
-    VulkanImage* GetCurrentImage();
+    TPtr<VulkanImage> GetCurrentImage();
     bool AcquireNextImage(uint64_t timeout, VkSemaphore semaphore, VkFence fence);
 
     VkSwapchainKHR GetRawSwapchain();
@@ -33,7 +33,7 @@ private:
     uint32_t _acquiredIndex;
 
     VulkanSurface* _surface;
-    std::vector<VulkanImage*> _imagerArr;
+    std::vector<TPtr<VulkanImage>> _imagerArr;
 };
 
 } // namespace ZE

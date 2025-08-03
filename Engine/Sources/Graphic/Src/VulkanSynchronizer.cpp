@@ -48,7 +48,13 @@ void DestroyFence(VulkanDevice* device, VkFence fence)
     vkDestroyFence(device->GetRawDevice(), fence, nullptr);
 }
 
-bool IsSignaled(VulkanDevice* device, VkFence fence)
+void WaitFence(VulkanDevice* device, VkFence inFence)
+{
+    VkFence fence = inFence;
+    vkWaitForFences(device->GetRawDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+}
+
+bool IsFenceSignaled(VulkanDevice* device, VkFence fence)
 {
     VkResult result = vkGetFenceStatus(device->GetRawDevice(), fence);
     return result == VkResult::VK_SUCCESS;
