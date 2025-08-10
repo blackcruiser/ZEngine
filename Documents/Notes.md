@@ -13,5 +13,6 @@
 6. Vulkan对象的生命周期还是需要手动控制，所以不再使用shared_ptr。
 
 7. CommandBuffer需要fence同步，但是fence想使用manager管理，只能在CommandBuffer创建后再传入fence。Unity使用FrameTracking管理fence和semaphore，unreal则是直接使用。
-
-8. std::shared_ptrr 传入的Deleter居然不是引用，只能自己写个
+目前什么都没渲染，执行速度非常快，导致AcquireNextImage的signalSemaphore还没有被QueueSumbit wait，就被下一次的AcquireNextImage signal了。出现了"Semaphore must not have any pending operations."错误。
+Unity使用FrameTracking管理semaphore，只有CPU端fence signal后，semaphore才能重新使用。因此Unity并没有直接wait fence。
+UE不同，UE每一帧会等QueueSubmit fence wait后再继续执行。

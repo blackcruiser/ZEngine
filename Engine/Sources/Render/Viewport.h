@@ -40,6 +40,7 @@ private:
     std::vector<VkFence> _presentFences;
     uint32_t _currentIndex;
     glm::ivec2 _size;
+    uint32_t _queuedImageCount;
 };
 
 }

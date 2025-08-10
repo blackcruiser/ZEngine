@@ -37,7 +37,7 @@ void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, cons
     VulkanQueue* graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
     graphicQueue->Submit(_commandBuffer, waitSemaphoreArr, waitStageArr, signalSemaphoreArr, _commandBuffer->GetFence());
 
-    RenderSystem::Get().GetGraphicResourcePool()->DelayDestroy();
+    RenderSystem::Get().GetGraphicResourcePool()->Cleanup();
 
     RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Release(_commandBuffer);
     _commandBuffer = RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Acquire();
@@ -49,7 +49,7 @@ void RenderGraph::Execute()
     Execute({}, {}, {});
 }
 
-void RenderGraph::CopyBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination)
+void RenderGraph::TransferBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination)
 {
     VkMemoryPropertyFlags properties = destination->GetProperties();
 
@@ -127,7 +127,7 @@ void RenderGraph::TransitionLayout(TPtr<VulkanImage> image, VkImageLayout oldLay
     image->SetLayout(newLayout);
 }
 
-void RenderGraph::CopyImage(const uint8_t* data, uint32_t size, TPtr<VulkanImage> destination)
+void RenderGraph::TransferImage(const uint8_t* data, uint32_t size, TPtr<VulkanImage> destination)
 {
     VulkanBuffer* stagingBuffer = RenderSystem::Get().GetBufferManager()->AcquireStagingBuffer(size);
 
@@ -153,6 +153,27 @@ void RenderGraph::CopyImage(const uint8_t* data, uint32_t size, TPtr<VulkanImage
     TransitionLayout(destination, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     RenderSystem::Get().GetBufferManager()->ReleaseStagingBuffer(stagingBuffer, _commandBuffer);
+}
+
+void RenderGraph::CopyImage(TPtr<VulkanImage> source, TPtr<VulkanImage> destination)
+{
+    VkImageCopy2 region{};
+    region.sType = VK_STRUCTURE_TYPE_IMAGE_COPY_2_KHR;
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.srcOffset = {0, 0, 0};
+    region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.srcOffset = {0, 0, 0};
+    region.extent = source->GetExtent();
+
+    VkCopyImageInfo2 info{};
+    info.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2;
+    info.srcImage = source->GetRawImage();
+    info.srcImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    info.dstImage = destination->GetRawImage();
+    info.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    info.regionCount = 1;
+    info.pRegions = &region;
+    vkCmdCopyImage2(_commandBuffer->GetRawCommandBuffer(), &info);
 }
 
 VkAttachmentLoadOp ConvertRenderTargetLoadActionToVulkan(ERenderTargetLoadAction loadAction)

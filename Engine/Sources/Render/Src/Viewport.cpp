@@ -6,14 +6,14 @@
 #include "Render/RenderSystem.h"
 #include "Render/RenderGraph.h"
 #include "CoreTypes.h"
+#include <iostream>
 
 
 const uint32_t kImageCount = 3;
 
 namespace ZE {
 
-Viewport::Viewport(void* windowHandle, const glm::ivec2& size) :
-    _size(size), _currentIndex(0), _windowHandle(windowHandle)
+Viewport::Viewport(void* windowHandle, const glm::ivec2& size) : _size(size), _currentIndex(0), _windowHandle(windowHandle), _queuedImageCount(0)
 {
 }
 
@@ -65,22 +65,41 @@ TPtr<VulkanImage> Viewport::GetCurrentImage()
 void Viewport::Advance()
 {
     _currentIndex = (_currentIndex + 1) % _swapchain->GetImageCount();
-    VkDevice device = _swapchain->GetDevice()->GetRawDevice();
-    VkFence fence = _presentFences[_currentIndex];
-    vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
-    vkResetFences(device, 1, &fence);
+   // VkDevice device = _swapchain->GetDevice()->GetRawDevice();
+    //VkFence fence = _presentFences[0];
+    //vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
+    //vkResetFences(device, 1, &fence);
+    
+    //std::cout << "AcquireNextImage" << std::endl;
+    _queuedImageCount++;
+    VkFence fence = VK_NULL_HANDLE;
+    if (_queuedImageCount >= _swapchain->GetImageCount())
+        fence = _presentFences[0];
 
-     _swapchain->AcquireNextImage(UINT64_MAX, _submitSemaphores[_currentIndex], _presentFences[_currentIndex]);
+     _swapchain->AcquireNextImage(UINT64_MAX, _submitSemaphores[_currentIndex], fence);
+
+     if (fence != VK_NULL_HANDLE)
+     {
+         VkDevice device = _swapchain->GetDevice()->GetRawDevice();
+         vkWaitForFences(device, 1, &fence, true, UINT64_MAX);
+         vkResetFences(device, 1, &fence);
+     }
 }
 
 void Viewport::Present(TPtr<RenderGraph> renderGraph)
 {
+    _swapchain->AcquireNextImage(UINT64_MAX, _submitSemaphores[_currentIndex], VK_NULL_HANDLE);
+
+
     TPtr<VulkanImage> currentImage = GetCurrentImage();
     renderGraph->TransitionLayout(currentImage, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    //std::cout << "Execute" << std::endl;
     renderGraph->Execute({_submitSemaphores[_currentIndex]}, {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}, {_presentSemaphores[_currentIndex]});
 
     VulkanQueue* graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
+    //std::cout << "Present" << std::endl;
     graphicQueue->Present(_swapchain, {_presentSemaphores[_currentIndex]});
+    _queuedImageCount--;
 }
 
 }

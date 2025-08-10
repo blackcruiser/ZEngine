@@ -16,7 +16,7 @@ VulkanQueue::~VulkanQueue()
 {
 }
 
-void VulkanQueue::Submit(VulkanCommandBuffer* commandBuffer, const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr, VkFence fence)
+void VulkanQueue::Submit(VulkanCommandBuffer* commandBuffer, const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr, VkFence signalFence)
 {
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     VkCommandBuffer vkCommandBuffer = commandBuffer->GetRawCommandBuffer();
@@ -31,7 +31,7 @@ void VulkanQueue::Submit(VulkanCommandBuffer* commandBuffer, const std::vector<V
     submitInfo.signalSemaphoreCount = signalSemaphoreArr.size();
     submitInfo.pSignalSemaphores = signalSemaphoreArr.data();
 
-    VkResult result = vkQueueSubmit(_vkQueue, 1, &submitInfo, fence);
+    VkResult result = vkQueueSubmit(_vkQueue, 1, &submitInfo, signalFence);
     ZE_CHECK_MSG(result == VkResult::VK_SUCCESS, "Failed to submit queue!")
 }
 

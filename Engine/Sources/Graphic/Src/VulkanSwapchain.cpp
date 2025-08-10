@@ -99,9 +99,9 @@ TPtr<VulkanImage> VulkanSwapchain::GetCurrentImage()
     return _imagerArr[_acquiredIndex];
 }
 
-bool VulkanSwapchain::AcquireNextImage(uint64_t timeout, VkSemaphore semaphore, VkFence fence)
+bool VulkanSwapchain::AcquireNextImage(uint64_t timeout, VkSemaphore signalSemaphore, VkFence signalFence)
 {
-    VkResult result = vkAcquireNextImageKHR(_device->GetRawDevice(), _swapchain, timeout, semaphore, fence, &_acquiredIndex);
+    VkResult result = vkAcquireNextImageKHR(_device->GetRawDevice(), _swapchain, timeout, signalSemaphore, signalFence, &_acquiredIndex);
 
     if (result == VkResult::VK_SUCCESS)
         return true;
