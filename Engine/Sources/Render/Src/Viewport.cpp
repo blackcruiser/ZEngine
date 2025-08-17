@@ -90,7 +90,6 @@ void Viewport::Present(TPtr<RenderGraph> renderGraph)
 {
     _swapchain->AcquireNextImage(UINT64_MAX, _submitSemaphores[_currentIndex], VK_NULL_HANDLE);
 
-
     TPtr<VulkanImage> currentImage = GetCurrentImage();
     renderGraph->TransitionLayout(currentImage, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     //std::cout << "Execute" << std::endl;

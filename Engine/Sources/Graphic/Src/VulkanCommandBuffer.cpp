@@ -27,6 +27,7 @@ VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool inC
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
 {
+    Reset();
     DestroyFence(_device, _fence);
 
     vkFreeCommandBuffers(_device->GetRawDevice(), _commandPool, 1, &_commandBuffer);
@@ -57,8 +58,22 @@ void VulkanCommandBuffer::Reset()
     _status = EStatus::Initial;
     ResetFence(_device, _fence);
 
+    for (VulkanRenderPass* renderPass : _cachedRenderPasses)
+    {
+        delete renderPass;
+    }
     _cachedRenderPasses.clear();
+
+    for (VulkanFramebuffer* framebuffer : _cachedFramebuffers)
+    {
+        delete framebuffer;
+    }
     _cachedFramebuffers.clear();
+
+    for (VulkanGraphicPipeline* pipeline : _cachedPipelines)
+    {
+        delete pipeline;
+    }
     _cachedPipelines.clear();
 }
 

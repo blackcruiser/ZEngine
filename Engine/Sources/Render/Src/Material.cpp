@@ -280,7 +280,7 @@ TPtr<VulkanImage> CreateGraphicImage(TPtr<RenderGraph> renderGraph, TPtr<Texture
     VkExtent3D extent{texture->GetWidth(), texture->GetHeight(), 1};
 
     TPtr<VulkanImage> vulkanImage = TPtr<VulkanImage>(new VulkanImage(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_R8G8B8A8_SRGB), GraphicResourceDeleter());
-    renderGraph->CopyImage(static_cast<const uint8_t*>(texture->GetData()), imageSize, vulkanImage);
+    renderGraph->TransferImage(static_cast<const uint8_t*>(texture->GetData()), imageSize, vulkanImage);
 
     return vulkanImage;
 }
@@ -498,7 +498,7 @@ void Pass::ApplyPipelineState(RHIPipelineState& state)
 
 void Pass::UpdateUniformBuffer(TPtr<RenderGraph> renderGraph, const glm::mat4x4& mvp)
 {
-    renderGraph->CopyBuffer(reinterpret_cast<const uint8_t*>(&mvp), sizeof(mvp), _uniformBuffer);
+    renderGraph->TransferBuffer(reinterpret_cast<const uint8_t*>(&mvp), sizeof(mvp), _uniformBuffer);
 }
 
 Material::Material(TPtr<MaterialResource> materialResource)
