@@ -38,11 +38,9 @@ VulkanFramebuffer::~VulkanFramebuffer()
     vkDestroyFramebuffer(_device->GetRawDevice(), _framebuffer, nullptr);
 }
 
-
 VkFramebuffer VulkanFramebuffer::GetRawFramebuffer()
 {
     return _framebuffer;
 }
-
 
 } // namespace ZE

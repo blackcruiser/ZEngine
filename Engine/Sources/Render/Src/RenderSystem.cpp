@@ -19,12 +19,6 @@
 
 namespace ZE {
 
- void GraphicResourceDeleter::operator()(GraphicResource* resource)
- {
-     RenderSystem::Get().GetGraphicResourcePool()->AddResource(resource);
- }
-
-
 RenderSystem& RenderSystem::Get()
 {
     static RenderSystem instance;
@@ -111,6 +105,15 @@ void RenderSystem::CleanupResources(TPtr<RenderGraph> renderGraph)
     _device->WaitIdle();
 
     RenderResource::CleanupRenderResources(renderGraph);
+}
+
+void RenderSystem::DeleteGraphicResources()
+{
+    std::vector<GraphicResource*>& resources = GraphicResource::GetPendingDeleteResources();
+    for (GraphicResource* resource : resources)
+    {
+        
+    }
 }
 
 void RenderSystem::Tick()

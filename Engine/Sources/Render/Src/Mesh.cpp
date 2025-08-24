@@ -28,14 +28,14 @@ void Mesh::InitRenderResource(TPtr<RenderGraph> renderGraph)
     const std::vector<VertexData>& vertices = MeshResource->GetVertices(0);
     uint32_t byteSize = static_cast<uint32_t>(vertices.size()) * sizeof(VertexData);
     
-    _vertexBuffer = TPtr<VulkanBuffer>(new VulkanBuffer(renderGraph->GetDevice(), byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), GraphicResourceDeleter());
+    _vertexBuffer = NewGraphicResource<VulkanBuffer>(renderGraph->GetDevice(), byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     renderGraph->TransferBuffer(reinterpret_cast<const uint8_t*>(vertices.data()), byteSize, _vertexBuffer);
 
     const std::vector<uint32_t>& indexes = MeshResource->GetIndexes(0); 
     byteSize = static_cast<uint32_t>(indexes.size()) * sizeof(uint32_t);
 
-    _indexBuffer = TPtr<VulkanBuffer>(new VulkanBuffer(renderGraph->GetDevice(), byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT), GraphicResourceDeleter());
+    _indexBuffer = NewGraphicResource<VulkanBuffer>(renderGraph->GetDevice(), byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     renderGraph->TransferBuffer(reinterpret_cast<const uint8_t*>(indexes.data()), byteSize, _indexBuffer);
     _verticesCount = static_cast<uint32_t>(indexes.size());

@@ -54,27 +54,8 @@ void VulkanCommandBuffer::End()
 
 void VulkanCommandBuffer::Reset()
 {
-    _executeCount++;
     _status = EStatus::Initial;
     ResetFence(_device, _fence);
-
-    for (VulkanRenderPass* renderPass : _cachedRenderPasses)
-    {
-        delete renderPass;
-    }
-    _cachedRenderPasses.clear();
-
-    for (VulkanFramebuffer* framebuffer : _cachedFramebuffers)
-    {
-        delete framebuffer;
-    }
-    _cachedFramebuffers.clear();
-
-    for (VulkanGraphicPipeline* pipeline : _cachedPipelines)
-    {
-        delete pipeline;
-    }
-    _cachedPipelines.clear();
 }
 
 void VulkanCommandBuffer::BeginRenderPass(VulkanRenderPass* renderPass, VulkanFramebuffer* framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors)
@@ -89,24 +70,11 @@ void VulkanCommandBuffer::BeginRenderPass(VulkanRenderPass* renderPass, VulkanFr
     renderPassInfo.pClearValues = clearColors.data();
 
     vkCmdBeginRenderPass(_commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    _cachedRenderPasses.push_back(renderPass);
-    _cachedFramebuffers.push_back(framebuffer);
 }
 
 void VulkanCommandBuffer::EndRenderPass()
 {
     vkCmdEndRenderPass(_commandBuffer);
-}
-
-void VulkanCommandBuffer::CachePipeline(VulkanGraphicPipeline* pipeline)
-{
-    _cachedPipelines.push_back(pipeline);
-}
-
-uint32_t VulkanCommandBuffer::GetExecuteCount()
-{
-    return _executeCount;
 }
 
 VkFence VulkanCommandBuffer::GetFence()

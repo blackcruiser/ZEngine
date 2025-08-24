@@ -37,7 +37,7 @@ void ForwardRenderer::Init(TPtr<RenderGraph> renderGraph, Viewport* viewport)
     VkExtent3D extent{size.r, size.g, 1.0f};
 
     // Depth Pass
-    _depthRenderTarget = TPtr<VulkanImage>(new VulkanImage(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT), GraphicResourceDeleter());
+    _depthRenderTarget = NewGraphicResource<VulkanImage>(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
 void ForwardRenderer::Cleanup(TPtr<RenderGraph> renderGraph)

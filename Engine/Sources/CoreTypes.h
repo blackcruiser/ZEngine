@@ -11,6 +11,8 @@
 
 namespace ZE {
 
+typedef unsigned int uint32;
+
 template<typename T>
 using TPtr = std::shared_ptr<T>;
 

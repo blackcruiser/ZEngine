@@ -42,16 +42,21 @@ void Application::Run(TPtr<Scene> scene)
     TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
     TPtr<RendererInterface> renderer = std::make_shared<ForwardRenderer>();
     renderer->Init(renderGraph, viewport);
+    int frameNumber = 0;
     while (!window->ShouldClose())
     {
         glfwPollEvents();
 
+        frameNumber++;
         RenderSystem::Get().InitializeResources(renderGraph);
 
         viewport->Advance();
         
         renderer->RenderFrame(renderGraph, viewport, scene);
         viewport->Present(renderGraph);
+        renderGraph->MarkFrameNumber(frameNumber);
+
+        RenderSystem::Get().DeleteGraphicResources();
     }
 
     RenderSystem::Get().CleanupResources(renderGraph);

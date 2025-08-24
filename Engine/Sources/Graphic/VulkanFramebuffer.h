@@ -11,7 +11,7 @@ class VulkanDevice;
 class VulkanImage;
 class VulkanRenderPass;
 
-class VulkanFramebuffer : public VulkanDeviceChild
+class VulkanFramebuffer : public VulkanDeviceChild, public GraphicResource
 {
 public:
     VulkanFramebuffer(VulkanDevice* device, VulkanRenderPass* renderPass, const std::vector<TPtr<VulkanImage>>& imageArr, const VkExtent2D& extent);

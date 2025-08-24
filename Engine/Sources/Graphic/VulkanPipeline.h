@@ -10,7 +10,7 @@ namespace ZE {
 
 class VulkanRenderPass;
 
-class VulkanGraphicPipeline : public VulkanDeviceChild
+class VulkanGraphicPipeline : public VulkanDeviceChild, public GraphicResource
 {
 public:
     VulkanGraphicPipeline(VulkanDevice* device, const RHIPipelineState& state, VulkanRenderPass* renderPass);

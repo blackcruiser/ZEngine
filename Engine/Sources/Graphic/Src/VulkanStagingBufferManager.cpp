@@ -18,18 +18,6 @@ VulkanStagingBufferManager::VulkanStagingBufferManager(VulkanDevice* device)
 
 VulkanStagingBufferManager::~VulkanStagingBufferManager()
 {
-    for (VulkanBuffer* buffer : _usedStagingBuffers)
-    {
-        delete buffer;
-    }
-    _usedStagingBuffers.clear();
-
-    for (StagingBufferEntry& entry : _pendingStagingBufferEntries)
-    {
-        delete entry.buffer;
-    }
-    _pendingStagingBufferEntries.clear();
-
     for (VulkanBuffer* buffer : _freeStagingBuffers)
     {
         delete buffer;
@@ -37,13 +25,11 @@ VulkanStagingBufferManager::~VulkanStagingBufferManager()
     _freeStagingBuffers.clear();
 
     ZE_CHECK(_usedStagingBuffers.empty());
-    ZE_CHECK(_pendingStagingBufferEntries.empty());
+    ZE_CHECK(_pendingStagingBuffers.empty());
 }
 
 VulkanBuffer* VulkanStagingBufferManager::AcquireStagingBuffer(uint32_t size)
 {
-    Recycle();
-
     VulkanBuffer* stagingBuffer = nullptr;
 
     for (auto iter = _freeStagingBuffers.begin(); iter != _freeStagingBuffers.end(); iter++)
@@ -66,27 +52,22 @@ VulkanBuffer* VulkanStagingBufferManager::AcquireStagingBuffer(uint32_t size)
     return stagingBuffer;
 }
 
-void VulkanStagingBufferManager::ReleaseStagingBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer)
+void VulkanStagingBufferManager::ReleaseStagingBuffer(VulkanBuffer* buffer)
 {
-    if (commandBuffer == nullptr)
-        _freeStagingBuffers.push_back(buffer);
-    else
-    {
-        _pendingStagingBufferEntries.push_back({buffer, commandBuffer, commandBuffer->GetExecuteCount()});
-    }
+    _pendingStagingBuffers.push_back(buffer);
 
     _usedStagingBuffers.remove(buffer);
 }
 
-void VulkanStagingBufferManager::Recycle()
+void VulkanStagingBufferManager::Recycle(uint32 frameNumber)
 {
-    for (auto iter = _pendingStagingBufferEntries.begin(); iter != _pendingStagingBufferEntries.end(); )
+    for (auto iter = _pendingStagingBuffers.begin(); iter != _pendingStagingBuffers.end(); )
     {
-        StagingBufferEntry& entry = *iter;
-        if (entry.frameCount < entry.commandBuffer->GetExecuteCount())
+        VulkanBuffer* buffer = *iter;
+        if (buffer->GetUsedFrameNumber() <= frameNumber)
         {
-            _freeStagingBuffers.push_back(entry.buffer);
-            iter = _pendingStagingBufferEntries.erase(iter);
+            _freeStagingBuffers.push_back(buffer);
+            iter = _pendingStagingBuffers.erase(iter);
         }
         else
         {

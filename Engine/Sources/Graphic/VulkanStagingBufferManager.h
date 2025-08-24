@@ -11,13 +11,6 @@ class VulkanBuffer;
 class VulkanCommandBuffer;
 
 
-struct StagingBufferEntry
-{
-    VulkanBuffer* buffer;
-    VulkanCommandBuffer* commandBuffer;
-    uint64_t frameCount;
-};
-
 class VulkanStagingBufferManager : public VulkanDeviceChild
 {
 public:
@@ -25,14 +18,13 @@ public:
     ~VulkanStagingBufferManager();
 
     VulkanBuffer* AcquireStagingBuffer(uint32_t size);
-    void ReleaseStagingBuffer(VulkanBuffer* buffer, VulkanCommandBuffer* commandBuffer = nullptr);
+    void ReleaseStagingBuffer(VulkanBuffer* buffer);
 
 private:
-    void Recycle();
+    void Recycle(uint32 frameNumber);
 
 private:
-    std::list<VulkanBuffer*> _usedStagingBuffers, _freeStagingBuffers;
-    std::list<StagingBufferEntry> _pendingStagingBufferEntries;
+    std::list<VulkanBuffer*> _usedStagingBuffers, _freeStagingBuffers, _pendingStagingBuffers;
 };
 
 } // namespace ZE

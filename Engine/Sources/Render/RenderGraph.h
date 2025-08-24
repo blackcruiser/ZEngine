@@ -17,13 +17,16 @@ class VulkanDescriptorSet;
 class VulkanRenderPass;
 struct RenderTargets;
 struct RHIPipelineState;
+class RenderSynchronizer;
 
 
 class RenderGraph
 {
 public:
-    RenderGraph();
+    RenderGraph(RenderSynchronizer* synchronizer);
     virtual ~RenderGraph();
+
+    void MarkFrameNumber(uint32 frameNumber);
 
     void BeginRenderPass();
     void EndRenderPass();
@@ -56,6 +59,8 @@ private:
     VulkanCommandBuffer* _commandBuffer;
     TPtr<RenderTargets> _pendingRenderTargets;
     VulkanRenderPass* _pendingRenderPass;
+
+    uint32 _frameNumber;
 };
 
 }

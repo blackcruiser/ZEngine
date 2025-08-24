@@ -37,10 +37,7 @@ public:
     void BeginRenderPass(VulkanRenderPass* renderPass, VulkanFramebuffer* framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors);
     void EndRenderPass();
 
-    uint32_t GetExecuteCount();
     VkFence GetFence();
-
-    void CachePipeline(VulkanGraphicPipeline* pipeline);
 
     VkCommandBuffer GetRawCommandBuffer();
     VkCommandPool GetRawCommandPool();
@@ -51,11 +48,6 @@ private:
     uint32_t _queueFamilyIndex;
     EStatus _status;
     VkFence _fence;
-    uint32_t _executeCount;
-
-    std::vector<VulkanRenderPass*> _cachedRenderPasses;
-    std::vector<VulkanFramebuffer*> _cachedFramebuffers;
-    std::vector<VulkanGraphicPipeline*> _cachedPipelines;
 };
 
 } // namespace ZE
