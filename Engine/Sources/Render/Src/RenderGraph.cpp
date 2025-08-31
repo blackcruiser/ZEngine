@@ -9,19 +9,22 @@
 #include "Graphic/VulkanDescriptorSet.h"
 #include "Graphic/VulkanFramebuffer.h"
 #include "Graphic/VulkanRenderPass.h"
+#include "Graphic/VulkanSwapchain.h"
 #include "Graphic/GraphicResource.h"
 #include "Render/RenderSystem.h"
 #include "Render/RenderTargets.h"
+#include "Render/RenderSynchronizer.h"
 
 #include <stdexcept>
 
 
 namespace ZE {
 
-RenderGraph::RenderGraph(RenderSynchronizer* synchronizer) :
-    _synchronizer(synchronizer)
+RenderGraph::RenderGraph(VulkanDevice* device) :
+    _device(device), _synchronizer(nullptr), _executeCounter(1)
 {
-    _device = RenderSystem::Get().GetDevice();
+    _synchronizer = new RenderSynchronizer(device);
+
     _commandBuffer = RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Acquire();
     _commandBuffer->Begin();
 }
@@ -29,12 +32,13 @@ RenderGraph::RenderGraph(RenderSynchronizer* synchronizer) :
 RenderGraph::~RenderGraph()
 {
     _commandBuffer->End();
-    RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Release(_commandBuffer);
-}
+    RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Release(_commandBuffer, _executeCounter);
 
-void RenderGraph::MarkFrameNumber(uint32 frameNumber)
-{
-    _frameNumber = frameNumber;
+    _synchronizer->WaitForAllFences();
+    RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Recycle(_executeCounter + 1);
+    RenderSystem::Get().GetBufferManager()->Recycle(_executeCounter + 1);
+
+    delete _synchronizer;
 }
 
 void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr)
@@ -43,8 +47,17 @@ void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, cons
     VulkanQueue* graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
     VkFence fence = _synchronizer->GetFence();
     graphicQueue->Submit(_commandBuffer, waitSemaphoreArr, waitStageArr, signalSemaphoreArr, fence);
+    _synchronizer->ReturnFence(fence, _executeCounter);
+    
+    _executeCounter++;
+    _synchronizer->Recycle();
+    uint32 safeExecuteCounter = _synchronizer->getSafeExecuteCounter();
 
-    RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Release(_commandBuffer);
+    RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Recycle(safeExecuteCounter);
+    RenderSystem::Get().GetBufferManager()->Recycle(safeExecuteCounter);
+    GarbageCollect(safeExecuteCounter);
+
+    RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Release(_commandBuffer, _executeCounter);
     _commandBuffer = RenderSystem::Get().GetCommandBufferManager(VulkanQueue::EType::Graphic)->Acquire();
     _commandBuffer->Begin();
 }
@@ -52,6 +65,30 @@ void RenderGraph::Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, cons
 void RenderGraph::Execute()
 {
     Execute({}, {}, {});
+}
+
+void RenderGraph::Present(VulkanSwapchain* swapchain, const std::vector<VkSemaphore>& waitSemaphoreArr)
+{
+    VulkanQueue* graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
+    graphicQueue->Present(swapchain, waitSemaphoreArr);
+}
+
+void RenderGraph::GarbageCollect(uint32 safeExecuteCounter)
+{
+    std::vector<GraphicResource*>& pendingDeleteResources = GraphicResource::GetPendingDeleteResources();
+    for (auto iter = pendingDeleteResources.begin(); iter != pendingDeleteResources.end(); )
+    {
+        GraphicResource* resource = *iter;
+        if (resource->GetUsedExecuteCounter() <= safeExecuteCounter)
+        {
+            delete resource;
+            iter = pendingDeleteResources.erase(iter);
+        }
+        else
+        {
+            iter++;
+        }
+    }
 }
 
 void RenderGraph::TransferBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination)
@@ -75,8 +112,8 @@ void RenderGraph::TransferBuffer(const uint8_t* data, uint32_t size, TPtr<Vulkan
         VkBufferCopy copyRegion{};
         copyRegion.size = size;
         vkCmdCopyBuffer(_commandBuffer->GetRawCommandBuffer(), stagingBuffer->GetRawBuffer(), destination->GetRawBuffer(), 1, &copyRegion);
-        stagingBuffer->MarkUsed(_frameNumber);
-        destination->MarkUsed(_frameNumber);
+        stagingBuffer->MarkUsed(_executeCounter);
+        destination->MarkUsed(_executeCounter);
 
         RenderSystem::Get().GetBufferManager()->ReleaseStagingBuffer(stagingBuffer);
     }
@@ -156,8 +193,8 @@ void RenderGraph::TransferImage(const uint8_t* data, uint32_t size, TPtr<VulkanI
     region.imageExtent = destination->GetExtent();
 
     vkCmdCopyBufferToImage(_commandBuffer->GetRawCommandBuffer(), stagingBuffer->GetRawBuffer(), destination->GetRawImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-    stagingBuffer->MarkUsed(_frameNumber);
-    destination->MarkUsed(_frameNumber);
+    stagingBuffer->MarkUsed(_executeCounter);
+    destination->MarkUsed(_executeCounter);
 
     TransitionLayout(destination, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -210,7 +247,7 @@ void RenderGraph::SetPipelineState(const RHIPipelineState& pipelineState, Vulkan
     TPtr<VulkanGraphicPipeline> pipeline = NewGraphicResource<VulkanGraphicPipeline>(_device, pipelineState, _pendingRenderPass);
 
     vkCmdBindPipeline(_commandBuffer->GetRawCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetRawPipeline());
-    pipeline->MarkUsed(_frameNumber);
+    pipeline->MarkUsed(_executeCounter);
 
     vkCmdBindDescriptorSets(_commandBuffer->GetRawCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineState.layout, 0, 1, &descriptorSet->GetRawDescriptorSet(), 0, nullptr);
 }
@@ -279,8 +316,8 @@ void RenderGraph::BeginRenderPass()
 
     VulkanFramebuffer* framebuffer = NewTempGraphicResource<VulkanFramebuffer>(_device, renderPass, framebufferImageArr, extent2D);
     _commandBuffer->BeginRenderPass(renderPass, framebuffer, {{0, 0}, extent2D}, clearValues);
-    renderPass->MarkUsed(_frameNumber);
-    framebuffer->MarkUsed(_frameNumber);
+    renderPass->MarkUsed(_executeCounter);
+    framebuffer->MarkUsed(_executeCounter);
 
     VkViewport viewport{0.0f, 0.0f, static_cast<float>(extent2D.width), static_cast<float>(extent2D.height), 0.0f, 1.0f};
     vkCmdSetViewport(_commandBuffer->GetRawCommandBuffer(), 0, 1, &viewport);
@@ -306,8 +343,8 @@ void RenderGraph::BindVertexBuffer(TPtr<VulkanBuffer> vertexBuffer, TPtr<VulkanB
     vkCmdBindVertexBuffers(_commandBuffer->GetRawCommandBuffer(), 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(_commandBuffer->GetRawCommandBuffer(), indexBuffer->GetRawBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-    vertexBuffer->MarkUsed(_frameNumber);
-    indexBuffer->MarkUsed(_frameNumber);
+    vertexBuffer->MarkUsed(_executeCounter);
+    indexBuffer->MarkUsed(_executeCounter);
 }
 
 void RenderGraph::DrawIndexed(uint32_t verticesCount, uint32_t firstIndex)

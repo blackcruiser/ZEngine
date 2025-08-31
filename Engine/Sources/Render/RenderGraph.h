@@ -15,6 +15,7 @@ class VulkanImageView;
 class VulkanCommandBuffer;
 class VulkanDescriptorSet;
 class VulkanRenderPass;
+class VulkanSwapchain;
 struct RenderTargets;
 struct RHIPipelineState;
 class RenderSynchronizer;
@@ -23,16 +24,18 @@ class RenderSynchronizer;
 class RenderGraph
 {
 public:
-    RenderGraph(RenderSynchronizer* synchronizer);
+    RenderGraph(VulkanDevice* device);
     virtual ~RenderGraph();
-
-    void MarkFrameNumber(uint32 frameNumber);
 
     void BeginRenderPass();
     void EndRenderPass();
 
     void Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr);
     void Execute();
+
+    void Present(VulkanSwapchain* swapchain, const std::vector<VkSemaphore>& waitSemaphoreArr);
+
+    void GarbageCollect(uint32 safeExecuteCounter);
 
     void TransferBuffer(const uint8_t* data, uint32_t size, TPtr<VulkanBuffer> destination);
     void TransferImage(const uint8_t* data, uint32_t size, TPtr<VulkanImage> destination);
@@ -60,7 +63,9 @@ private:
     TPtr<RenderTargets> _pendingRenderTargets;
     VulkanRenderPass* _pendingRenderPass;
 
-    uint32 _frameNumber;
+    RenderSynchronizer* _synchronizer;
+
+    uint32 _executeCounter;
 };
 
 }

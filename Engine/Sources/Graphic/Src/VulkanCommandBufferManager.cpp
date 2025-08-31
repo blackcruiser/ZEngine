@@ -20,8 +20,9 @@ VulkanCommandBufferManager::VulkanCommandBufferManager(VulkanDevice* device, uin
 
 VulkanCommandBufferManager::~VulkanCommandBufferManager()
 {
-    for (VulkanCommandBuffer* commandBuffer : _submittedCommandBuffers)
+    for (auto& entry : _submittedCommandBuffers)
     {
+        VulkanCommandBuffer* commandBuffer = std::get<0>(entry);
         delete commandBuffer;
     }
     _submittedCommandBuffers.clear();
@@ -37,8 +38,6 @@ VulkanCommandBufferManager::~VulkanCommandBufferManager()
 
 VulkanCommandBuffer* VulkanCommandBufferManager::Acquire()
 {
-    Recycle();
-
     if (_freeCommandBuffers.empty())
     {
         return new VulkanCommandBuffer(_device, _commandPool, _queueFamilyIndex);
@@ -52,17 +51,18 @@ VulkanCommandBuffer* VulkanCommandBufferManager::Acquire()
     }
 }
 
-void VulkanCommandBufferManager::Release(VulkanCommandBuffer* commandBuffer)
+void VulkanCommandBufferManager::Release(VulkanCommandBuffer* commandBuffer, uint32 frameCount)
 {
-    _submittedCommandBuffers.push_back(commandBuffer);
+    _submittedCommandBuffers.emplace_back(commandBuffer, frameCount);
 }
 
-void VulkanCommandBufferManager::Recycle()
+void VulkanCommandBufferManager::Recycle(uint32 safeFrameCount)
 {
     for (auto iterator = _submittedCommandBuffers.begin(); iterator != _submittedCommandBuffers.end(); )
     {
-        VulkanCommandBuffer* commandBuffer = *iterator;
-        if (IsFenceSignaled(_device, commandBuffer->GetFence()))
+        VulkanCommandBuffer* commandBuffer = std::get<0>(*iterator);
+        uint32 frameCount = std::get<1>(*iterator);
+        if (frameCount <= safeFrameCount)
         {
             commandBuffer->Reset();
             _freeCommandBuffers.push_back(commandBuffer);

@@ -18,8 +18,8 @@ public:
     RenderPass();
     ~RenderPass();
 
-    void Execute(TPtr<RenderGraph>& commandBuffer, const TPtrArr<SceneObject>& objectsToRender);
-    virtual void Draw(TPtr<RenderGraph>& commandBuffer, const TPtrArr<SceneObject>& objectsToRender) = 0;
+    void Execute(RenderGraph*& commandBuffer, const TPtrArr<SceneObject>& objectsToRender);
+    virtual void Draw(RenderGraph*& commandBuffer, const TPtrArr<SceneObject>& objectsToRender) = 0;
 };
 
 }

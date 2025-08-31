@@ -19,7 +19,7 @@ void DepthPass::Init(TPtr<VulkanImage> depthRenderTarget)
     renderTargets->depthStencil = RenderTargetBinding{depthRenderTarget, ERenderTargetLoadAction::Clear};
 }
 
-void DepthPass::Draw(TPtr<RenderGraph>& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
+void DepthPass::Draw(RenderGraph*& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
 {
     renderGraph->SetRenderTargets(renderTargets);
     renderGraph->BeginRenderPass();

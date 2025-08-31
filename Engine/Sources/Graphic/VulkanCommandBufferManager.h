@@ -18,15 +18,15 @@ public:
     ~VulkanCommandBufferManager();
 
     VulkanCommandBuffer* Acquire();
-    void Release(VulkanCommandBuffer* commandBuffer);
+    void Release(VulkanCommandBuffer* commandBuffer, uint32 frameCount);
 
-    void Recycle();
+    void Recycle(uint32 safeFrameCount);
 
 private:
     uint32_t _queueFamilyIndex;
     VkCommandPool _commandPool;
 
-    std::vector<VulkanCommandBuffer*> _submittedCommandBuffers;
+    std::vector<std::tuple<VulkanCommandBuffer*, uint32>> _submittedCommandBuffers;
     std::vector<VulkanCommandBuffer*>  _freeCommandBuffers;
 };
 

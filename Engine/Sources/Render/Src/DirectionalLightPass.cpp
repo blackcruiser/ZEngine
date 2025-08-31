@@ -20,7 +20,7 @@ void DirectionalLightPass::Init(TPtr<VulkanImage> colorRenderTarget, TPtr<Vulkan
     renderTargets->depthStencil = RenderTargetBinding{depthRenderTarget, ERenderTargetLoadAction::Load};
 }
 
-void DirectionalLightPass::Draw(TPtr<RenderGraph>& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
+void DirectionalLightPass::Draw(RenderGraph*& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
 {
     renderGraph->SetRenderTargets(renderTargets);
     renderGraph->BeginRenderPass();

@@ -4,6 +4,7 @@
 #include "CoreTypes.h"
 #include "PipelineState.h"
 #include "VulkanDevice.h"
+#include "GraphicResource.h"
 
 
 namespace ZE {

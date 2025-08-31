@@ -37,8 +37,6 @@ public:
     void BeginRenderPass(VulkanRenderPass* renderPass, VulkanFramebuffer* framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors);
     void EndRenderPass();
 
-    VkFence GetFence();
-
     VkCommandBuffer GetRawCommandBuffer();
     VkCommandPool GetRawCommandPool();
 
@@ -47,7 +45,6 @@ private:
     VkCommandPool _commandPool;
     uint32_t _queueFamilyIndex;
     EStatus _status;
-    VkFence _fence;
 };
 
 } // namespace ZE

@@ -21,7 +21,7 @@ Viewport::~Viewport()
 {
 }
 
-void Viewport::InitRenderResource(TPtr<RenderGraph> renderGraph)
+void Viewport::InitRenderResource(RenderGraph* renderGraph)
 {
     RenderResource::InitRenderResource(renderGraph);
 
@@ -36,7 +36,7 @@ void Viewport::InitRenderResource(TPtr<RenderGraph> renderGraph)
     }
 }
 
-void Viewport::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
+void Viewport::CleanupRenderResource(RenderGraph* renderGraph)
 {
     VulkanDevice* device = renderGraph->GetDevice();
     uint32_t imageCount = _swapchain->GetImageCount();
@@ -86,7 +86,7 @@ void Viewport::Advance()
      }
 }
 
-void Viewport::Present(TPtr<RenderGraph> renderGraph)
+void Viewport::Present(RenderGraph* renderGraph)
 {
     _swapchain->AcquireNextImage(UINT64_MAX, _submitSemaphores[_currentIndex], VK_NULL_HANDLE);
 
@@ -95,9 +95,8 @@ void Viewport::Present(TPtr<RenderGraph> renderGraph)
     //std::cout << "Execute" << std::endl;
     renderGraph->Execute({_submitSemaphores[_currentIndex]}, {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}, {_presentSemaphores[_currentIndex]});
 
-    VulkanQueue* graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);
     //std::cout << "Present" << std::endl;
-    graphicQueue->Present(_swapchain, {_presentSemaphores[_currentIndex]});
+    renderGraph->Present(_swapchain, {_presentSemaphores[_currentIndex]});
     _queuedImageCount--;
 }
 

@@ -14,11 +14,11 @@ public:
     GraphicResource();
     virtual ~GraphicResource();
 
-    void MarkUsed(int32_t frameNumber);
-    int32_t GetUsedFrameNumber();
+    void MarkUsed(int32_t executeCounter);
+    int32_t GetUsedExecuteCounter();
 
 private:
-    int32_t _frameNumber;
+    int32_t _executeCounter;
 
 public:
     static std::vector<GraphicResource*>& GetPendingDeleteResources();
@@ -46,7 +46,7 @@ template <typename T, class... ArgTypes>
 requires std::is_base_of_v<GraphicResource, T>
 T* NewTempGraphicResource(ArgTypes&&... Args)
 {
-    T* ptr = T(std::forward<ArgTypes>(Args)...);
+    T* ptr = new T(std::forward<ArgTypes>(Args)...);
     GraphicResourceDeleter::DelayDelete(ptr);
     return ptr;
 }

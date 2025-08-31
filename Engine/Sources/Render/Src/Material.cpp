@@ -230,7 +230,7 @@ Pass::~Pass()
 {
 }
 
-void Pass::InitRenderResource(TPtr<RenderGraph> renderGraph)
+void Pass::InitRenderResource(RenderGraph* renderGraph)
 {
     RenderResource::InitRenderResource(renderGraph);
 
@@ -247,7 +247,7 @@ void Pass::InitRenderResource(TPtr<RenderGraph> renderGraph)
     renderGraph->Execute();
 }
 
-void Pass::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
+void Pass::CleanupRenderResource(RenderGraph* renderGraph)
 {
     delete  _pipelineLayout;
     delete _descriptorSet;
@@ -272,7 +272,7 @@ void Pass::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
     RenderResource::CleanupRenderResource(renderGraph);
 }
 
-TPtr<VulkanImage> CreateGraphicImage(TPtr<RenderGraph> renderGraph, TPtr<TextureResource> texture)
+TPtr<VulkanImage> CreateGraphicImage(RenderGraph* renderGraph, TPtr<TextureResource> texture)
 {
     assert(texture->IsLoaded());
 
@@ -286,7 +286,7 @@ TPtr<VulkanImage> CreateGraphicImage(TPtr<RenderGraph> renderGraph, TPtr<Texture
 }
 
 
-void Pass::CreateGraphicTextures(TPtr<RenderGraph> renderGraph)
+void Pass::CreateGraphicTextures(RenderGraph* renderGraph)
 {
     assert(_owner.expired() == false);
 
@@ -318,7 +318,7 @@ void Pass::CreateGraphicTextures(TPtr<RenderGraph> renderGraph)
     }
 }
 
-void Pass::CreateGraphicBuffers(TPtr<RenderGraph> renderGraph)
+void Pass::CreateGraphicBuffers(RenderGraph* renderGraph)
 {
     _uniformBuffer = NewGraphicResource<VulkanBuffer>(renderGraph->GetDevice(), sizeof(glm::mat4x4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
@@ -332,7 +332,7 @@ VulkanShader* CreateGraphicShader(VulkanDevice* device, VkShaderStageFlagBits sh
     return new VulkanShader(device, shader->GetByteCode());
 }
 
-void Pass::CreateGraphicShaders(TPtr<RenderGraph> renderGraph)
+void Pass::CreateGraphicShaders(RenderGraph* renderGraph)
 {
     assert(_owner.expired() == false);
     TPtr<PassResource> passResource = _owner.lock();
@@ -355,7 +355,7 @@ void Pass::CreateGraphicShaders(TPtr<RenderGraph> renderGraph)
     }
 }
 
-void Pass::CreateDescriptorSetLayout(TPtr<RenderGraph> renderGraph)
+void Pass::CreateDescriptorSetLayout(RenderGraph* renderGraph)
 {
     VulkanDevice* device = renderGraph->GetDevice();
 
@@ -377,14 +377,14 @@ void Pass::CreateDescriptorSetLayout(TPtr<RenderGraph> renderGraph)
     _descriptorSetLayout = new VulkanDescriptorSetLayout(device, localDescriptorSetLayoutBindings);
 }
 
-void Pass::CreateDescriptorSet(TPtr<RenderGraph> renderGraph)
+void Pass::CreateDescriptorSet(RenderGraph* renderGraph)
 {
     VulkanDescriptorPool* descriptorPool = RenderSystem::Get().GetDescriptorPool();
 
     _descriptorSet = new VulkanDescriptorSet(renderGraph->GetDevice(), descriptorPool, _descriptorSetLayout);
 }
 
-void Pass::LinkDescriptorSet(TPtr<RenderGraph> renderGraph)
+void Pass::LinkDescriptorSet(RenderGraph* renderGraph)
 {
     {
         VkDescriptorBufferInfo bufferInfo{};
@@ -410,7 +410,7 @@ void Pass::LinkDescriptorSet(TPtr<RenderGraph> renderGraph)
     }
 }
 
-void Pass::CreatePipelineLayout(TPtr<RenderGraph> renderGraph)
+void Pass::CreatePipelineLayout(RenderGraph* renderGraph)
 {
     VulkanDevice* device = renderGraph->GetDevice();
 
@@ -496,7 +496,7 @@ void Pass::ApplyPipelineState(RHIPipelineState& state)
     state.layout = _pipelineLayout->GetRawPipelineLayout();
 }
 
-void Pass::UpdateUniformBuffer(TPtr<RenderGraph> renderGraph, const glm::mat4x4& mvp)
+void Pass::UpdateUniformBuffer(RenderGraph* renderGraph, const glm::mat4x4& mvp)
 {
     renderGraph->TransferBuffer(reinterpret_cast<const uint8_t*>(&mvp), sizeof(mvp), _uniformBuffer);
 }

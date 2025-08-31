@@ -16,7 +16,7 @@ std::unordered_set<RenderResource*>& RenderResource::GetUninitialized()
     return _uninitializedResourceSet;
 }
 
-void RenderResource::InitializeRenderResources(TPtr<RenderGraph> renderGraph)
+void RenderResource::InitializeRenderResources(RenderGraph* renderGraph)
 {
     for (auto iter = _uninitializedResourceSet.begin(); iter != _uninitializedResourceSet.end();)
     {
@@ -26,7 +26,7 @@ void RenderResource::InitializeRenderResources(TPtr<RenderGraph> renderGraph)
     }
 }
 
-void RenderResource::CleanupRenderResources(TPtr<RenderGraph> renderGraph)
+void RenderResource::CleanupRenderResources(RenderGraph* renderGraph)
 {
     for (auto iter = _resourceSet.begin(); iter != _resourceSet.end(); iter++)
     {
@@ -48,11 +48,11 @@ RenderResource::~RenderResource()
     _uninitializedResourceSet.erase(this);
 }
 
-void RenderResource::InitRenderResource(TPtr<RenderGraph> renderGraph)
+void RenderResource::InitRenderResource(RenderGraph* renderGraph)
 {
 }
 
-void RenderResource::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
+void RenderResource::CleanupRenderResource(RenderGraph* renderGraph)
 {
 }
 

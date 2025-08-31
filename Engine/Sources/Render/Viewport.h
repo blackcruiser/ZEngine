@@ -22,8 +22,8 @@ public:
     Viewport(void* windowHandle, const glm::ivec2& size);
     ~Viewport();
 
-    virtual void InitRenderResource(TPtr<RenderGraph> renderGraph) override;
-    virtual void CleanupRenderResource(TPtr<RenderGraph> renderGraph) override;
+    virtual void InitRenderResource(RenderGraph* renderGraph) override;
+    virtual void CleanupRenderResource(RenderGraph* renderGraph) override;
 
     glm::ivec2 GetSize();
     
@@ -31,7 +31,7 @@ public:
 
     void Advance();
 
-    void Present(TPtr<RenderGraph> renderGraph);
+    void Present(RenderGraph* renderGraph);
 
 private:
     void* _windowHandle;

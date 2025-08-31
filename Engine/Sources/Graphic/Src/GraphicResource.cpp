@@ -8,7 +8,7 @@ namespace ZE {
 std::vector<GraphicResource*> GraphicResource::pendingDeleteResources;
 
 GraphicResource::GraphicResource() :
-    _frameNumber(0)
+    _executeCounter(0)
 {
 }
 
@@ -16,14 +16,14 @@ GraphicResource::~GraphicResource()
 {
 }
 
-void GraphicResource::MarkUsed(int32_t frameNumber)
+void GraphicResource::MarkUsed(int32_t executeCounter)
 {
-    _frameNumber = frameNumber;
+    _executeCounter = executeCounter;
 }
 
-int32_t GraphicResource::GetUsedFrameNumber()
+int32_t GraphicResource::GetUsedExecuteCounter()
 {
-    return _frameNumber;
+    return _executeCounter;
 }
 
 std::vector<GraphicResource*>& GraphicResource::GetPendingDeleteResources()

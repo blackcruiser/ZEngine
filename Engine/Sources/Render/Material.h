@@ -35,18 +35,18 @@ public:
     Pass(TPtr<PassResource> passResource);
     ~Pass();
 
-    virtual void InitRenderResource(TPtr<RenderGraph> renderGraph) override;
-    virtual void CleanupRenderResource(TPtr<RenderGraph> renderGraph) override;
+    virtual void InitRenderResource(RenderGraph* renderGraph) override;
+    virtual void CleanupRenderResource(RenderGraph* renderGraph) override;
 
 private:
-    void CreateGraphicTextures(TPtr<RenderGraph> renderGraph);
-    void CreateGraphicBuffers(TPtr<RenderGraph> renderGraph);
-    void CreateGraphicShaders(TPtr<RenderGraph> renderGraph);
+    void CreateGraphicTextures(RenderGraph* renderGraph);
+    void CreateGraphicBuffers(RenderGraph* renderGraph);
+    void CreateGraphicShaders(RenderGraph* renderGraph);
 
-    void CreateDescriptorSetLayout(TPtr<RenderGraph> renderGraph);
-    void CreateDescriptorSet(TPtr<RenderGraph> renderGraph);
-    void LinkDescriptorSet(TPtr<RenderGraph> renderGraph);
-    void CreatePipelineLayout(TPtr<RenderGraph> renderGraph);
+    void CreateDescriptorSetLayout(RenderGraph* renderGraph);
+    void CreateDescriptorSet(RenderGraph* renderGraph);
+    void LinkDescriptorSet(RenderGraph* renderGraph);
+    void CreatePipelineLayout(RenderGraph* renderGraph);
 
 public:
     VulkanDescriptorSet* GetDescriptorSet();
@@ -54,7 +54,7 @@ public:
     VulkanPipelineLayout* GetPipelineLayout();
     void ApplyPipelineState(RHIPipelineState& state);
 
-    void UpdateUniformBuffer(TPtr<RenderGraph> renderGraph, const glm::mat4x4& mvp);
+    void UpdateUniformBuffer(RenderGraph* renderGraph, const glm::mat4x4& mvp);
 
 private:
     std::unordered_map<VkShaderStageFlagBits, VulkanShader*> _shaders;

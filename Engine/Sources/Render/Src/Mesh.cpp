@@ -17,7 +17,7 @@ Mesh::~Mesh()
 {
 }
 
-void Mesh::InitRenderResource(TPtr<RenderGraph> renderGraph)
+void Mesh::InitRenderResource(RenderGraph* renderGraph)
 {
     RenderResource::InitRenderResource(renderGraph);
 
@@ -43,7 +43,7 @@ void Mesh::InitRenderResource(TPtr<RenderGraph> renderGraph)
     renderGraph->Execute();
 }
 
-void Mesh::CleanupRenderResource(TPtr<RenderGraph> renderGraph)
+void Mesh::CleanupRenderResource(RenderGraph* renderGraph)
 {
     _indexBuffer.reset();
     _vertexBuffer.reset();

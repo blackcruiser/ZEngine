@@ -17,7 +17,6 @@ class VulkanStagingBufferManager;
 class VulkanGraphicPipeline;
 class VulkanRenderPass;
 class GraphicResource;
-class RenderSynchronizer;
 class RenderGraph;
 
 
@@ -34,8 +33,8 @@ public:
     void Initialize();
     void Cleanup();
 
-    void InitializeResources(TPtr<RenderGraph> renderGraph);
-    void CleanupResources(TPtr<RenderGraph> renderGraph);
+    void InitializeResources(RenderGraph* renderGraph);
+    void CleanupResources(RenderGraph* renderGraph);
 
     void DeleteGraphicResources();
 
@@ -48,7 +47,7 @@ public:
     VulkanCommandBufferManager* GetCommandBufferManager(VulkanQueue::EType type);
     VulkanStagingBufferManager* GetBufferManager();
 
-    RenderSynchronizer* GetSynchronizer();
+    RenderGraph* GetRenderGraph();
 
 private:
     VkInstance _instance;
@@ -64,6 +63,8 @@ private:
     VulkanCommandBufferManager* _computeCommandBufferManager;
     VulkanCommandBufferManager* _transferCommandBufferManager;
     VulkanStagingBufferManager* _bufferManager;
+
+    RenderGraph* _renderGraph;
 };
 
 } // namespace ZE

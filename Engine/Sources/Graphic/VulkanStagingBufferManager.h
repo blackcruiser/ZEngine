@@ -20,8 +20,7 @@ public:
     VulkanBuffer* AcquireStagingBuffer(uint32_t size);
     void ReleaseStagingBuffer(VulkanBuffer* buffer);
 
-private:
-    void Recycle(uint32 frameNumber);
+    void Recycle(uint32 executeCounter);
 
 private:
     std::list<VulkanBuffer*> _usedStagingBuffers, _freeStagingBuffers, _pendingStagingBuffers;

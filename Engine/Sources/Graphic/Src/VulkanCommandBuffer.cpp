@@ -11,7 +11,7 @@
 namespace ZE {
 
 VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool inCommandPool, uint32_t inQueueFamilyIndex)
-    : VulkanDeviceChild(device), _commandBuffer(VK_NULL_HANDLE), _commandPool(inCommandPool), _queueFamilyIndex(inQueueFamilyIndex), _status(EStatus::Initial), _fence(VK_NULL_HANDLE), _executeCount(0)
+    : VulkanDeviceChild(device), _commandBuffer(VK_NULL_HANDLE), _commandPool(inCommandPool), _queueFamilyIndex(inQueueFamilyIndex), _status(EStatus::Initial)
 {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -21,14 +21,11 @@ VulkanCommandBuffer::VulkanCommandBuffer(VulkanDevice* device, VkCommandPool inC
 
     VkResult result = vkAllocateCommandBuffers(_device->GetRawDevice(), &allocInfo, &_commandBuffer);
     ZE_CHECK_MSG(result == VkResult::VK_SUCCESS, "Create CommandBuffer fail!");
-
-    _fence = CreateFence(device, false);
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
 {
     Reset();
-    DestroyFence(_device, _fence);
 
     vkFreeCommandBuffers(_device->GetRawDevice(), _commandPool, 1, &_commandBuffer);
 }
@@ -55,7 +52,6 @@ void VulkanCommandBuffer::End()
 void VulkanCommandBuffer::Reset()
 {
     _status = EStatus::Initial;
-    ResetFence(_device, _fence);
 }
 
 void VulkanCommandBuffer::BeginRenderPass(VulkanRenderPass* renderPass, VulkanFramebuffer* framebuffer, const VkRect2D& renderArea, const std::vector<VkClearValue>& clearColors)
@@ -75,11 +71,6 @@ void VulkanCommandBuffer::BeginRenderPass(VulkanRenderPass* renderPass, VulkanFr
 void VulkanCommandBuffer::EndRenderPass()
 {
     vkCmdEndRenderPass(_commandBuffer);
-}
-
-VkFence VulkanCommandBuffer::GetFence()
-{
-    return _fence;
 }
 
 VkCommandBuffer VulkanCommandBuffer::GetRawCommandBuffer()

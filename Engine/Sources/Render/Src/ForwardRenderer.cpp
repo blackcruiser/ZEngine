@@ -31,7 +31,7 @@ ForwardRenderer::~ForwardRenderer()
 {
 }
 
-void ForwardRenderer::Init(TPtr<RenderGraph> renderGraph, Viewport* viewport)
+void ForwardRenderer::Init(RenderGraph* renderGraph, Viewport* viewport)
 {
     glm::ivec2 size = viewport->GetSize();
     VkExtent3D extent{size.r, size.g, 1.0f};
@@ -40,12 +40,12 @@ void ForwardRenderer::Init(TPtr<RenderGraph> renderGraph, Viewport* viewport)
     _depthRenderTarget = NewGraphicResource<VulkanImage>(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_D32_SFLOAT, VkImageUsageFlagBits::VK_IMAGE_USAGE_TRANSFER_DST_BIT | VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
-void ForwardRenderer::Cleanup(TPtr<RenderGraph> renderGraph)
+void ForwardRenderer::Cleanup(RenderGraph* renderGraph)
 {
     _depthRenderTarget.reset();
 }
 
-TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<RenderGraph> renderGraph, TPtr<Scene> scene)
+TPtrArr<SceneObject> ForwardRenderer::Prepare(RenderGraph* renderGraph, TPtr<Scene> scene)
 {
     //Filter Objects
     const TPtrArr<SceneObject>& allObjects = scene->GetObjects();
@@ -104,7 +104,7 @@ TPtrArr<SceneObject> ForwardRenderer::Prepare(TPtr<RenderGraph> renderGraph, TPt
     return objectsToRender;
 }
 
-void ForwardRenderer::RenderFrame(TPtr<RenderGraph> renderGraph, Viewport* viewport, TPtr<Scene> scene)
+void ForwardRenderer::RenderFrame(RenderGraph* renderGraph, Viewport* viewport, TPtr<Scene> scene)
 {
     {
         TPtr<VulkanImage> backBuffer = viewport->GetCurrentImage();

@@ -59,12 +59,12 @@ void VulkanStagingBufferManager::ReleaseStagingBuffer(VulkanBuffer* buffer)
     _usedStagingBuffers.remove(buffer);
 }
 
-void VulkanStagingBufferManager::Recycle(uint32 frameNumber)
+void VulkanStagingBufferManager::Recycle(uint32 executeCounter)
 {
     for (auto iter = _pendingStagingBuffers.begin(); iter != _pendingStagingBuffers.end(); )
     {
         VulkanBuffer* buffer = *iter;
-        if (buffer->GetUsedFrameNumber() <= frameNumber)
+        if (buffer->GetUsedExecuteCounter() <= executeCounter)
         {
             _freeStagingBuffers.push_back(buffer);
             iter = _pendingStagingBuffers.erase(iter);

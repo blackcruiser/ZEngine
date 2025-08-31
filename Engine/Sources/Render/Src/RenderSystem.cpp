@@ -70,14 +70,12 @@ void RenderSystem::Initialize()
 
     _bufferManager = new VulkanStagingBufferManager(_device);
 
-    _graphicResourcePool = new ObjectPool<GraphicResource>();
+    _renderGraph = new RenderGraph(_device);
 }
 
 void RenderSystem::Cleanup()
 {
-    _graphicResourcePool->Cleanup();
-
-    delete _graphicResourcePool;
+    delete _renderGraph;
 
     delete _bufferManager;
     delete _graphicCommandBufferManager;
@@ -95,12 +93,12 @@ void RenderSystem::Cleanup()
     DestroyInstance(_instance);
 }
 
-void RenderSystem::InitializeResources(TPtr<RenderGraph> renderGraph)
+void RenderSystem::InitializeResources(RenderGraph* renderGraph)
 {
     RenderResource::InitializeRenderResources(renderGraph);
 }
 
-void RenderSystem::CleanupResources(TPtr<RenderGraph> renderGraph)
+void RenderSystem::CleanupResources(RenderGraph* renderGraph)
 {
     _device->WaitIdle();
 
@@ -165,10 +163,9 @@ VulkanStagingBufferManager* RenderSystem::GetBufferManager()
     return _bufferManager;
 }
 
-ObjectPool<GraphicResource>* RenderSystem::GetGraphicResourcePool()
+RenderGraph* RenderSystem::GetRenderGraph()
 {
-    ZE_CHECK(_graphicResourcePool);
-    return _graphicResourcePool;
+    return _renderGraph;
 }
 
 } // namespace ZE

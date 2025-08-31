@@ -3,6 +3,7 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 #include "VulkanDevice.h"
+#include "GraphicResource.h"
 
 
 namespace ZE {

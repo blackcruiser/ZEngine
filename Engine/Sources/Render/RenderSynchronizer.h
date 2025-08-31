@@ -11,18 +11,29 @@
 
 namespace ZE {
 
+class VulkanDevice;
+
 class RenderSynchronizer
 {
 public:
-    RenderSynchronizer();
+    RenderSynchronizer(VulkanDevice* device);
     ~RenderSynchronizer();
+    
+    uint32 getSafeExecuteCounter();
 
     VkFence GetFence();
-    void MarkExecuted(VkFence fence, uint32 frameNumber);
+    void ReturnFence(VkFence fence, uint32 executeCounter);
+    void WaitForAllFences();
+
+    void Recycle();
 
 private:
-    std::vector<VkFence> m_freeFences;
-    std::vector<std::tuple<VkFence, uint32>> m_pendingFences;
+    VulkanDevice* _device;
+
+    uint32 _safeExecuteCounter;
+
+    std::vector<VkFence> _freeFences;
+    std::vector<std::tuple<VkFence, uint32>> _pendingFences;
 };
 
 } // namespace ZE

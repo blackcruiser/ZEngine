@@ -39,22 +39,19 @@ void Application::Run(TPtr<Scene> scene)
 
     window->CreateViewport(RenderSystem::Get().GetDevice());
     Viewport* viewport = window->GetViewport();
-    TPtr<RenderGraph> renderGraph = std::make_shared<RenderGraph>();
+    RenderGraph* renderGraph = RenderSystem::Get().GetRenderGraph();
     TPtr<RendererInterface> renderer = std::make_shared<ForwardRenderer>();
     renderer->Init(renderGraph, viewport);
-    int frameNumber = 0;
     while (!window->ShouldClose())
     {
         glfwPollEvents();
 
-        frameNumber++;
         RenderSystem::Get().InitializeResources(renderGraph);
 
         viewport->Advance();
         
         renderer->RenderFrame(renderGraph, viewport, scene);
         viewport->Present(renderGraph);
-        renderGraph->MarkFrameNumber(frameNumber);
 
         RenderSystem::Get().DeleteGraphicResources();
     }
@@ -63,7 +60,6 @@ void Application::Run(TPtr<Scene> scene)
     renderer->Cleanup(renderGraph);
 
     renderer.reset();
-    renderGraph.reset();
     delete viewport;
 
     InputSystem::Get().DetachFrom(window);

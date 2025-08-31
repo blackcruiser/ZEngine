@@ -16,3 +16,5 @@
 目前什么都没渲染，执行速度非常快，导致AcquireNextImage的signalSemaphore还没有被QueueSumbit wait，就被下一次的AcquireNextImage signal了。出现了"Semaphore must not have any pending operations."错误。
 Unity使用FrameTracking管理semaphore，只有CPU端fence signal后，semaphore才能重新使用。因此Unity并没有直接wait fence。
 UE不同，UE每一帧会等QueueSubmit fence wait后再继续执行。
+
+8. Unity中TaskExecutor与UE中FRHICommandList相似。

@@ -13,7 +13,7 @@ RenderPass::~RenderPass()
 {
 }
 
-void RenderPass::Execute(TPtr<RenderGraph>& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
+void RenderPass::Execute(RenderGraph*& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
 {
     Draw(renderGraph, objectsToRender);
 }
