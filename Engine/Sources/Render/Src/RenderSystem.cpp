@@ -163,7 +163,7 @@ VulkanStagingBufferManager* RenderSystem::GetBufferManager()
     return _bufferManager;
 }
 
-RenderGraph* RenderSystem::GetRenderGraph()
+RenderGraph* RenderSystem::GetRenderGraph(uint32 threadId)
 {
     return _renderGraph;
 }

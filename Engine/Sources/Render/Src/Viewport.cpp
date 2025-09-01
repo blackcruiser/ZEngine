@@ -88,10 +88,8 @@ void Viewport::Advance()
 
 void Viewport::Present(RenderGraph* renderGraph)
 {
-    _swapchain->AcquireNextImage(UINT64_MAX, _submitSemaphores[_currentIndex], VK_NULL_HANDLE);
-
-    TPtr<VulkanImage> currentImage = GetCurrentImage();
-    renderGraph->TransitionLayout(currentImage, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    //TPtr<VulkanImage> currentImage = GetCurrentImage();
+    //renderGraph->TransitionLayout(currentImage, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     //std::cout << "Execute" << std::endl;
     renderGraph->Execute({_submitSemaphores[_currentIndex]}, {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}, {_presentSemaphores[_currentIndex]});
 

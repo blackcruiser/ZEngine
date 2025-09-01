@@ -47,7 +47,7 @@ public:
     VulkanCommandBufferManager* GetCommandBufferManager(VulkanQueue::EType type);
     VulkanStagingBufferManager* GetBufferManager();
 
-    RenderGraph* GetRenderGraph();
+    RenderGraph* GetRenderGraph(uint32 threadId = 0);
 
 private:
     VkInstance _instance;
