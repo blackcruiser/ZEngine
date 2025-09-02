@@ -67,6 +67,16 @@ void RenderGraph::Execute()
     Execute({}, {}, {});
 }
 
+uint32 RenderGraph::GetExecuteCounter()
+{
+    return _executeCounter;
+}
+
+RenderSynchronizer* RenderGraph::GetSynchronizer()
+{
+    return _synchronizer;
+}
+
 void RenderGraph::Present(VulkanSwapchain* swapchain, const std::vector<VkSemaphore>& waitSemaphoreArr)
 {
     VulkanQueue* graphicQueue = RenderSystem::Get().GetQueue(VulkanQueue::EType::Graphic);

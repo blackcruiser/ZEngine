@@ -33,6 +33,10 @@ public:
     void Execute(const std::vector<VkSemaphore>& waitSemaphoreArr, const std::vector<VkPipelineStageFlags>& waitStageArr, const std::vector<VkSemaphore>& signalSemaphoreArr);
     void Execute();
 
+    uint32 GetExecuteCounter();
+
+    RenderSynchronizer* GetSynchronizer();
+
     void Present(VulkanSwapchain* swapchain, const std::vector<VkSemaphore>& waitSemaphoreArr);
 
     void GarbageCollect(uint32 safeExecuteCounter);

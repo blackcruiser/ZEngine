@@ -48,7 +48,7 @@ void Application::Run(TPtr<Scene> scene)
 
         RenderSystem::Get().InitializeResources(renderGraph);
 
-        viewport->Advance();
+        viewport->Advance(renderGraph);
         
         renderer->RenderFrame(renderGraph, viewport, scene);
         viewport->Present(renderGraph);
@@ -65,7 +65,6 @@ void Application::Run(TPtr<Scene> scene)
     InputSystem::Get().DetachFrom(window);
     window->UnregisterInput(InputSystem::Get());
     window.reset();
-
 
     RenderSystem::Get().Cleanup();
     InputSystem::Cleanup();

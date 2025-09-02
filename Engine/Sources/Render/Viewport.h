@@ -29,14 +29,14 @@ public:
     
     TPtr<VulkanImage> GetCurrentImage();
 
-    void Advance();
+    void Advance(RenderGraph* renderGraph);
 
     void Present(RenderGraph* renderGraph);
 
 private:
     void* _windowHandle;
     VulkanSwapchain* _swapchain;
-    std::vector<VkSemaphore> _submitSemaphores, _presentSemaphores;
+    VkSemaphore _acquireSemaphore;
     std::vector<VkFence> _presentFences;
     uint32_t _currentIndex;
     glm::ivec2 _size;

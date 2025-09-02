@@ -24,6 +24,11 @@ public:
     VkFence GetFence();
     void ReturnFence(VkFence fence, uint32 executeCounter);
     void WaitForAllFences();
+    void RecycleFences();
+
+    VkSemaphore GetSemaphore();
+    void ReturnSemaphore(VkSemaphore semaphore, uint32 executeCounter);
+    void RecycleSemaphores();
 
     void Recycle();
 
@@ -34,6 +39,9 @@ private:
 
     std::vector<VkFence> _freeFences;
     std::vector<std::tuple<VkFence, uint32>> _pendingFences;
+
+    std::vector<VkSemaphore> _freeSemaphores;
+    std::vector<std::tuple<VkSemaphore, uint32>> _pendingSemaphores;
 };
 
 } // namespace ZE
