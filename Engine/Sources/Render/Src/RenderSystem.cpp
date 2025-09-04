@@ -50,19 +50,20 @@ void RenderSystem::Initialize()
         {
             _graphicQueue = new VulkanQueue(_device, VulkanQueue::EType::Graphic, i);
             _graphicCommandBufferManager = new VulkanCommandBufferManager(_device, i);
+            break;
         }
 
-        if ((properties.queueFlags & VK_QUEUE_COMPUTE_BIT) == VK_QUEUE_COMPUTE_BIT)
-        {
-            _computeQueue = new VulkanQueue(_device, VulkanQueue::EType::Compute, i);
-            _computeCommandBufferManager = new VulkanCommandBufferManager(_device, i);
-        }
+        // if ((properties.queueFlags & VK_QUEUE_COMPUTE_BIT) == VK_QUEUE_COMPUTE_BIT)
+        // {
+        //     _computeQueue = new VulkanQueue(_device, VulkanQueue::EType::Compute, i);
+        //     _computeCommandBufferManager = new VulkanCommandBufferManager(_device, i);
+        // }
 
-        if ((properties.queueFlags & VK_QUEUE_TRANSFER_BIT) == VK_QUEUE_TRANSFER_BIT)
-        {
-            _transferQueue = new VulkanQueue(_device, VulkanQueue::EType::Transfer, i);
-            _transferCommandBufferManager = new VulkanCommandBufferManager(_device, i);
-        }
+        // if ((properties.queueFlags & VK_QUEUE_TRANSFER_BIT) == VK_QUEUE_TRANSFER_BIT)
+        // {
+        //     _transferQueue = new VulkanQueue(_device, VulkanQueue::EType::Transfer, i);
+        //     _transferCommandBufferManager = new VulkanCommandBufferManager(_device, i);
+        // }
     }
 
     std::vector<VkDescriptorPoolSize> poolSizeArr = {{VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10}, {VkDescriptorType::VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10}};

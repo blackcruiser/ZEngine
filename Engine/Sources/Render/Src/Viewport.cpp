@@ -60,6 +60,7 @@ void Viewport::Advance(RenderGraph* renderGraph)
     RenderSynchronizer* synchronizer = renderGraph->GetSynchronizer();
 
     _queuedImageCount++;
+    RenderSynchronizer* synchronizer = renderGraph->GetSynchronizer();
     VkFence fence = VK_NULL_HANDLE;
     if (_queuedImageCount >= _swapchain->GetImageCount())
         fence = synchronizer->GetFence();
