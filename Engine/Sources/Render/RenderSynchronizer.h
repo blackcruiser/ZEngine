@@ -23,6 +23,7 @@ public:
 
     VkFence GetFence();
     void ReturnFence(VkFence fence, uint32 executeCounter);
+    void WaitForFence(VkFence fence);
     void WaitForAllFences();
     void RecycleFences();
 

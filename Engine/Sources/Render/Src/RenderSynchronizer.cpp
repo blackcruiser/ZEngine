@@ -69,12 +69,25 @@ void RenderSynchronizer::ReturnFence(VkFence fence, uint32 executeCounter)
     _pendingFences.emplace_back(std::tuple<VkFence, uint32>(fence, executeCounter));
 }
 
+void RenderSynchronizer::WaitForFence(VkFence fence)
+{
+    vkWaitForFences(_device->GetRawDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vkResetFences(_device->GetRawDevice(), 1, &fence);
+    _freeFences.push_back(fence);
+}
+
 void RenderSynchronizer::WaitForAllFences()
 {
     for (auto& entry : _pendingFences)
     {
         VkFence fence = std::get<0>(entry);
+        uint32 executeCounter = std::get<1>(entry);
+
         vkWaitForFences(_device->GetRawDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+        vkResetFences(_device->GetRawDevice(), 1, &fence);
+        _freeFences.push_back(fence);
+
+        _safeExecuteCounter = std::max(_safeExecuteCounter, executeCounter);
     }
 }
 

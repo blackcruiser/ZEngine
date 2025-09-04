@@ -28,8 +28,8 @@ private:
     ~InputSystem();
 
 public:
-    void AttachTo(TPtr<Window> window);
-    void DetachFrom(TPtr<Window> window);
+    void AttachTo(Window* window);
+    void DetachFrom(Window* window);
 
     size_t RegisterMouseAction(MouseAction action);
     void UnregisterMouseAction(size_t key);
@@ -44,7 +44,7 @@ private:
     std::vector<MouseAction> _mouseActions;
     std::vector<KeyboardAction> _keyboardActions;
 
-    TPtr<Window> _window;
+    Window* _window;
 
     static InputSystem* _instance;
 };

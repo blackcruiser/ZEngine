@@ -28,26 +28,11 @@ void Viewport::InitRenderResource(RenderGraph* renderGraph)
 
     VulkanDevice* device = renderGraph->GetDevice();
     _swapchain = new VulkanSwapchain(device, _windowHandle, _size, kImageCount);
-
-    for (uint32_t i = 0; i < kImageCount; i++)
-    {
-        //_submitSemaphores.emplace_back(CreateSemaphore(device));
-        //_presentSemaphores.emplace_back(CreateSemaphore(device));
-        _presentFences.emplace_back(CreateFence(device, true));
-    }
 }
 
 void Viewport::CleanupRenderResource(RenderGraph* renderGraph)
 {
-    VulkanDevice* device = renderGraph->GetDevice();
     uint32_t imageCount = _swapchain->GetImageCount();
-    for (uint32_t i = 0; i < imageCount; i++)
-    {
-        //DestroySemaphore(device, _submitSemaphores[i]);
-        //DestroySemaphore(device, _presentSemaphores[i]);
-        DestroyFence(device, _presentFences[i]);
-    }
-
     delete _swapchain;
 
     RenderResource::CleanupRenderResource(renderGraph);
@@ -72,19 +57,19 @@ void Viewport::Advance(RenderGraph* renderGraph)
     //vkResetFences(device, 1, &fence);
     
     //std::cout << "AcquireNextImage" << std::endl;
+    RenderSynchronizer* synchronizer = renderGraph->GetSynchronizer();
+
     _queuedImageCount++;
     VkFence fence = VK_NULL_HANDLE;
     if (_queuedImageCount >= _swapchain->GetImageCount())
-        fence = _presentFences[0];
+        fence = synchronizer->GetFence();
 
-    _acquireSemaphore = renderGraph->GetSynchronizer()->GetSemaphore();
+    _acquireSemaphore = synchronizer->GetSemaphore();
      _swapchain->AcquireNextImage(UINT64_MAX, _acquireSemaphore, fence);
 
      if (fence != VK_NULL_HANDLE)
      {
-         VkDevice device = _swapchain->GetDevice()->GetRawDevice();
-         vkWaitForFences(device, 1, &fence, true, UINT64_MAX);
-         vkResetFences(device, 1, &fence);
+        synchronizer->WaitForFence(fence);
      }
 }
 
@@ -93,12 +78,13 @@ void Viewport::Present(RenderGraph* renderGraph)
     //TPtr<VulkanImage> currentImage = GetCurrentImage();
     //renderGraph->TransitionLayout(currentImage, VkImageLayout::VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VkImageLayout::VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
     //std::cout << "Execute" << std::endl;
-    renderGraph->GetSynchronizer()->ReturnSemaphore(_acquireSemaphore, renderGraph->GetExecuteCounter());
-    VkSemaphore executeSemaphore = renderGraph->GetSynchronizer()->GetSemaphore();
+    RenderSynchronizer* synchronizer = renderGraph->GetSynchronizer();
+    synchronizer->ReturnSemaphore(_acquireSemaphore, renderGraph->GetExecuteCounter());
+    VkSemaphore executeSemaphore = synchronizer->GetSemaphore();
     renderGraph->Execute({_acquireSemaphore}, {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}, {executeSemaphore});
 
     //std::cout << "Present" << std::endl;
-    renderGraph->GetSynchronizer()->ReturnSemaphore(executeSemaphore, renderGraph->GetExecuteCounter());
+    synchronizer->ReturnSemaphore(executeSemaphore, renderGraph->GetExecuteCounter());
     renderGraph->Present(_swapchain, {executeSemaphore});
     _queuedImageCount--;
 }

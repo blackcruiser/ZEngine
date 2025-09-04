@@ -28,48 +28,52 @@ Application::~Application()
 
 void Application::Run(TPtr<Scene> scene)
 {
-    scene->Load();
 
     RenderSystem::Get().Initialize();
     InputSystem::Initialize();
 
-    TPtr<Window> window = std::make_shared<Window>(AppName, size);
-    InputSystem::Get().AttachTo(window);
-
-
-    window->CreateViewport(RenderSystem::Get().GetDevice());
-    Viewport* viewport = window->GetViewport();
-    RenderGraph* renderGraph = RenderSystem::Get().GetRenderGraph();
-    TPtr<RendererInterface> renderer = std::make_shared<ForwardRenderer>();
-    renderer->Init(renderGraph, viewport);
-    while (!window->ShouldClose())
     {
-        glfwPollEvents();
+        scene->Load();
 
-        RenderSystem::Get().InitializeResources(renderGraph);
+        RenderGraph* renderGraph = RenderSystem::Get().GetRenderGraph();
 
-        viewport->Advance(renderGraph);
-        
-        renderer->RenderFrame(renderGraph, viewport, scene);
-        viewport->Present(renderGraph);
+        Window* window = new Window(AppName, size);
+        InputSystem::Get().AttachTo(window);
 
-        RenderSystem::Get().DeleteGraphicResources();
+        window->CreateViewport(RenderSystem::Get().GetDevice());
+        Viewport* viewport = window->GetViewport();
+        viewport->InitRenderResource(renderGraph);
+
+        RendererInterface* renderer = new ForwardRenderer();
+        renderer->Init(renderGraph, viewport);
+
+        while (!window->ShouldClose())
+        {
+            glfwPollEvents();
+
+            viewport->Advance(renderGraph);
+            
+            renderer->RenderFrame(renderGraph, viewport, scene);
+            viewport->Present(renderGraph);
+        }
+
+        renderer->Cleanup(renderGraph);
+        delete renderer;
+
+        viewport->CleanupRenderResource(renderGraph);
+        delete viewport;
+
+        InputSystem::Get().DetachFrom(window);
+        window->UnregisterInput(InputSystem::Get());
+        delete window;
+
+        RenderSystem::Get().CleanupResources(renderGraph);
+        scene->Unload();
     }
-
-    RenderSystem::Get().CleanupResources(renderGraph);
-    renderer->Cleanup(renderGraph);
-
-    renderer.reset();
-    delete viewport;
-
-    InputSystem::Get().DetachFrom(window);
-    window->UnregisterInput(InputSystem::Get());
-    window.reset();
 
     RenderSystem::Get().Cleanup();
     InputSystem::Cleanup();
 
-    scene->Unload();
 }
 
 } // namespace ZE

@@ -46,13 +46,13 @@ InputSystem::~InputSystem()
 {
 }
 
-void InputSystem::AttachTo(TPtr<Window> window)
+void InputSystem::AttachTo(Window* window)
 {
     _window = window;
     _window->RegisterInput(InputSystem::Get());
 }
 
-void InputSystem::DetachFrom(TPtr<Window> window)
+void InputSystem::DetachFrom(Window* window)
 {
     _window->UnregisterInput(InputSystem::Get());
     _window = nullptr;
