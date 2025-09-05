@@ -21,8 +21,8 @@ public:
     Mesh(TPtr<MeshResource> meshResource);
     ~Mesh();
 
-    virtual void InitRenderResource(RenderGraph* renderGraph) override;
-    virtual void CleanupRenderResource(RenderGraph* renderGraph) override;
+    virtual void InitGraphic(RenderGraph* renderGraph) override;
+    virtual void CleanupGraphic(RenderGraph* renderGraph) override;
 
     uint32_t GetVerticesCount();
     TPtr<VulkanBuffer> GetVertexBuffer();

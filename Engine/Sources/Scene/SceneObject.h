@@ -11,11 +11,16 @@
 
 namespace ZE {
 
+class ObjectResource;
+
 class SceneObject : public std::enable_shared_from_this<SceneObject>
 {
 public:
     SceneObject();
     ~SceneObject();
+
+    void Load();
+    void Unload();
 
     template <typename T>
     requires std::is_convertible<T, SceneComponent>::value
@@ -55,6 +60,8 @@ public:
 
         return components;
     }
+
+    ObjectResource* CreateRenderResource();
 
 private:
     TPtrArr<SceneComponent> _componentArr;

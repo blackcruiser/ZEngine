@@ -22,20 +22,20 @@ Viewport::~Viewport()
 {
 }
 
-void Viewport::InitRenderResource(RenderGraph* renderGraph)
+void Viewport::InitGraphic(RenderGraph* renderGraph)
 {
-    RenderResource::InitRenderResource(renderGraph);
+    RenderResource::InitGraphic(renderGraph);
 
     VulkanDevice* device = renderGraph->GetDevice();
     _swapchain = new VulkanSwapchain(device, _windowHandle, _size, kImageCount);
 }
 
-void Viewport::CleanupRenderResource(RenderGraph* renderGraph)
+void Viewport::CleanupGraphic(RenderGraph* renderGraph)
 {
     uint32_t imageCount = _swapchain->GetImageCount();
     delete _swapchain;
 
-    RenderResource::CleanupRenderResource(renderGraph);
+    RenderResource::CleanupGraphic(renderGraph);
 }
 
 glm::ivec2 Viewport::GetSize()

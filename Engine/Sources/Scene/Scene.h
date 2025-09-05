@@ -8,6 +8,7 @@ namespace ZE {
 
 class SceneObject;
 class CameraComponent;
+class SceneResource;
 
 class Scene
 {
@@ -23,6 +24,8 @@ public:
 
     void Load();
     void Unload();
+
+    SceneResource* CreateRenderResource();
 
 private:
     TPtrArr<SceneObject> _objects;

@@ -18,3 +18,5 @@ Unity使用FrameTracking管理semaphore，只有CPU端fence signal后，semaphor
 UE不同，UE每一帧会等QueueSubmit fence wait后再继续执行。
 
 8. Unity中TaskExecutor与UE中FRHICommandList相似。
+
+9. Unity的渲染数据都在GameThread管理，Mesh与Material等。当需要渲染时，将这些数据组织成indexBuffer、vertexbuffer等再通过m_CommandQueue传递至RenderThread。

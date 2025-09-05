@@ -35,8 +35,8 @@ public:
     Pass(TPtr<PassResource> passResource);
     ~Pass();
 
-    virtual void InitRenderResource(RenderGraph* renderGraph) override;
-    virtual void CleanupRenderResource(RenderGraph* renderGraph) override;
+    virtual void InitGraphic(RenderGraph* renderGraph) override;
+    virtual void CleanupGraphic(RenderGraph* renderGraph) override;
 
 private:
     void CreateGraphicTextures(RenderGraph* renderGraph);

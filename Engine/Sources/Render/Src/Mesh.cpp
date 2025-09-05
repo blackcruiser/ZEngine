@@ -17,9 +17,9 @@ Mesh::~Mesh()
 {
 }
 
-void Mesh::InitRenderResource(RenderGraph* renderGraph)
+void Mesh::InitGraphic(RenderGraph* renderGraph)
 {
-    RenderResource::InitRenderResource(renderGraph);
+    RenderResource::InitGraphic(renderGraph);
 
     assert(_owner.expired() == false);
 
@@ -43,12 +43,12 @@ void Mesh::InitRenderResource(RenderGraph* renderGraph)
     renderGraph->Execute();
 }
 
-void Mesh::CleanupRenderResource(RenderGraph* renderGraph)
+void Mesh::CleanupGraphic(RenderGraph* renderGraph)
 {
     _indexBuffer.reset();
     _vertexBuffer.reset();
 
-    RenderResource::CleanupRenderResource(renderGraph);
+    RenderResource::CleanupGraphic(renderGraph);
 }
 
 uint32_t Mesh::GetVerticesCount()

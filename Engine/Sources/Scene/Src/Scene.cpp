@@ -57,11 +57,7 @@ void Scene::Load()
 {
     for (TPtr<SceneObject>& object : _objects)
     {
-        TPtrArr<SceneComponent> components = object->GetComponents<SceneComponent>();
-        for (TPtr<SceneComponent>& component : components)
-        {
-            component->Load();
-        }
+        object->Load();
     }
 }
 
@@ -69,11 +65,17 @@ void Scene::Unload()
 {
     for (TPtr<SceneObject>& object : _objects)
     {
-        TPtrArr<SceneComponent> components = object->GetComponents<SceneComponent>();
-        for (TPtr<SceneComponent>& component : components)
-        {
-            component->Unload();
-        }
+        object->Unload();
+    }
+}
+
+SceneResource* Scene::CreateRenderResource()
+{
+    SceneResource* Resource = new SceneResource();
+    for (TPtr<SceneObject>& object : _objects)
+    {
+        ObjectResource* objectResource = object->CreateRenderResource();
+        Resource->AddObject(objectResource);
     }
 }
 

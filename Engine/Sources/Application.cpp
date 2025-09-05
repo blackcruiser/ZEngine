@@ -28,52 +28,52 @@ Application::~Application()
 
 void Application::Run(TPtr<Scene> scene)
 {
-
     RenderSystem::Get().Initialize();
     InputSystem::Initialize();
 
     {
-        scene->Load();
-
         RenderGraph* renderGraph = RenderSystem::Get().GetRenderGraph();
+
+        scene->Load();
 
         Window* window = new Window(AppName, size);
         InputSystem::Get().AttachTo(window);
 
+
         window->CreateViewport(RenderSystem::Get().GetDevice());
         Viewport* viewport = window->GetViewport();
-        viewport->InitRenderResource(renderGraph);
+
 
         RendererInterface* renderer = new ForwardRenderer();
         renderer->Init(renderGraph, viewport);
-
         while (!window->ShouldClose())
         {
             glfwPollEvents();
+
+            RenderSystem::Get().InitializeResources(renderGraph);
 
             viewport->Advance(renderGraph);
             
             renderer->RenderFrame(renderGraph, viewport, scene);
             viewport->Present(renderGraph);
+
+            RenderSystem::Get().DeleteGraphicResources();
         }
 
-        renderer->Cleanup(renderGraph);
-        delete renderer;
 
-        viewport->CleanupRenderResource(renderGraph);
+        renderer->Cleanup(renderGraph);
+        RenderSystem::Get().CleanupResources(renderGraph);
         delete viewport;
 
         InputSystem::Get().DetachFrom(window);
         window->UnregisterInput(InputSystem::Get());
         delete window;
 
-        RenderSystem::Get().CleanupResources(renderGraph);
         scene->Unload();
     }
 
     RenderSystem::Get().Cleanup();
     InputSystem::Cleanup();
-
 }
 
 } // namespace ZE

@@ -1,4 +1,5 @@
 #include "RenderResource.h"
+#include "RenderSystem.h"
 
 
 namespace ZE {
@@ -21,17 +22,17 @@ void RenderResource::InitializeRenderResources(RenderGraph* renderGraph)
     for (auto iter = _uninitializedResourceSet.begin(); iter != _uninitializedResourceSet.end();)
     {
         RenderResource* resource = *iter;
-        resource->InitRenderResource(renderGraph);
+        resource->InitGraphic(renderGraph);
         iter = _uninitializedResourceSet.erase(iter);
     }
 }
 
-void RenderResource::CleanupRenderResources(RenderGraph* renderGraph)
+void RenderResource::CleanupGraphics(RenderGraph* renderGraph)
 {
     for (auto iter = _resourceSet.begin(); iter != _resourceSet.end(); iter++)
     {
         RenderResource* resource = *iter;
-        resource->CleanupRenderResource(renderGraph);
+        resource->CleanupGraphic(renderGraph);
          _uninitializedResourceSet.insert(resource);
     }
 }
@@ -48,11 +49,24 @@ RenderResource::~RenderResource()
     _uninitializedResourceSet.erase(this);
 }
 
-void RenderResource::InitRenderResource(RenderGraph* renderGraph)
+void RenderResource::Init()
+{
+    // ToDo: Run in RenderThread.
+    RenderGraph* renderGraph = RenderSystem::Get().GetRenderGraph();
+    InitGraphic(renderGraph);
+}
+
+void RenderResource::Cleanup()
+{
+    // ToDo: Run in RenderThread.
+    CleanupGraphic();
+}
+
+void RenderResource::InitGraphic(RenderGraph* renderGraph)
 {
 }
 
-void RenderResource::CleanupRenderResource(RenderGraph* renderGraph)
+void RenderResource::CleanupGraphic()
 {
 }
 
