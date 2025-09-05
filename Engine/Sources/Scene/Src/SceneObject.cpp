@@ -32,11 +32,25 @@ void SceneObject::Unload()
 
 ObjectResource* SceneObject::CreateRenderResource()
 {
+    ObjectResource* resource = new ObjectResource();
+
     TPtrArr<SceneComponent> components = GetComponents<SceneComponent>();
     for (TPtr<SceneComponent>& component : components)
     {
-        component->CreateRenderResource();
+        ComponentResource* componentResource = component->CreateRenderResource();
+        resource->AddComponentResource(componentResource);
     }
+
+    return resource;
+}
+
+ObjectResource::ObjectResource()
+{
+}
+
+void ObjectResource::AddComponentResource(ComponentResource* resource)
+{
+    _componentResources.push_back(resource);
 }
 
 }

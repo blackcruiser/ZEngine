@@ -2,6 +2,7 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "Render/RenderResource.h"
 
 
 namespace ZE {
@@ -16,6 +17,7 @@ enum class EComponentType : int
 };
 
 class SceneObject;
+class ComponentResource;
 
 class SceneComponent
 {
@@ -36,9 +38,15 @@ public:
     virtual void Update(float deltaTime){};
     virtual void OnDetached(){};
 
+    virtual ComponentResource* CreateRenderResource();
+
 private:
     EComponentType _type;
     TWeakPtr<SceneObject> _sceneObject;
+};
+
+class ComponentResource : public RenderResource
+{
 };
 
 } // namespace ZE

@@ -9,6 +9,7 @@ namespace ZE {
 class SceneObject;
 class CameraComponent;
 class SceneResource;
+class ObjectResource;
 
 class Scene
 {
@@ -30,6 +31,17 @@ public:
 private:
     TPtrArr<SceneObject> _objects;
     TPtr<CameraComponent> _cameraComponent;
+};
+
+class SceneResource
+{
+public:
+    SceneResource();
+
+    void AddObjectResource(ObjectResource* resource);
+
+private:
+    std::vector<ObjectResource*> _objectResources;
 };
 
 }

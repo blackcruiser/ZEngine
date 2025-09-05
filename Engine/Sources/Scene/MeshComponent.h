@@ -8,6 +8,8 @@ namespace ZE {
 
 class MeshResource;
 class MaterialResource;
+class Mesh;
+class Material;
 
 class MeshComponent : public SceneComponent
 {
@@ -24,9 +26,28 @@ public:
     void SetMaterial(uint32_t slot, TPtr<MaterialResource> material);
     TPtr<MaterialResource> GetMaterial(uint32_t slot);
 
+    virtual ComponentResource* CreateRenderResource() override;
+
 private:
     TPtr<MeshResource> _mesh;
     TPtrArr<MaterialResource> _materialArr;
 };
+
+class MeshComponentResource : public ComponentResource
+{
+public:
+    MeshComponentResource();
+    ~MeshComponentResource();
+
+    virtual void Init() override;
+    virtual void Cleanup() override;
+
+    virtual void InitGraphic(RenderGraph* renderGraph) override;
+    virtual void CleanupGraphic() override;
+
+private:
+    Mesh* _mesh;
+    Material* _material;
+}
 
 } // namespace ZE

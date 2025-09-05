@@ -64,4 +64,36 @@ TPtr<MaterialResource> MeshComponent::GetMaterial(uint32_t slot)
         return nullptr;
 }
 
+ComponentResource* MeshComponent::CreateRenderResource()
+{
+    MeshComponentResource* resource = new MeshComponentResource();
+
+    return resource;
+}
+
+
+MeshComponentResource::MeshComponentResource()
+{
+}
+
+MeshComponentResource::~MeshComponentResource()
+{
+}
+
+void MeshComponentResource::Init()
+{
+}
+
+void MeshComponentResource::Cleanup()
+{
+}
+
+void MeshComponentResource::InitGraphic(RenderGraph* renderGraph)
+{
+}
+
+void MeshComponentResource::CleanupGraphic()
+{
+}
+
 } // namespace ZE

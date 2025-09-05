@@ -75,8 +75,18 @@ SceneResource* Scene::CreateRenderResource()
     for (TPtr<SceneObject>& object : _objects)
     {
         ObjectResource* objectResource = object->CreateRenderResource();
-        Resource->AddObject(objectResource);
+        Resource->AddObjectResource(objectResource);
     }
+}
+
+
+SceneResource::SceneResource()
+{
+}
+
+void SceneResource::AddObjectResource(ObjectResource* resource)
+{
+    _objectResources.push_back(resource);
 }
 
 } // namespace ZE

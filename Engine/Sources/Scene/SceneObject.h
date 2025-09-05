@@ -12,6 +12,7 @@
 namespace ZE {
 
 class ObjectResource;
+class ComponentResource;
 
 class SceneObject : public std::enable_shared_from_this<SceneObject>
 {
@@ -65,6 +66,17 @@ public:
 
 private:
     TPtrArr<SceneComponent> _componentArr;
+};
+
+class ObjectResource
+{
+public:
+    ObjectResource();
+
+    void AddComponentResource(ComponentResource* resource);
+
+private:
+    std::vector<ComponentResource*> _componentResources;
 };
 
 }

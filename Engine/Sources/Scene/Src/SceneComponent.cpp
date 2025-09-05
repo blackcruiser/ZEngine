@@ -26,4 +26,9 @@ TPtr<SceneObject> SceneComponent::GetObject()
     return _sceneObject.lock();
 }
 
+ComponentResource* SceneComponent::CreateRenderResource()
+{
+    return nullptr;
+}
+
 }
