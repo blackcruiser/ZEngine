@@ -99,4 +99,9 @@ TPtr<Mesh> MeshResource::GetMesh()
     return _mesh;
 }
 
+Mesh MeshResource::CreateRenderResource()
+{
+    
+}
+
 } // namespace ZE

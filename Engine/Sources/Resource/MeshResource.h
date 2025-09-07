@@ -35,6 +35,8 @@ public:
     void SetMesh(TPtr<Mesh> mesh);
     TPtr<Mesh> GetMesh();
 
+    Mesh* CreateRenderResource();
+
 private:
     std::filesystem::path _path;
 

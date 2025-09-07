@@ -47,6 +47,11 @@ private:
 
 class ComponentResource : public RenderResource
 {
+    virtual void Init(RenderGraph* renderGraph) {};
+    virtual void Cleanup() {};
+
+    virtual void InitGraphic(RenderGraph* renderGraph) {};
+    virtual void CleanupGraphic() {};
 };
 
 } // namespace ZE

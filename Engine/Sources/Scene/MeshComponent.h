@@ -39,7 +39,7 @@ public:
     MeshComponentResource();
     ~MeshComponentResource();
 
-    virtual void Init() override;
+    virtual void Init(RenderGraph* renderGraph) override;
     virtual void Cleanup() override;
 
     virtual void InitGraphic(RenderGraph* renderGraph) override;

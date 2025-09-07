@@ -66,13 +66,15 @@ TPtr<MaterialResource> MeshComponent::GetMaterial(uint32_t slot)
 
 ComponentResource* MeshComponent::CreateRenderResource()
 {
-    MeshComponentResource* resource = new MeshComponentResource();
+    Mesh* mesh = new Mesh()
+    MeshComponentResource* resource = new MeshComponentResource(mesh, material);
 
     return resource;
 }
 
 
-MeshComponentResource::MeshComponentResource()
+MeshComponentResource::MeshComponentResource(Mesh* inMesh, Material* inMaterial) :
+    _mesh(inMesh), _material(inMaterial)
 {
 }
 
@@ -80,12 +82,14 @@ MeshComponentResource::~MeshComponentResource()
 {
 }
 
-void MeshComponentResource::Init()
+void MeshComponentResource::Init(RenderGraph* renderGraph)
 {
+    InitGraphic(renderGraph);
 }
 
 void MeshComponentResource::Cleanup()
 {
+    CleanupGraphic();
 }
 
 void MeshComponentResource::InitGraphic(RenderGraph* renderGraph)
