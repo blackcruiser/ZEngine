@@ -8,7 +8,7 @@
 
 namespace ZE {
 
-Mesh::Mesh(TPtr<MeshResource> meshResource)
+Mesh::Mesh(MeshResource* meshResource)
     : _owner(meshResource), _vertexBuffer(nullptr), _indexBuffer(nullptr), _verticesCount(0)
 {
 }
@@ -21,18 +21,16 @@ void Mesh::InitGraphic(RenderGraph* renderGraph)
 {
     RenderResource::InitGraphic(renderGraph);
 
-    assert(_owner.expired() == false);
+    assert(_owner == false);
 
-    TPtr<MeshResource> MeshResource = _owner.lock();
-
-    const std::vector<VertexData>& vertices = MeshResource->GetVertices(0);
+    const std::vector<VertexData>& vertices = _owner->GetVertices(0);
     uint32_t byteSize = static_cast<uint32_t>(vertices.size()) * sizeof(VertexData);
     
     _vertexBuffer = NewGraphicResource<VulkanBuffer>(renderGraph->GetDevice(), byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     renderGraph->TransferBuffer(reinterpret_cast<const uint8_t*>(vertices.data()), byteSize, _vertexBuffer);
 
-    const std::vector<uint32_t>& indexes = MeshResource->GetIndexes(0); 
+    const std::vector<uint32_t>& indexes = _owner->GetIndexes(0); 
     byteSize = static_cast<uint32_t>(indexes.size()) * sizeof(uint32_t);
 
     _indexBuffer = NewGraphicResource<VulkanBuffer>(renderGraph->GetDevice(), byteSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -43,12 +41,12 @@ void Mesh::InitGraphic(RenderGraph* renderGraph)
     renderGraph->Execute();
 }
 
-void Mesh::CleanupGraphic(RenderGraph* renderGraph)
+void Mesh::CleanupGraphic()
 {
     _indexBuffer.reset();
     _vertexBuffer.reset();
 
-    RenderResource::CleanupGraphic(renderGraph);
+    RenderResource::CleanupGraphic();
 }
 
 uint32_t Mesh::GetVerticesCount()

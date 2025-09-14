@@ -20,3 +20,6 @@ UE不同，UE每一帧会等QueueSubmit fence wait后再继续执行。
 8. Unity中TaskExecutor与UE中FRHICommandList相似。
 
 9. Unity的渲染数据都在GameThread管理，Mesh与Material等。当需要渲染时，将这些数据组织成indexBuffer、vertexbuffer等再通过m_CommandQueue传递至RenderThread。
+
+10. 原本想分离GameThread数据和RenderThread数据。例如MeshResource(GameThread)创建Mesh(RenderThread),Mesh在RenderThread调用InitGraphic初始化数据。MeshComponent(GameThread)创建MeshProxy(RenderThread)。但有个问题是，Mesh初始化GpuVertexBuffer需要顶点数据，如果MeshRenderThread初始化，则需要创建时从MeshResource中把顶点数据复制过来，开销过大。
+最终还是学习UE的处理方法，UMesh同时持有GameThread数据和RenderThread数据。

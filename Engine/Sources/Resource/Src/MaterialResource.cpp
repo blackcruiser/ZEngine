@@ -1,4 +1,5 @@
 #include "MaterialResource.h"
+#include "Render/Material.h"
 
 
 namespace ZE {
@@ -28,6 +29,13 @@ void PassResource::Load()
             bindingInfo.texture->Load();
         }
     }
+}
+
+void PassResource::PostLoad()
+{
+    CreatePass();
+
+    InitRenderResourceGameThread(_pass);
 }
 
 void PassResource::Unload()
@@ -132,6 +140,16 @@ const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& PassResou
     return _textureMap;
 }
 
+void PassResource::CreatePass()
+{
+    _pass = new Pass(this);
+}
+
+Pass* PassResource::GetPass()
+{
+    return _pass;
+}
+
 
 /*
 * MaterialResource
@@ -149,6 +167,13 @@ void MaterialResource::Load()
 {
     for (auto &[passType, pass] : _passMap)
         pass->Load();
+}
+
+void MaterialResource::PostLoad()
+{
+    CreateMaterial();
+
+    InitRenderResourceGameThread(_material);
 }
 
 void MaterialResource::Unload()
@@ -171,12 +196,12 @@ TPtr<PassResource> MaterialResource::GetPass(EPassType passType)
 }
 
 
-void MaterialResource::SetMaterial(TPtr<Material> material)
+void MaterialResource::CreateMaterial()
 {
-    _material = material;
+    _material = new Material(this);
 }
 
-TPtr<Material> MaterialResource::GetMaterial()
+Material* MaterialResource::GetMaterial()
 {
     return _material;
 }

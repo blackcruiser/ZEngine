@@ -61,6 +61,14 @@ void Scene::Load()
     }
 }
 
+void Scene::PostLoad()
+{
+    for (TPtr<SceneObject>& object : _objects)
+    {
+        object->PostLoad();
+    }
+}
+
 void Scene::Unload()
 {
     for (TPtr<SceneObject>& object : _objects)

@@ -2,6 +2,7 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "BaseResource.h"
 
 
 namespace ZE {
@@ -11,7 +12,7 @@ class CameraComponent;
 class SceneResource;
 class ObjectResource;
 
-class Scene
+class Scene : public BaseResource
 {
 public:
     Scene();
@@ -23,8 +24,10 @@ public:
     void SetCamera(TPtr<CameraComponent> cameraComponent);
     TPtr<CameraComponent> GetCamera();
 
-    void Load();
-    void Unload();
+    virtual void Load() override;
+    virtual void PostLoad() override;
+
+    virtual void Unload() override;
 
     SceneResource* CreateRenderResource();
 

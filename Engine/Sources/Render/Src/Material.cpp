@@ -202,7 +202,7 @@ VkShaderStageFlagBits ConvertShaderStageToVulkan(EShaderStage shaderStage)
     return VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT;
 }
 
-Pass::Pass(TPtr<PassResource> passResource)
+Pass::Pass(PassResource* passResource)
     : _owner(passResource), _descriptorSet(nullptr), _pipelineLayout(nullptr)
 {
     for (const BlendState& blendState : passResource->GetBlendStates())
@@ -247,7 +247,7 @@ void Pass::InitGraphic(RenderGraph* renderGraph)
     renderGraph->Execute();
 }
 
-void Pass::CleanupGraphic(RenderGraph* renderGraph)
+void Pass::CleanupGraphic()
 {
     delete  _pipelineLayout;
     delete _descriptorSet;
@@ -269,7 +269,7 @@ void Pass::CleanupGraphic(RenderGraph* renderGraph)
         }
     }
 
-    RenderResource::CleanupGraphic(renderGraph);
+    RenderResource::CleanupGraphic();
 }
 
 TPtr<VulkanImage> CreateGraphicImage(RenderGraph* renderGraph, TPtr<TextureResource> texture)
@@ -288,13 +288,12 @@ TPtr<VulkanImage> CreateGraphicImage(RenderGraph* renderGraph, TPtr<TextureResou
 
 void Pass::CreateGraphicTextures(RenderGraph* renderGraph)
 {
-    assert(_owner.expired() == false);
+    assert(_owner != nullptr);
 
-    TPtr<PassResource> passResource = _owner.lock();
     VulkanDevice* device = renderGraph->GetDevice();
 
     const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& textureMap =
-        passResource->GetTextureMap();
+        _owner->GetTextureMap();
 
     for (auto& [stage, textureList] : textureMap)
     {
@@ -334,11 +333,10 @@ VulkanShader* CreateGraphicShader(VulkanDevice* device, VkShaderStageFlagBits sh
 
 void Pass::CreateGraphicShaders(RenderGraph* renderGraph)
 {
-    assert(_owner.expired() == false);
-    TPtr<PassResource> passResource = _owner.lock();
+    assert(_owner != nullptr);
 
     VulkanDevice* device = renderGraph->GetDevice();
-    const TPtrUnorderedMap<EShaderStage, ShaderResource>& shaderMap = passResource->GetShaderMap();
+    const TPtrUnorderedMap<EShaderStage, ShaderResource>& shaderMap = _owner->GetShaderMap();
     for (auto& [stage, shader] : shaderMap)
     {
         VkShaderStageFlagBits vulkanBit = ConvertShaderStageToVulkanBit(stage);
@@ -501,7 +499,8 @@ void Pass::UpdateUniformBuffer(RenderGraph* renderGraph, const glm::mat4x4& mvp)
     renderGraph->TransferBuffer(reinterpret_cast<const uint8_t*>(&mvp), sizeof(mvp), _uniformBuffer);
 }
 
-Material::Material(TPtr<MaterialResource> materialResource)
+
+Material::Material(MaterialResource* materialResource)
     : _owner(materialResource)
 {
 }

@@ -1,5 +1,6 @@
 #include "MeshResource.h"
-
+#include "Render/RenderGraph.h"
+#include "Render/Mesh.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
@@ -66,6 +67,13 @@ void MeshResource::Load()
     _isLoaded = true;
 }
 
+void MeshResource::PostLoad()
+{
+    CreateMesh();
+
+    InitRenderResourceGameThread(_mesh);
+}
+
 void MeshResource::Unload()
 {
 }
@@ -89,19 +97,15 @@ const std::vector<uint32_t>& MeshResource::GetIndexes(uint32_t meshIndex)
     return _meshIndexesData[meshIndex];
 }
 
-void MeshResource::SetMesh(TPtr<Mesh> mesh)
+void MeshResource::CreateMesh()
 {
-    _mesh = mesh;
+    _mesh = new Mesh(this);
 }
 
-TPtr<Mesh> MeshResource::GetMesh()
+Mesh* MeshResource::GetMesh()
 {
     return _mesh;
 }
 
-Mesh MeshResource::CreateRenderResource()
-{
-    
-}
 
 } // namespace ZE

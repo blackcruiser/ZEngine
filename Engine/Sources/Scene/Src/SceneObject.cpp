@@ -21,6 +21,15 @@ void SceneObject::Load()
     }
 }
 
+void SceneObject::PostLoad()
+{
+    TPtrArr<SceneComponent> components = GetComponents<SceneComponent>();
+    for (TPtr<SceneComponent>& component : components)
+    {
+        component->PostLoad();
+    }
+}
+
 void SceneObject::Unload()
 {
     TPtrArr<SceneComponent> components = GetComponents<SceneComponent>();

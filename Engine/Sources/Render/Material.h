@@ -32,11 +32,11 @@ struct VulkanImageBindingInfo
 class Pass : public RenderResource
 {
 public:
-    Pass(TPtr<PassResource> passResource);
+    Pass(PassResource* passResource);
     ~Pass();
 
     virtual void InitGraphic(RenderGraph* renderGraph) override;
-    virtual void CleanupGraphic(RenderGraph* renderGraph) override;
+    virtual void CleanupGraphic() override;
 
 private:
     void CreateGraphicTextures(RenderGraph* renderGraph);
@@ -69,13 +69,13 @@ private:
     std::vector<RHIBlendState> blendStates;
     std::vector<RHIShaderState> shaderStates;
 
-    TWeakPtr<PassResource> _owner;
+    PassResource* _owner;
 };
 
 class Material : public RenderResource
 {
 public:
-    Material(TPtr<MaterialResource> material);
+    Material(MaterialResource* material);
     ~Material();
 
     void SetPass(EPassType passType, TPtr<Pass> pass);
@@ -83,7 +83,7 @@ public:
 
 private:
     TPtrUnorderedMap<EPassType, Pass> _passMap;
-    TWeakPtr<MaterialResource> _owner;
+    MaterialResource* _owner;
 };
 
 } // namespace ZE

@@ -37,6 +37,8 @@ public:
     virtual ~PassResource();
 
     virtual void Load() override;
+    virtual void PostLoad() override;
+
     virtual void Unload() override;
 
     void SetCullintType(ECullingType cullingType);
@@ -63,6 +65,14 @@ private:
     std::vector<BlendState> _blendStates;
     TPtrUnorderedMap<EShaderStage, ShaderResource> _shaderMap;
     std::unordered_map<EShaderStage, std::list<TextureBindingInfo>> _textureMap;
+
+    // RenderThread
+public:
+    void CreatePass();
+    Pass* GetPass();
+
+private:
+    Pass* _pass;
 };
 
 class MaterialResource : public BaseResource
@@ -72,6 +82,8 @@ public:
     virtual ~MaterialResource();
 
     virtual void Load() override;
+    virtual void PostLoad() override;
+
     virtual void Unload() override;
 
     void SetPass(EPassType passType, TPtr<PassResource> pass);
@@ -80,13 +92,13 @@ public:
 private:
     TPtrUnorderedMap<EPassType, PassResource> _passMap;
 
+    // RenderThread
 public:
-    // ToDo
-    void SetMaterial(TPtr<Material> material);
-    TPtr<Material> GetMaterial();
+    void CreateMaterial();
+    Material* GetMaterial();
 
 private:
-    TPtr<Material> _material;
+    Material* _material;
 };
 
 } // namespace ZE

@@ -19,7 +19,7 @@ enum class EComponentType : int
 class SceneObject;
 class ComponentResource;
 
-class SceneComponent
+class SceneComponent : public BaseResource
 {
 public:
     SceneComponent(const EComponentType type);
@@ -31,9 +31,6 @@ public:
     TPtr<SceneObject> GetObject();
 
     // liftCycle
-    virtual void Load(){};
-    virtual void Unload(){};
-
     virtual void OnAttached(){};
     virtual void Update(float deltaTime){};
     virtual void OnDetached(){};

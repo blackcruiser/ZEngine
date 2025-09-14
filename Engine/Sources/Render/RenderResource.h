@@ -35,4 +35,8 @@ public:
     bool IsRenderResourceInitialized();
 };
 
+void InitRenderResourceGameThread(RenderResource* resource);
+
+void CleanupRenderResourceGameThread(RenderResource* resouce);
+
 }

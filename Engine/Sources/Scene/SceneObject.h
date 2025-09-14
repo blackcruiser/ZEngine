@@ -2,6 +2,7 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
+#include "BaseResource.h"
 #include "SceneComponent.h"
 
 #include <glm/glm.hpp>
@@ -14,14 +15,16 @@ namespace ZE {
 class ObjectResource;
 class ComponentResource;
 
-class SceneObject : public std::enable_shared_from_this<SceneObject>
+class SceneObject : public BaseResource, public std::enable_shared_from_this<SceneObject>
 {
 public:
     SceneObject();
     ~SceneObject();
 
-    void Load();
-    void Unload();
+    virtual void Load() override;
+    virtual void PostLoad() override;
+
+    virtual void Unload() override;
 
     template <typename T>
     requires std::is_convertible<T, SceneComponent>::value

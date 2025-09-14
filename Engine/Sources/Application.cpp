@@ -35,6 +35,7 @@ void Application::Run(TPtr<Scene> scene)
         RenderGraph* renderGraph = RenderSystem::Get().GetRenderGraph();
 
         scene->Load();
+        scene->PostLoad();
 
         Window* window = new Window(AppName, size);
         InputSystem::Get().AttachTo(window);

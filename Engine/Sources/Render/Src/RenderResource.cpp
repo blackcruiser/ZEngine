@@ -75,4 +75,16 @@ bool RenderResource::IsRenderResourceInitialized()
     return !_uninitializedResourceSet.contains(this);
 }
 
+void InitRenderResourceGameThread(RenderResource* resource)
+{
+    RenderGraph* renderGraph = RenderSystem::Get().GetRenderGraph();
+
+    resource->InitGraphic(renderGraph);
+}
+
+void CleanupRenderResourceGameThread(RenderResource* resource)
+{
+    resource->Cleanup();
+}
+
 } // namespace ZE

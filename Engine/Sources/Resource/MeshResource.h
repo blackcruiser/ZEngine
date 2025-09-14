@@ -19,12 +19,14 @@ struct VertexData
     glm::vec2 texCoord;
 };
 
-class MeshResource : BaseResource
+class MeshResource : public BaseResource
 {
 public:
     MeshResource(const std::filesystem::path& path);
 
     virtual void Load() override;
+    virtual void PostLoad() override;
+
     virtual void Unload() override;
 
     uint32_t GetMeshCount();
@@ -32,10 +34,8 @@ public:
     const std::vector<VertexData>& GetVertices(uint32_t meshIndex);
     const std::vector<uint32_t>& GetIndexes(uint32_t meshIndex);
 
-    void SetMesh(TPtr<Mesh> mesh);
-    TPtr<Mesh> GetMesh();
-
-    Mesh* CreateRenderResource();
+    void CreateMesh();
+    Mesh* GetMesh();
 
 private:
     std::filesystem::path _path;
@@ -43,7 +43,7 @@ private:
     std::vector<std::vector<VertexData>> _meshVerticesData;
     std::vector<std::vector<uint32_t>> _meshIndexesData;
 
-    TPtr<Mesh> _mesh;
+    Mesh* _mesh;
 };
 
 

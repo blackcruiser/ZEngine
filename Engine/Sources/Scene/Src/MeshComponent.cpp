@@ -26,6 +26,19 @@ void MeshComponent::Load()
     }
 }
 
+void MeshComponent::PostLoad()
+{
+    SceneComponent::PostLoad();
+
+    if (_mesh != nullptr)
+        _mesh->PostLoad();
+
+    for (const TPtr<MaterialResource>& material : _materialArr)
+    {
+        material->PostLoad();
+    }
+}
+
 void MeshComponent::Unload()
 {
     if (_mesh != nullptr)

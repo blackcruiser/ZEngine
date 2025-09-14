@@ -18,11 +18,11 @@ class RenderGraph;
 class Mesh : public RenderResource
 {
 public:
-    Mesh(TPtr<MeshResource> meshResource);
+    Mesh(MeshResource* meshResource);
     ~Mesh();
 
     virtual void InitGraphic(RenderGraph* renderGraph) override;
-    virtual void CleanupGraphic(RenderGraph* renderGraph) override;
+    virtual void CleanupGraphic() override;
 
     uint32_t GetVerticesCount();
     TPtr<VulkanBuffer> GetVertexBuffer();
@@ -35,7 +35,7 @@ private:
     TPtr<VulkanBuffer> _indexBuffer;
     uint32_t _verticesCount;
 
-    TWeakPtr<MeshResource> _owner;
+    MeshResource* _owner;
 };
 
 } // namespace ZE

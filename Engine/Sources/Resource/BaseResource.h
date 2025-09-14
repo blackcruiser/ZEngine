@@ -9,7 +9,10 @@ public:
     ~BaseResource();
 
     virtual bool IsLoaded();
+
     virtual void Load(){};
+    virtual void PostLoad() {};
+
     virtual void Unload(){};
 
 protected:
