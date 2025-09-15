@@ -47,28 +47,6 @@ void ForwardRenderer::Cleanup(RenderGraph* renderGraph)
 
 TPtrArr<SceneObject> ForwardRenderer::Prepare(RenderGraph* renderGraph, TPtr<Scene> scene)
 {
-    //Filter Objects
-    const TPtrArr<SceneObject>& allObjects = scene->GetObjects();
-    TPtrArr<SceneObject> objectsToRender;
-    std::copy_if(allObjects.begin(), allObjects.end(), std::back_inserter(objectsToRender), [](TPtr<SceneObject> object) {
-        TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
-        if (meshComponent == nullptr)
-            return false;
-
-        TPtr<MeshResource> meshResource = meshComponent->GetMesh();
-        TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
-        if (meshResource == nullptr || materialResource == nullptr)
-            return false;
-
-        TPtr<Mesh> mesh = meshResource->GetMesh();
-        TPtr<Material> material = materialResource->GetMaterial();
-        if (mesh == nullptr || material == nullptr)
-            return false;
-
-        return true;
-    });
-
-
     // Update Uniform Buffer
     {
         TPtr<CameraComponent> cameraComponent = scene->GetCamera();
@@ -104,7 +82,7 @@ TPtrArr<SceneObject> ForwardRenderer::Prepare(RenderGraph* renderGraph, TPtr<Sce
     return objectsToRender;
 }
 
-void ForwardRenderer::RenderFrame(RenderGraph* renderGraph, Viewport* viewport, TPtr<Scene> scene)
+void ForwardRenderer::RenderFrame(RenderGraph* renderGraph, Viewport* viewport, SceneResource* sceneResource)
 {
     {
         TPtr<VulkanImage> backBuffer = viewport->GetCurrentImage();
@@ -113,7 +91,7 @@ void ForwardRenderer::RenderFrame(RenderGraph* renderGraph, Viewport* viewport, 
     }
 
     {
-        TPtrArr<SceneObject> objectsToRender = Prepare(renderGraph, scene);
+        TPtrArr<SceneObject> objectsToRender = Prepare(renderGraph, sceneResource);
         _depthPass->Execute(renderGraph, objectsToRender);
         renderGraph->Execute();
 

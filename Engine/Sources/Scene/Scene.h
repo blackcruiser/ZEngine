@@ -42,6 +42,7 @@ public:
     SceneResource();
 
     void AddObjectResource(ObjectResource* resource);
+    std::vector<ObjectResource*>& GetObjectResources();
 
 private:
     std::vector<ObjectResource*> _objectResources;

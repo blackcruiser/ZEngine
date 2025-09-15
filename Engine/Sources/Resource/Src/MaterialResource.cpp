@@ -178,6 +178,9 @@ void MaterialResource::PostLoad()
 
 void MaterialResource::Unload()
 {
+    CleanupRenderResourceGameThread(_material);
+    _material = nullptr;
+
     for (auto &[passType, pass] : _passMap)
         pass->Unload();
 }

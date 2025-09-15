@@ -79,30 +79,26 @@ TPtr<MaterialResource> MeshComponent::GetMaterial(uint32_t slot)
 
 ComponentResource* MeshComponent::CreateRenderResource()
 {
-    Mesh* mesh = new Mesh()
-    MeshComponentResource* resource = new MeshComponentResource(mesh, material);
+    Mesh* mesh = _mesh->GetMesh();
+
+    std::vector<Material*> materials;
+    std::transform(_materialArr.begin(), _materialArr.end(), std::back_inserter(materials), [](TPtr<MaterialResource> material) {
+        return material->GetMaterial();
+    });
+
+    MeshComponentResource* resource = new MeshComponentResource(mesh, materials);
 
     return resource;
 }
 
 
-MeshComponentResource::MeshComponentResource(Mesh* inMesh, Material* inMaterial) :
-    _mesh(inMesh), _material(inMaterial)
+MeshComponentResource::MeshComponentResource(Mesh* inMesh, std::vector<Material*>& inMaterials) :
+    _mesh(inMesh), _materials(inMaterials)
 {
 }
 
 MeshComponentResource::~MeshComponentResource()
 {
-}
-
-void MeshComponentResource::Init(RenderGraph* renderGraph)
-{
-    InitGraphic(renderGraph);
-}
-
-void MeshComponentResource::Cleanup()
-{
-    CleanupGraphic();
 }
 
 void MeshComponentResource::InitGraphic(RenderGraph* renderGraph)

@@ -27,28 +27,29 @@ public:
     void SetMaterial(uint32_t slot, TPtr<MaterialResource> material);
     TPtr<MaterialResource> GetMaterial(uint32_t slot);
 
-    virtual ComponentResource* CreateRenderResource() override;
-
 private:
     TPtr<MeshResource> _mesh;
     TPtrArr<MaterialResource> _materialArr;
+
+public:
+    virtual ComponentResource* CreateRenderResource() override;
+
+private:
+    ComponentResource* componentResource;
 };
 
 class MeshComponentResource : public ComponentResource
 {
 public:
-    MeshComponentResource();
+    MeshComponentResource(Mesh* inMesh, std::vector<Material*>& inMaterials);
     ~MeshComponentResource();
-
-    virtual void Init(RenderGraph* renderGraph) override;
-    virtual void Cleanup() override;
 
     virtual void InitGraphic(RenderGraph* renderGraph) override;
     virtual void CleanupGraphic() override;
 
 private:
     Mesh* _mesh;
-    Material* _material;
-}
+    std::vector<Material*> _materials;
+};
 
 } // namespace ZE

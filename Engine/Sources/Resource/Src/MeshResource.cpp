@@ -76,6 +76,9 @@ void MeshResource::PostLoad()
 
 void MeshResource::Unload()
 {
+    CleanupRenderResourceGameThread(_mesh);
+
+    _mesh = nullptr;
 }
 
 uint32_t MeshResource::GetMeshCount()

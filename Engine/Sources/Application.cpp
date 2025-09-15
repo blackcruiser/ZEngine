@@ -31,22 +31,28 @@ void Application::Run(TPtr<Scene> scene)
     RenderSystem::Get().Initialize();
     InputSystem::Initialize();
 
+    // Load Scene
     {
-        RenderGraph* renderGraph = RenderSystem::Get().GetRenderGraph();
-
         scene->Load();
         scene->PostLoad();
+    }
+
+    // Render initialize
+    {
+        SceneResource* sceneResource = scene->CreateRenderResource();
+
+        RenderGraph* renderGraph = RenderSystem::Get().GetRenderGraph();
 
         Window* window = new Window(AppName, size);
         InputSystem::Get().AttachTo(window);
 
-
         window->CreateViewport(RenderSystem::Get().GetDevice());
         Viewport* viewport = window->GetViewport();
 
-
         RendererInterface* renderer = new ForwardRenderer();
         renderer->Init(renderGraph, viewport);
+
+    
         while (!window->ShouldClose())
         {
             glfwPollEvents();
@@ -55,7 +61,7 @@ void Application::Run(TPtr<Scene> scene)
 
             viewport->Advance(renderGraph);
             
-            renderer->RenderFrame(renderGraph, viewport, scene);
+            renderer->RenderFrame(renderGraph, viewport, sceneResource);
             viewport->Present(renderGraph);
 
             RenderSystem::Get().DeleteGraphicResources();
@@ -70,6 +76,9 @@ void Application::Run(TPtr<Scene> scene)
         window->UnregisterInput(InputSystem::Get());
         delete window;
 
+    }
+
+    {
         scene->Unload();
     }
 
