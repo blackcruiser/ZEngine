@@ -33,16 +33,14 @@ private:
 class TransformComponentResource : public ComponentResource
 {
 public:
-    TransformComponentResource();
+    TransformComponentResource(TransformComponent* component);
     ~TransformComponentResource();
-
-    virtual void Init(RenderGraph* renderGraph) override;
-    virtual void Cleanup() override;
 
     virtual void InitGraphic(RenderGraph* renderGraph) override;
     virtual void CleanupGraphic() override;
 
 private:
+    TransformComponent* owner;
     TPtr<VulkanBuffer> _MVPBuffer;
 };
 

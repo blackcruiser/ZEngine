@@ -16,7 +16,7 @@ class RendererInterface
 public:
     virtual void Init(RenderGraph* renderGraph, Viewport* viewport) = 0;
     virtual void Cleanup(RenderGraph* renderGraph) = 0;;
-    virtual void RenderFrame(RenderGraph* renderGraph, Viewport* viewport, TPtr<Scene> scene) = 0;
+    virtual void RenderFrame(RenderGraph* renderGraph, Viewport* viewport, SceneResource* sceneResource) = 0;
 };
 
 } // namespace ZE

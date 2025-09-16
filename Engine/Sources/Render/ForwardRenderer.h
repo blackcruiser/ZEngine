@@ -25,9 +25,8 @@ public:
     virtual void Init(RenderGraph* renderGraph, Viewport* viewport) override;
     virtual void Cleanup(RenderGraph* renderGraph) override;
 
-    TPtrArr<SceneObject> Prepare(RenderGraph* renderGraph, TPtr<Scene> scene);
     void Draw(RenderGraph* commandBuffer, TPtr<Scene> scene);
-    virtual void RenderFrame(RenderGraph* commandBuffer, Viewport* viewport, TPtr<Scene> scene) override;
+    virtual void RenderFrame(RenderGraph* commandBuffer, Viewport* viewport, SceneResource* sceneResource) override;
 
 private:
     TPtr<VulkanImage> _depthRenderTarget;

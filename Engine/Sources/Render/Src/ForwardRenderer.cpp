@@ -91,11 +91,10 @@ void ForwardRenderer::RenderFrame(RenderGraph* renderGraph, Viewport* viewport, 
     }
 
     {
-        TPtrArr<SceneObject> objectsToRender = Prepare(renderGraph, sceneResource);
-        _depthPass->Execute(renderGraph, objectsToRender);
+        _depthPass->Execute(renderGraph, sceneResource);
         renderGraph->Execute();
 
-        _directionalLightPass->Execute(renderGraph, objectsToRender);
+        _directionalLightPass->Execute(renderGraph, sceneResource);
         renderGraph->Execute();
     }
 }
