@@ -19,6 +19,7 @@ public:
 
     virtual void Load() override;
     virtual void PostLoad() override;
+
     virtual void Unload() override;
 
     void SetMesh(TPtr<MeshResource> mesh);

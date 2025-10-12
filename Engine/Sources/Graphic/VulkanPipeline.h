@@ -9,20 +9,16 @@
 
 namespace ZE {
 
-class VulkanRenderPass;
-
 class VulkanGraphicPipeline : public VulkanDeviceChild, public GraphicResource
 {
 public:
-    VulkanGraphicPipeline(VulkanDevice* device, const RHIPipelineState& state, VulkanRenderPass* renderPass);
+    VulkanGraphicPipeline(VulkanDevice* device, const VkGraphicsPipelineCreateInfo& createInfo);
     ~VulkanGraphicPipeline();
 
     VkPipeline GetRawPipeline();
 
 private:
     VkPipeline _pipeline;
-
-    VulkanRenderPass* _renderPass;
 };
 
 } // namespace ZE

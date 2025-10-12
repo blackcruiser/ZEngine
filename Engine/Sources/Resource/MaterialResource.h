@@ -14,6 +14,7 @@
 
 namespace ZE {
 
+class Pass;
 class Material;
 
 enum class EPassType : int

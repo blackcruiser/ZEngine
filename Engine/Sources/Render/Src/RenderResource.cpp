@@ -27,12 +27,12 @@ void RenderResource::InitializeRenderResources(RenderGraph* renderGraph)
     }
 }
 
-void RenderResource::CleanupGraphics(RenderGraph* renderGraph)
+void RenderResource::CleanupGraphics()
 {
     for (auto iter = _resourceSet.begin(); iter != _resourceSet.end(); iter++)
     {
         RenderResource* resource = *iter;
-        resource->CleanupGraphic(renderGraph);
+        resource->CleanupGraphic();
          _uninitializedResourceSet.insert(resource);
     }
 }

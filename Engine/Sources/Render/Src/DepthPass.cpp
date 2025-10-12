@@ -19,35 +19,8 @@ void DepthPass::Init(TPtr<VulkanImage> depthRenderTarget)
     renderTargets->depthStencil = RenderTargetBinding{depthRenderTarget, ERenderTargetLoadAction::Clear};
 }
 
-void DepthPass::Draw(RenderGraph*& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
+void DepthPass::Draw(RenderGraph* renderGraph, SceneResource* sceneResource)
 {
-    renderGraph->SetRenderTargets(renderTargets);
-    renderGraph->BeginRenderPass();
-
-    EPassType passType = EPassType::DepthPass;
-    for (const TPtr<SceneObject>& object : objectsToRender)
-    {
-        TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
-
-        TPtr<MeshResource> meshResource = meshComponent->GetMesh();
-        TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
-
-        TPtr<Mesh> mesh = meshResource->GetMesh();
-        TPtr<Material> material = materialResource->GetMaterial();
-        TPtr<Pass> pass = material->GetPass(passType);
-
-        RHIPipelineState pipelineState;
-        mesh->ApplyPipelineState(pipelineState);
-        pass->ApplyPipelineState(pipelineState);
-        renderGraph->SetPipelineState(pipelineState, pass->GetDescriptorSet());
-
-        renderGraph->BindVertexBuffer(mesh->GetVertexBuffer(), mesh->GetIndexBuffer());
-
-        // Draw
-        renderGraph->DrawIndexed(mesh->GetVerticesCount(), 0);
-    }
-
-    renderGraph->EndRenderPass();
 }
 
 }

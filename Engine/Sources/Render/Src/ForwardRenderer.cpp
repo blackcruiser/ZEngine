@@ -45,43 +45,6 @@ void ForwardRenderer::Cleanup(RenderGraph* renderGraph)
     _depthRenderTarget.reset();
 }
 
-TPtrArr<SceneObject> ForwardRenderer::Prepare(RenderGraph* renderGraph, TPtr<Scene> scene)
-{
-    // Update Uniform Buffer
-    {
-        TPtr<CameraComponent> cameraComponent = scene->GetCamera();
-        glm::mat4x4 VP = cameraComponent->GetProjectMatrix() * cameraComponent->GetViewMatrix();
-
-        for (TPtr<SceneObject>& object : objectsToRender)
-        {
-            TPtr<MeshComponent> meshComponent = object->GetComponent<MeshComponent>();
-
-            TPtr<MeshResource> meshResource = meshComponent->GetMesh();
-            TPtr<MaterialResource> materialResource = meshComponent->GetMaterial(0);
-
-            TPtr<Mesh> mesh = meshResource->GetMesh();
-            TPtr<Material> material = materialResource->GetMaterial();
-
-            TPtr<TransformComponent> transformComponent = object->GetComponent<TransformComponent>();
-            glm::mat4x4 MVP = VP * transformComponent->GetTransform();
-
-            for (int i = 0; i < static_cast<int>(EPassType::PassCount); i++)
-            {
-                EPassType passType = static_cast<EPassType>(i);
-
-                TPtr<Pass> pass = material->GetPass(passType);
-                if (pass)
-                {
-                    // Update Global DescriptorSet
-                    pass->UpdateUniformBuffer(renderGraph, MVP);
-                }
-            }
-        }
-    }
-
-    return objectsToRender;
-}
-
 void ForwardRenderer::RenderFrame(RenderGraph* renderGraph, Viewport* viewport, SceneResource* sceneResource)
 {
     {

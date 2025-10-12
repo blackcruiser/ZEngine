@@ -3,6 +3,7 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 #include "Render/RenderResource.h"
+#include "Resource/BaseResource.h"
 
 
 namespace ZE {

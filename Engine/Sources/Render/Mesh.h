@@ -36,6 +36,12 @@ private:
     uint32_t _verticesCount;
 
     MeshResource* _owner;
+
+public:
+    VkVertexInputBindingDescription vertexInputBindingDescription;
+    std::vector<VkVertexInputAttributeDescription> VertexInputAttributeDescriptions;
+    VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo;
+    VkPipelineInputAssemblyStateCreateInfo InputAssemblyStateCreateInfo;
 };
 
 } // namespace ZE

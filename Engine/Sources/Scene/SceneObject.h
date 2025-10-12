@@ -2,7 +2,7 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
-#include "BaseResource.h"
+#include "Resource/BaseResource.h"
 #include "SceneComponent.h"
 
 #include <glm/glm.hpp>

@@ -41,9 +41,10 @@ struct RHIPipelineState
 
     VkVertexInputBindingDescription vertexInputBinding;
     VkPipelineVertexInputStateCreateInfo vertexInputState;
-    VkPipelineRasterizationStateCreateInfo rasterizeationState;
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState;
     std::vector<VkVertexInputAttributeDescription> vertexInputAttributes;
+
+    VkPipelineRasterizationStateCreateInfo rasterizeationState;
     VkPipelineDepthStencilStateCreateInfo depthStencilState;
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
     VkPipelineColorBlendStateCreateInfo colorBlendState;

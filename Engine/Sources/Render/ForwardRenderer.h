@@ -9,7 +9,7 @@
 
 namespace ZE {
 
-class SceneObject;
+class SceneResource;
 class DirectionalLightPass;
 class DepthPass;
 class RenderGraph;

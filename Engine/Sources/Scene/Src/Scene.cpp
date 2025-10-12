@@ -79,12 +79,14 @@ void Scene::Unload()
 
 SceneResource* Scene::CreateRenderResource()
 {
-    SceneResource* Resource = new SceneResource();
+    SceneResource* resource = new SceneResource();
     for (TPtr<SceneObject>& object : _objects)
     {
         ObjectResource* objectResource = object->CreateRenderResource();
-        Resource->AddObjectResource(objectResource);
+        resource->AddObjectResource(objectResource);
     }
+
+    return resource;
 }
 
 

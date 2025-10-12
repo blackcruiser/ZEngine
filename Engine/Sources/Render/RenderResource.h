@@ -16,7 +16,7 @@ public:
     static std::unordered_set<RenderResource*>& GetUninitialized();
 
     static void InitializeRenderResources(RenderGraph* renderGraph);
-    static void CleanupGraphics(RenderGraph* renderGraph);
+    static void CleanupGraphics();
 
 private:
     static std::unordered_set<RenderResource*> _resourceSet;

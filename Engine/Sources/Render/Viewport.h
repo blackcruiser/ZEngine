@@ -23,7 +23,7 @@ public:
     ~Viewport();
 
     virtual void InitGraphic(RenderGraph* renderGraph) override;
-    virtual void CleanupGraphic(RenderGraph* renderGraph) override;
+    virtual void CleanupGraphic() override;
 
     glm::ivec2 GetSize();
     

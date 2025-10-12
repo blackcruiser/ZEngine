@@ -4,6 +4,7 @@
 #include "Mesh.h"
 #include "RenderSystem.h"
 #include "Render/RenderGraph.h"
+#include "Render/Texture.h"
 #include "Graphic/VulkanBuffer.h"
 #include "Graphic/VulkanStagingBufferManager.h"
 #include "Graphic/VulkanDescriptorPool.h"
@@ -203,27 +204,27 @@ VkShaderStageFlagBits ConvertShaderStageToVulkan(EShaderStage shaderStage)
 }
 
 Pass::Pass(PassResource* passResource)
-    : _owner(passResource), _descriptorSet(nullptr), _pipelineLayout(nullptr)
+    : _owner(passResource), _descriptorSet(nullptr)
 {
-    for (const BlendState& blendState : passResource->GetBlendStates())
-    {
-        RHIBlendState outBlendState = ConvertBlendStateToVulkan(blendState);
-        blendStates.push_back(outBlendState);
-    }
+    // for (const BlendState& blendState : passResource->GetBlendStates())
+    // {
+    //     RHIBlendState outBlendState = ConvertBlendStateToVulkan(blendState);
+    //     blendStates.push_back(outBlendState);
+    // }
 
-    depthStencilState = ConvertDepthStencilStateToVulkan(passResource->GetDepthStencilState());
-    rasterizationState.cullingType = ConvertCullingTypeToVulkanBit(passResource->GetCullingType());
+    // depthStencilState = ConvertDepthStencilStateToVulkan(passResource->GetDepthStencilState());
+    // rasterizationState.cullingType = ConvertCullingTypeToVulkanBit(passResource->GetCullingType());
 
-    for (auto [shaderStage, shaderResource] : passResource->GetShaderMap())
-    {
-        RHIShaderState shaderState;
+    // for (auto [shaderStage, shaderResource] : passResource->GetShaderMap())
+    // {
+    //     RHIShaderState shaderState;
 
-        shaderState.name = "main";
-        shaderState.shaderModule = VK_NULL_HANDLE;
-        shaderState.stage = ConvertShaderStageToVulkan(shaderStage);
+    //     shaderState.name = "main";
+    //     shaderState.shaderModule = VK_NULL_HANDLE;
+    //     shaderState.stage = ConvertShaderStageToVulkan(shaderStage);
 
-        shaderStates.push_back(shaderState);
-    }
+    //     shaderStates.push_back(shaderState);
+    // }
 }
 
 Pass::~Pass()
@@ -234,92 +235,26 @@ void Pass::InitGraphic(RenderGraph* renderGraph)
 {
     RenderResource::InitGraphic(renderGraph);
 
-    CreateGraphicTextures(renderGraph);
-    CreateGraphicBuffers(renderGraph);
     CreateGraphicShaders(renderGraph);
 
     CreateDescriptorSetLayout(renderGraph);
     CreateDescriptorSet(renderGraph);
     LinkDescriptorSet(renderGraph);
 
-    CreatePipelineLayout(renderGraph);
-
     renderGraph->Execute();
 }
 
 void Pass::CleanupGraphic()
 {
-    delete  _pipelineLayout;
     delete _descriptorSet;
     delete _descriptorSetLayout;
-    _uniformBuffer.reset();
 
     for (auto iter = _shaders.begin(); iter != _shaders.end(); iter++)
     {
         delete iter->second;
     }
 
-    for (auto iter = _textures.begin(); iter != _textures.end(); iter++)
-    {
-        std::list<VulkanImageBindingInfo>& bindingInfos = iter->second;
-        for (VulkanImageBindingInfo& bindingInfo : bindingInfos)
-        {
-            bindingInfo.vulkanSampler.reset();
-            bindingInfo.vulkanImage.reset();
-        }
-    }
-
     RenderResource::CleanupGraphic();
-}
-
-TPtr<VulkanImage> CreateGraphicImage(RenderGraph* renderGraph, TPtr<TextureResource> texture)
-{
-    assert(texture->IsLoaded());
-
-    uint32_t imageSize = texture->GetWidth() * texture->GetHeight() * 4;
-    VkExtent3D extent{texture->GetWidth(), texture->GetHeight(), 1};
-
-    TPtr<VulkanImage> vulkanImage = NewGraphicResource<VulkanImage>(renderGraph->GetDevice(), extent, VkFormat::VK_FORMAT_R8G8B8A8_SRGB);
-    renderGraph->TransferImage(static_cast<const uint8_t*>(texture->GetData()), imageSize, vulkanImage);
-
-    return vulkanImage;
-}
-
-
-void Pass::CreateGraphicTextures(RenderGraph* renderGraph)
-{
-    assert(_owner != nullptr);
-
-    VulkanDevice* device = renderGraph->GetDevice();
-
-    const std::unordered_map<EShaderStage, std::list<TextureBindingInfo>>& textureMap =
-        _owner->GetTextureMap();
-
-    for (auto& [stage, textureList] : textureMap)
-    {
-        if (textureList.empty() == true)
-            continue;
-
-        std::list<VulkanImageBindingInfo> vulkanBindingInfoList;
-        for (const TextureBindingInfo& bindingInfo : textureList)
-        {
-            VulkanImageBindingInfo vulkanBindingInfo;
-
-            vulkanBindingInfo.bindingPoint = bindingInfo.bindingPoint;
-            vulkanBindingInfo.vulkanImage = CreateGraphicImage(renderGraph, bindingInfo.texture);
-            vulkanBindingInfo.vulkanSampler = NewGraphicResource<VulkanSampler>(device);
-
-            vulkanBindingInfoList.push_back(vulkanBindingInfo);
-        }
-
-        VkShaderStageFlagBits vulkanBit = ConvertShaderStageToVulkanBit(stage);
-        _textures.insert(std::make_pair(vulkanBit, vulkanBindingInfoList));
-    }
-}
-
-void Pass::CreateGraphicBuffers(RenderGraph* renderGraph)
-{
-    _uniformBuffer = NewGraphicResource<VulkanBuffer>(renderGraph->GetDevice(), sizeof(glm::mat4x4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
 VulkanShader* CreateGraphicShader(VulkanDevice* device, VkShaderStageFlagBits shaderStage,
@@ -343,162 +278,52 @@ void Pass::CreateGraphicShaders(RenderGraph* renderGraph)
         VulkanShader* vulkanShader = CreateGraphicShader(device, vulkanBit, shader);
         _shaders.insert(std::make_pair(vulkanBit, vulkanShader));
 
-        for (RHIShaderState& shaderState : shaderStates)
-        {
-            if (shaderState.stage == vulkanBit)
-            {
-                shaderState.shaderModule = vulkanShader->GetRawShader();
-            }
-        }
+        VkPipelineShaderStageCreateInfo createInfo{};
+        createInfo.stage = ConvertShaderStageToVulkanBit(stage);
+        createInfo.module = vulkanShader->GetRawShader();
+
+        shaderStages.push_back(createInfo);
     }
 }
 
 void Pass::CreateDescriptorSetLayout(RenderGraph* renderGraph)
 {
+    std::vector<VkDescriptorSetLayoutBinding> localDescriptorSetLayoutBindings;
+    for (TextureBinding& bindingInfo : _textures)
+    {
+        VkDescriptorSetLayoutBinding samplerDescriptorSetlayoutBinding{};
+        samplerDescriptorSetlayoutBinding.binding = 1;
+        samplerDescriptorSetlayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        samplerDescriptorSetlayoutBinding.descriptorCount = 1;
+        samplerDescriptorSetlayoutBinding.stageFlags = bindingInfo.flagBits;
+
+        localDescriptorSetLayoutBindings.push_back(samplerDescriptorSetlayoutBinding);
+    }
+
     VulkanDevice* device = renderGraph->GetDevice();
-
-    VkDescriptorSetLayoutBinding matrixDescriptorSetlayoutBinding{};
-    matrixDescriptorSetlayoutBinding.binding = 0;
-    matrixDescriptorSetlayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    matrixDescriptorSetlayoutBinding.descriptorCount = 1;
-    matrixDescriptorSetlayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    VkDescriptorSetLayoutBinding samplerDescriptorSetlayoutBinding{};
-    samplerDescriptorSetlayoutBinding.binding = 1;
-    samplerDescriptorSetlayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerDescriptorSetlayoutBinding.descriptorCount = 1;
-    samplerDescriptorSetlayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    std::vector<VkDescriptorSetLayoutBinding> localDescriptorSetLayoutBindings = {
-        matrixDescriptorSetlayoutBinding, samplerDescriptorSetlayoutBinding};
-
     _descriptorSetLayout = new VulkanDescriptorSetLayout(device, localDescriptorSetLayoutBindings);
 }
 
 void Pass::CreateDescriptorSet(RenderGraph* renderGraph)
 {
     VulkanDescriptorPool* descriptorPool = RenderSystem::Get().GetDescriptorPool();
-
     _descriptorSet = new VulkanDescriptorSet(renderGraph->GetDevice(), descriptorPool, _descriptorSetLayout);
-}
 
-void Pass::LinkDescriptorSet(RenderGraph* renderGraph)
-{
+    for (TextureBinding& bindingInfo : _textures)
     {
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = _uniformBuffer->GetRawBuffer();
-        bufferInfo.offset = 0;
-        bufferInfo.range = _uniformBuffer->GetSize();
-
-        _descriptorSet->Update(0, 0, bufferInfo);
-    }
-
-    {
-        if (_textures.find(VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT) == _textures.end())
-            return;
-
-        std::list<VulkanImageBindingInfo>& textureBindingInfo = _textures.at(VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT);
-
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = textureBindingInfo.begin()->vulkanImage->GetRawImageView();
-        imageInfo.sampler = textureBindingInfo.begin()->vulkanSampler->GetRawSampler();
+        imageInfo.imageView = bindingInfo.texture->GetImage()->GetRawImageView();
+        imageInfo.sampler = bindingInfo.texture->GetSampler()->GetRawSampler();
 
         _descriptorSet->Update(1, 0, imageInfo);
     }
-}
-
-void Pass::CreatePipelineLayout(RenderGraph* renderGraph)
-{
-    VulkanDevice* device = renderGraph->GetDevice();
-
-    std::vector<VulkanDescriptorSetLayout*> descriptorSetLayoutArr{_descriptorSetLayout};
-    _pipelineLayout = new VulkanPipelineLayout(device, descriptorSetLayoutArr);
 }
 
 VulkanDescriptorSet* Pass::GetDescriptorSet()
 {
     return _descriptorSet;
 }
-
-VulkanPipelineLayout* Pass::GetPipelineLayout()
-{
-    return _pipelineLayout;
-}
-
-void Pass::ApplyPipelineState(RHIPipelineState& state)
-{
-    VkPipelineDepthStencilStateCreateInfo& depthStencil = state.depthStencilState;
-    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencil.depthTestEnable = depthStencilState.depthTestEnable;
-    depthStencil.depthWriteEnable = depthStencilState.depthWriteEnable;
-    depthStencil.depthCompareOp = depthStencilState.depthCompareOp;
-    depthStencil.depthBoundsTestEnable = VK_FALSE;
-    depthStencil.stencilTestEnable = VK_FALSE;
-
-    std::vector<VkPipelineShaderStageCreateInfo>& shaderStages = state.shaderStages;
-    for (const RHIShaderState& shaderState : shaderStates)
-    {
-        VkPipelineShaderStageCreateInfo vkFragmentShaderStageCreateInfo{};
-        vkFragmentShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vkFragmentShaderStageCreateInfo.stage = shaderState.stage;
-        vkFragmentShaderStageCreateInfo.pName = shaderState.name.c_str();
-        vkFragmentShaderStageCreateInfo.module = shaderState.shaderModule;
-
-        shaderStages.push_back(vkFragmentShaderStageCreateInfo);
-    }
-
-    VkPipelineRasterizationStateCreateInfo& rasterizer = state.rasterizeationState;
-    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode =  rasterizationState.cullingType;
-    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterizer.depthBiasEnable = VK_FALSE;
-    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-    rasterizer.depthBiasClamp = 0.0f;          // Optional
-    rasterizer.depthBiasSlopeFactor = 0.0f;    // Optional
-
-    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-    colorBlendAttachment.colorWriteMask =
-        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_FALSE;
-    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
-    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;             // Optional
-    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
-    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;             // Optional
-    colorBlendAttachment.blendEnable = VK_TRUE;
-    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-    state.colorBlendAttachments.push_back(colorBlendAttachment);
-
-    VkPipelineColorBlendStateCreateInfo& colorBlending = state.colorBlendState;
-    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
-    colorBlending.attachmentCount = static_cast<uint32_t>(state.colorBlendAttachments.size());
-    colorBlending.pAttachments = state.colorBlendAttachments.data();
-    colorBlending.blendConstants[0] = 0.0f; // Optional
-    colorBlending.blendConstants[1] = 0.0f; // Optional
-    colorBlending.blendConstants[2] = 0.0f; // Optional
-    colorBlending.blendConstants[3] = 0.0f; // Optional
-
-    state.layout = _pipelineLayout->GetRawPipelineLayout();
-}
-
-void Pass::UpdateUniformBuffer(RenderGraph* renderGraph, const glm::mat4x4& mvp)
-{
-    renderGraph->TransferBuffer(reinterpret_cast<const uint8_t*>(&mvp), sizeof(mvp), _uniformBuffer);
-}
-
 
 Material::Material(MaterialResource* materialResource)
     : _owner(materialResource)
@@ -509,12 +334,12 @@ Material::~Material()
 {
 }
 
-void Material::SetPass(EPassType passType, TPtr<Pass> pass)
+void Material::SetPass(EPassType passType, Pass* pass)
 {
-    _passMap.insert(std::make_pair(passType, pass));
+    _passMap .insert(std::make_pair(passType, pass));
 }
 
-TPtr<Pass> Material::GetPass(EPassType passType)
+Pass* Material::GetPass(EPassType passType)
 {
     if (_passMap.find(passType) == _passMap.end())
         return nullptr;

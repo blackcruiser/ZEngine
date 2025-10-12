@@ -2,7 +2,7 @@
 
 #include "CoreDefines.h"
 #include "CoreTypes.h"
-#include "BaseResource.h"
+#include "Resource/BaseResource.h"
 
 
 namespace ZE {

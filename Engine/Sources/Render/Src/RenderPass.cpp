@@ -13,9 +13,16 @@ RenderPass::~RenderPass()
 {
 }
 
-void RenderPass::Execute(RenderGraph*& renderGraph, const TPtrArr<SceneObject>& objectsToRender)
+void RenderPass::Execute(RenderGraph* renderGraph, SceneResource* sceneResource)
 {
-    Draw(renderGraph, objectsToRender);
+    renderGraph->SetRenderTargets(renderTargets);
+    renderGraph->BeginRenderPass();
+
+    renderGraph->SetPassParameter();
+
+    Draw(renderGraph, sceneResource);
+
+    renderGraph->EndRenderPass();
 }
 
 } // namespace ZE

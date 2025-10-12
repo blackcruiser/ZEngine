@@ -103,7 +103,7 @@ void RenderSystem::CleanupResources(RenderGraph* renderGraph)
 {
     _device->WaitIdle();
 
-    RenderResource::CleanupGraphics(renderGraph);
+    RenderResource::CleanupGraphics();
     renderGraph->GarbageCollect(renderGraph->GetExecuteCounter());
 }
 

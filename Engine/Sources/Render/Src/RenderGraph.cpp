@@ -10,12 +10,19 @@
 #include "Graphic/VulkanFramebuffer.h"
 #include "Graphic/VulkanRenderPass.h"
 #include "Graphic/VulkanSwapchain.h"
+#include "Graphic/VulkanDescriptorSet.h"
+#include "Graphic/VulkanDescriptorSetLayout.h"
 #include "Graphic/GraphicResource.h"
 #include "Render/RenderSystem.h"
 #include "Render/RenderTargets.h"
 #include "Render/RenderSynchronizer.h"
+#include "Render/Mesh.h"
+#include "Render/Material.h"
+
+#include <vulkan/vulkan.h>
 
 #include <stdexcept>
+#include <array>
 
 
 namespace ZE {
@@ -252,9 +259,14 @@ void RenderGraph::SetRenderTargets(TPtr<RenderTargets> renderTargets)
     _pendingRenderTargets = renderTargets;
 }
 
+void RenderGraph::SetPassParameter()
+{
+}
+
 void RenderGraph::SetPipelineState(const RHIPipelineState& pipelineState, VulkanDescriptorSet* descriptorSet)
 {
-    TPtr<VulkanGraphicPipeline> pipeline = NewGraphicResource<VulkanGraphicPipeline>(_device, pipelineState, _pendingRenderPass);
+    TPtr<VulkanGraphicPipeline> pipeline;
+    //TPtr<VulkanGraphicPipeline> pipeline = NewGraphicResource<VulkanGraphicPipeline>(_device, pipelineState, _pendingRenderPass);
 
     vkCmdBindPipeline(_commandBuffer->GetRawCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetRawPipeline());
     pipeline->MarkUsed(_executeCounter);
@@ -357,8 +369,88 @@ void RenderGraph::BindVertexBuffer(TPtr<VulkanBuffer> vertexBuffer, TPtr<VulkanB
     indexBuffer->MarkUsed(_executeCounter);
 }
 
+void RenderGraph::ApplyMesh(Mesh* mesh)
+{
+    _passContext->vertexInputBindingDescription = mesh->vertexInputBindingDescription;
+    _passContext->vertexInputStateCreateInfo = mesh->vertexInputStateCreateInfo;
+    _passContext->InputAssemblyStateCreateInfo = mesh->InputAssemblyStateCreateInfo;
+    _passContext->VertexInputAttributeDescriptions = mesh->VertexInputAttributeDescriptions;
+
+    _passContext->vertexBuffer = mesh->GetVertexBuffer();
+    _passContext->indexBuffer = mesh->GetIndexBuffer();
+
+    _passContext->vertexBuffer->MarkUsed(_executeCounter);
+    _passContext->indexBuffer->MarkUsed(_executeCounter);
+}
+
+void RenderGraph::ApplyPass(Pass* pass)
+{
+    _passContext->rasterizeationState = pass->rasterizeationState;
+    _passContext->depthStencilState = pass->depthStencilState;
+    _passContext->colorBlendAttachments = pass->colorBlendAttachments;
+    _passContext->colorBlendState = pass->colorBlendState;
+    _passContext->shaderStages = pass->shaderStages;
+
+    _passContext->descriptorSet = pass->_descriptorSet->GetRawDescriptorSet();
+    _passContext->descriptorSetLayout = pass->_descriptorSetLayout->GetRawDescriptorSetLayout();
+}
+
 void RenderGraph::DrawIndexed(uint32_t verticesCount, uint32_t firstIndex)
 {
+    VkPipelineViewportStateCreateInfo viewportState{};
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.pViewports = nullptr;
+    viewportState.scissorCount = 1;
+    viewportState.pScissors = nullptr;
+
+    VkPipelineMultisampleStateCreateInfo multisampling{};
+    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sampleShadingEnable = VK_FALSE;
+    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampling.minSampleShading = 1.0f;          // Optional
+    multisampling.pSampleMask = nullptr;            // Optional
+    multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
+    multisampling.alphaToOneEnable = VK_FALSE;      // Optional
+
+    std::array<VkDynamicState, 2> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
+    dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicStateCreateInfo.dynamicStateCount = dynamicStates.size();
+    dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
+
+    VkGraphicsPipelineCreateInfo pipelineInfo{}; 
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = static_cast<uint32_t>(_passContext->shaderStages.size());
+    pipelineInfo.pStages = _passContext->shaderStages.data();
+    pipelineInfo.pVertexInputState = &_passContext->vertexInputStateCreateInfo;
+    pipelineInfo.pInputAssemblyState = &_passContext->InputAssemblyStateCreateInfo;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pRasterizationState = &_passContext->rasterizeationState;
+    pipelineInfo.pMultisampleState = &multisampling;
+    pipelineInfo.pDepthStencilState = &_passContext->depthStencilState; // Optional
+    pipelineInfo.pColorBlendState = &_passContext->colorBlendState;
+    pipelineInfo.pDynamicState = &dynamicStateCreateInfo; // Optional
+    pipelineInfo.layout = _passContext->layout;
+    pipelineInfo.renderPass = _pendingRenderPass->GetRawRenderPass();
+    pipelineInfo.subpass = 0;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+    pipelineInfo.basePipelineIndex = -1;              // Optional
+
+
+    TPtr<VulkanGraphicPipeline> pipeline = NewGraphicResource<VulkanGraphicPipeline>(_device, pipelineInfo);
+
+    vkCmdBindPipeline(_commandBuffer->GetRawCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->GetRawPipeline());
+    pipeline->MarkUsed(_executeCounter);
+
+    vkCmdBindDescriptorSets(_commandBuffer->GetRawCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _passContext->layout, 0, 1, &_passContext->descriptorSet, 0, nullptr);
+
+    VkDeviceSize offsets[] = {0};
+    VkBuffer vertexBuffer = _passContext->vertexBuffer->GetRawBuffer();
+    vkCmdBindVertexBuffers(_commandBuffer->GetRawCommandBuffer(), 0, 1, &vertexBuffer, offsets);
+    vkCmdBindIndexBuffer(_commandBuffer->GetRawCommandBuffer(), _passContext->indexBuffer->GetRawBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+
     vkCmdDrawIndexed(_commandBuffer->GetRawCommandBuffer(), verticesCount, 1, firstIndex, 0, 0);
 }
 

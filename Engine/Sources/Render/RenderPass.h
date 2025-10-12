@@ -3,14 +3,12 @@
 #include "CoreDefines.h"
 #include "CoreTypes.h"
 
-#include <optional>
 
 namespace ZE {
 
-class SceneObject;
-class Scene;
-struct RenderTargets;
+class SceneResource;
 class RenderGraph;
+class RenderTargets;
 
 class RenderPass
 {
@@ -18,8 +16,11 @@ public:
     RenderPass();
     ~RenderPass();
 
-    void Execute(RenderGraph*& commandBuffer, const TPtrArr<SceneObject>& objectsToRender);
-    virtual void Draw(RenderGraph*& commandBuffer, const TPtrArr<SceneObject>& objectsToRender) = 0;
+    void Execute(RenderGraph* commandBuffer, SceneResource* sceneResource);
+    virtual void Draw(RenderGraph* commandBuffer, SceneResource* sceneResource) = 0;
+
+protected:
+    TPtr<RenderTargets> renderTargets;
 };
 
 }

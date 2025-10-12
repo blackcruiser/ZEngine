@@ -21,7 +21,7 @@ void Mesh::InitGraphic(RenderGraph* renderGraph)
 {
     RenderResource::InitGraphic(renderGraph);
 
-    assert(_owner == false);
+    assert(_owner == nullptr);
 
     const std::vector<VertexData>& vertices = _owner->GetVertices(0);
     uint32_t byteSize = static_cast<uint32_t>(vertices.size()) * sizeof(VertexData);
@@ -39,6 +39,42 @@ void Mesh::InitGraphic(RenderGraph* renderGraph)
     _verticesCount = static_cast<uint32_t>(indexes.size());
 
     renderGraph->Execute();
+
+    {
+            VkVertexInputBindingDescription bindingDescription;
+    bindingDescription.binding = 0;
+    bindingDescription.stride = sizeof(VertexData);
+    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+    attributeDescriptions.resize(3);
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[0].offset = offsetof(VertexData, position);
+
+    attributeDescriptions[1].binding = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[1].offset = offsetof(VertexData, normal);
+
+    attributeDescriptions[2].binding = 0;
+    attributeDescriptions[2].location = 2;
+    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[2].offset = offsetof(VertexData, texCoord);
+
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo;
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly;
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.primitiveRestartEnable = VK_FALSE;
+    }
 }
 
 void Mesh::CleanupGraphic()

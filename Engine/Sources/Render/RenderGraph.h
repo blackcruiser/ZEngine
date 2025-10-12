@@ -18,7 +18,37 @@ class VulkanRenderPass;
 class VulkanSwapchain;
 struct RenderTargets;
 struct RHIPipelineState;
+class Mesh;
+class Pass;
 class RenderSynchronizer;
+
+struct PassContext
+{
+    VkVertexInputBindingDescription vertexInputBindingDescription;
+    VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo;
+    VkPipelineInputAssemblyStateCreateInfo InputAssemblyStateCreateInfo;
+    std::vector<VkVertexInputAttributeDescription> VertexInputAttributeDescriptions;
+
+    VkPipelineRasterizationStateCreateInfo rasterizeationState;
+    VkPipelineDepthStencilStateCreateInfo depthStencilState;
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+    VkPipelineColorBlendStateCreateInfo colorBlendState;
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+
+    VkPipelineLayout layout;
+
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorSet descriptorSet;
+
+    TPtr<VulkanBuffer> vertexBuffer;
+    TPtr<VulkanBuffer> indexBuffer;
+};
+
+class RenderContext
+{
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorSet descriptorSet;
+};
 
 
 class RenderGraph
@@ -51,7 +81,13 @@ public:
     void SetRenderTargets(TPtr<RenderTargets> renderTargets);
     VulkanImageView* GetFramebuffer();
 
+    void SetPassParameter();
+
     void SetPipelineState(const RHIPipelineState& pipelineState, VulkanDescriptorSet* descriptorSet);
+
+    void ApplyMesh(Mesh* mesh);
+    void ApplyPass(Pass* pass);
+
 
     void BindVertexBuffer(TPtr<VulkanBuffer> vertexBuffer, TPtr<VulkanBuffer> indexBuffer);
 
@@ -66,6 +102,9 @@ private:
     VulkanCommandBuffer* _commandBuffer;
     TPtr<RenderTargets> _pendingRenderTargets;
     VulkanRenderPass* _pendingRenderPass;
+
+    PassContext* _passContext;
+    RenderContext* _renderContenxt;
 
     RenderSynchronizer* _synchronizer;
 

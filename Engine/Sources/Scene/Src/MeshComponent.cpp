@@ -1,6 +1,7 @@
 #include "MeshComponent.h"
 #include "Resource/MaterialResource.h"
 #include "Resource/MeshResource.h"
+#include "Render/Mesh.h"
 
 
 namespace ZE {
